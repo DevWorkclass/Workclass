@@ -1,5 +1,5 @@
 /**
- * Types du domaine tickets (backend).
+ * Types du domaine tickets.
  */
 
 export interface Ticket {
@@ -13,15 +13,8 @@ export interface Ticket {
   createdAt: Date;
 }
 
-export interface QRData {
-  ticketId: string;
-  signature: string; // HMAC-SHA256
-}
-
-export interface TicketGenerateInput {
-  bookingId: string;
-}
-
-export interface TicketGetInput {
-  ticketId: string;
+export interface TicketGenerationResult {
+  ticketNumber: string;
+  pdfUrl: string;
+  qrCode: string;
 }

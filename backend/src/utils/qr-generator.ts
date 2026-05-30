@@ -1,29 +1,41 @@
 /**
- * Génération QR code (côté serveur uniquement).
- * Le payload est signé HMAC-SHA256 avant encodage.
- * STUB v1 : implémentation en ÉTAPE 3 avec `qrcode`.
+ * Génération + vérification de QR codes signés HMAC-SHA256.
+ * Le payload encodé est un JSON `{ ticketId, signature }`.
  */
 
-import { generateHMAC as hmacSha256 } from './crypto.js';
-import { env } from '../config/env.js';
-import type { QRData } from '../domains/tickets/types/tickets.types.js';
+import QRCode from 'qrcode';
+import { generateHMAC, verifyHMAC } from './crypto';
 
-/**
- * Signe un ticketId et retourne le payload JSON sérialisé.
- */
-export function buildSignedQRPayload(ticketId: string): string {
-  if (!env.QR_HMAC_SECRET) {
-    throw new Error('QR_HMAC_SECRET manquant — impossible de signer le QR.');
-  }
-  const signature = hmacSha256(ticketId);
-  const data: QRData = { ticketId, signature };
-  return JSON.stringify(data);
+export interface QRCodeData {
+  ticketId: string;
+  signature: string;
 }
 
 /**
- * Vérifie un payload QR (parse + vérification HMAC).
+ * Génère une data-URL PNG d'un QR signé pour `ticketId`.
  */
-export function parseAndVerifyQRPayload(payload: string): QRData | null {
+export async function generateQRCode(ticketId: string): Promise<string> {
+  const signature = generateHMAC(ticketId);
+  const data: QRCodeData = { ticketId, signature };
+  return QRCode.toDataURL(JSON.stringify(data), {
+    width: 400,
+    margin: 2,
+    color: { dark: '#0066CC', light: '#FFFFFF' },
+  });
+}
+
+/**
+ * Vérifie qu'un payload QR a une signature HMAC valide.
+ */
+export function verifyQRCode(data: QRCodeData): boolean {
+  return verifyHMAC(data.ticketId, data.signature);
+}
+
+/**
+ * Parse + vérifie un payload QR brut (chaîne JSON).
+ * Retourne le `QRCodeData` si valide, `null` sinon.
+ */
+export function parseAndVerifyQRPayload(payload: string): QRCodeData | null {
   try {
     const parsed = JSON.parse(payload) as unknown;
     if (
@@ -34,16 +46,9 @@ export function parseAndVerifyQRPayload(payload: string): QRData | null {
     ) {
       return null;
     }
-    return parsed as QRData;
+    const data = parsed as QRCodeData;
+    return verifyQRCode(data) ? data : null;
   } catch {
     return null;
   }
-}
-
-/**
- * Génère l'image PNG du QR.
- * TODO ÉTAPE 3 : utiliser `qrcode` (Node) → Buffer PNG / DataURL.
- */
-export async function renderQRImage(_payload: string): Promise<Buffer> {
-  throw new Error('Not implemented — ÉTAPE 3 backend (utilise `qrcode`).');
 }

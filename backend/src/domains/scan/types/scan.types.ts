@@ -1,16 +1,18 @@
-import type { Ticket, QRData } from '../../tickets/types/tickets.types.js';
+/**
+ * Types du domaine scan — re-export QRCodeData depuis utils/qr-generator.
+ */
 
-export interface ScanVerificationPayload {
-  qrData: QRData;
-  scannedAt: Date;
-  scannerId?: string;
-}
+import type { Ticket } from '../../tickets/types/tickets.types.js';
+import type { QRCodeData } from '../../../utils/qr-generator.js';
+
+export type { QRCodeData };
 
 export type ScanErrorCode =
-  | 'invalid_signature'
+  | 'invalid'
   | 'already_scanned'
   | 'expired'
-  | 'not_found';
+  | 'not_found'
+  | 'event_not_active';
 
 export interface ScanResult {
   valid: boolean;

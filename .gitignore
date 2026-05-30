@@ -38,6 +38,7 @@ frontend/.vercel/
 # Backend
 backend/dist/
 backend/coverage/
+backend/uploads/
 
 # Prisma
 backend/prisma/*.db

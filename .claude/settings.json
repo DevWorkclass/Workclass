@@ -21,7 +21,9 @@
       "Bash(npx prisma *)",
       "Bash(git add *)",
       "Bash(git commit *)",
-      "Bash(npx tsc *)"
+      "Bash(npx tsc *)",
+      "Bash(rm -f src/domains/tickets/repositories/tickets.repository.ts src/domains/tickets/repositories/.gitkeep)",
+      "Bash(rmdir src/domains/tickets/repositories)"
     ]
   }
 }

@@ -1,35 +1,25 @@
-import type { Request, Response, NextFunction } from 'express';
-import {
-  ticketGenerateSchema,
-  ticketGetSchema,
-} from '../validators/tickets.validator.js';
-import { ticketGeneratorService } from '../services/ticket-generator.service.js';
+/**
+ * Contrôleur tickets.
+ */
 
-export const ticketsController = {
+import type { Request, Response, NextFunction } from 'express';
+import { z } from 'zod';
+import { TicketGeneratorService } from '../services/ticket-generator.service';
+
+const generateSchema = z.object({
+  bookingId: z.string().uuid('ID reservation invalide'),
+});
+
+export class TicketsController {
+  private readonly service = new TicketGeneratorService();
+
   async generate(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const input = ticketGenerateSchema.parse(req.body);
-      const ticket = await ticketGeneratorService.generate(input);
-      res.status(201).json({ success: true, data: ticket });
-    } catch (err) {
-      next(err);
+      const { bookingId } = generateSchema.parse(req.body);
+      const result = await this.service.generateTicket(bookingId);
+      res.status(201).json({ success: true, data: result });
+    } catch (error) {
+      next(error);
     }
-  },
-
-  async get(req: Request, res: Response, next: NextFunction): Promise<void> {
-    try {
-      const input = ticketGetSchema.parse(req.body);
-      const ticket = await ticketGeneratorService.get(input.ticketId);
-      if (!ticket) {
-        res.status(404).json({
-          success: false,
-          error: { code: 'not_found', message: 'Billet introuvable' },
-        });
-        return;
-      }
-      res.json({ success: true, data: ticket });
-    } catch (err) {
-      next(err);
-    }
-  },
-};
+  }
+}

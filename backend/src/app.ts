@@ -12,6 +12,7 @@ import { bookingRoutes } from './domains/booking/routes/booking.routes';
 import { ticketsRoutes } from './domains/tickets/routes/tickets.routes';
 import { scanRoutes } from './domains/scan/routes/scan.routes';
 import { feedbackRoutes } from './domains/feedback/routes/feedback.routes';
+import { paymentsRoutes } from './domains/payments/routes/payments.routes';
 
 const app = express();
 
@@ -48,6 +49,7 @@ app.use('/api', bookingRoutes);
 app.use('/api', ticketsRoutes);
 app.use('/api', scanRoutes);
 app.use('/api', feedbackRoutes);
+app.use('/api', paymentsRoutes);
 
 // --- 404 + handler d'erreurs (doivent rester en dernier) ---
 app.use(notFoundHandler);

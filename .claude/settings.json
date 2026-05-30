@@ -25,7 +25,8 @@
       "Bash(rm -f src/domains/tickets/repositories/tickets.repository.ts src/domains/tickets/repositories/.gitkeep)",
       "Bash(rmdir src/domains/tickets/repositories)",
       "Bash(rm -f src/domains/notifications/templates/confirmation-email.ts src/domains/notifications/templates/certificate-email.ts src/domains/notifications/templates/feedback-link-email.ts)",
-      "Bash(rmdir src/domains/notifications/templates)"
+      "Bash(rmdir src/domains/notifications/templates)",
+      "Bash(npm run *)"
     ]
   }
 }

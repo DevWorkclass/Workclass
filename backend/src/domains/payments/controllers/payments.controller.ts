@@ -1,20 +1,40 @@
+/**
+ * Contrôleur payments.
+ */
+
 import type { Request, Response, NextFunction } from 'express';
 import { z } from 'zod';
-import { paymentsService } from '../services/payments.service.js';
+import { PaymentsService } from '../services/payments.service';
 
 const initiateSchema = z.object({
-  bookingId: z.string().uuid(),
-  provider: z.enum(['simulation', 'stripe', 'paystack', 'orange_money']),
+  bookingId: z.string().uuid('ID reservation invalide'),
+  provider: z.enum(['stripe', 'paystack', 'orange_money', 'simulation']),
 });
 
-export const paymentsController = {
+const simulateSchema = z.object({
+  paymentId: z.string().uuid('ID paiement invalide'),
+});
+
+export class PaymentsController {
+  private readonly service = new PaymentsService();
+
   async initiate(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const input = initiateSchema.parse(req.body);
-      const result = await paymentsService.initiate(input);
-      res.json({ success: true, data: result });
-    } catch (err) {
-      next(err);
+      const data = initiateSchema.parse(req.body);
+      const result = await this.service.initiate(data);
+      res.status(201).json({ success: true, data: result });
+    } catch (error) {
+      next(error);
     }
-  },
-};
+  }
+
+  async simulate(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const { paymentId } = simulateSchema.parse(req.body);
+      const payment = await this.service.simulatePayment(paymentId);
+      res.json({ success: true, data: payment });
+    } catch (error) {
+      next(error);
+    }
+  }
+}

@@ -4,7 +4,7 @@
  * STUB v1 : implémentation en ÉTAPE 3 avec `qrcode`.
  */
 
-import { hmacSha256 } from './crypto.js';
+import { generateHMAC as hmacSha256 } from './crypto.js';
 import { env } from '../config/env.js';
 import type { QRData } from '../domains/tickets/types/tickets.types.js';
 
@@ -15,7 +15,7 @@ export function buildSignedQRPayload(ticketId: string): string {
   if (!env.QR_HMAC_SECRET) {
     throw new Error('QR_HMAC_SECRET manquant — impossible de signer le QR.');
   }
-  const signature = hmacSha256(ticketId, env.QR_HMAC_SECRET);
+  const signature = hmacSha256(ticketId);
   const data: QRData = { ticketId, signature };
   return JSON.stringify(data);
 }

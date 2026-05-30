@@ -1,52 +1,22 @@
 /**
  * Client Redis (ioredis) — cache + rate-limit distribué.
- *
- * Comportement :
- *  - Si `REDIS_URL` est défini → client connecté, partagé via `getRedisClient()`.
- *  - Sinon → `getRedisClient()` retourne `null`. Le rate-limit retombe sur
- *    le store in-memory d'`express-rate-limit` (acceptable en dev mono-instance).
- *
- * Utilisation typique :
- *   const redis = getRedisClient();
- *   if (redis) { ... } // sinon désactiver le feature distribué
+ * Import direct : `import { redis } from '../config/redis';`
  */
 
 import Redis from 'ioredis';
-import { env } from './env.js';
-import { logger } from '../utils/logger.js';
 
-let cached: Redis | null | undefined;
+const REDIS_URL = process.env.REDIS_URL ?? 'redis://localhost:6379';
 
-export function getRedisClient(): Redis | null {
-  // `undefined` = pas encore évalué ; `null` = explicitement désactivé.
-  if (cached !== undefined) return cached;
+export const redis = new Redis(REDIS_URL, {
+  maxRetriesPerRequest: 3,
+  lazyConnect: false,
+});
 
-  if (!env.REDIS_URL) {
-    logger.warn(
-      'REDIS_URL non défini — rate-limit distribué désactivé (fallback in-memory).',
-    );
-    cached = null;
-    return null;
-  }
+redis.on('error', (err) => {
+  // eslint-disable-next-line no-console
+  console.error('[redis]', err.message);
+});
 
-  const client = new Redis(env.REDIS_URL, {
-    maxRetriesPerRequest: 3,
-    lazyConnect: false,
-  });
-
-  client.on('error', (err) => {
-    logger.error({ err }, 'Erreur Redis');
-  });
-
-  cached = client;
-  return client;
-}
-
-/**
- * Fermeture propre de la connexion Redis (à appeler dans le shutdown).
- */
 export async function disconnectRedis(): Promise<void> {
-  if (!cached) return;
-  await cached.quit();
-  cached = undefined;
+  await redis.quit();
 }

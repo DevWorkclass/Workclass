@@ -1,51 +1,49 @@
 /**
- * Middleware d'authentification admin.
- * Vérifie le Bearer JWT et attache l'utilisateur à req.
+ * Middleware d'authentification + autorisation par rôle.
+ *  - `authMiddleware` : vérifie le Bearer JWT et attache `req.user`.
+ *  - `requireRole(...roles)` : restreint l'accès aux rôles listés.
  */
 
-import type { RequestHandler } from 'express';
-import { jwtService } from '../services/jwt.service.js';
-import { UserRole, type JwtPayload } from '../types/auth.types.js';
+import type { Request, Response, NextFunction } from 'express';
+import { verifyAccessToken, type TokenPayload } from '../services/jwt.service';
+import { UnauthorizedError, ForbiddenError } from '../../errors/types/error.types';
 
 declare global {
   // eslint-disable-next-line @typescript-eslint/no-namespace
   namespace Express {
     interface Request {
-      user?: JwtPayload;
+      user?: TokenPayload;
     }
   }
 }
 
-export const requireAuth: RequestHandler = (req, res, next) => {
-  const header = req.headers.authorization;
-  if (!header?.startsWith('Bearer ')) {
-    res.status(401).json({
-      success: false,
-      error: { code: 'unauthorized', message: 'Token manquant' },
-    });
-    return;
-  }
+export function authMiddleware(
+  req: Request,
+  _res: Response,
+  next: NextFunction,
+): void {
   try {
-    const token = header.slice('Bearer '.length);
-    req.user = jwtService.verify(token);
-    next();
-  } catch {
-    res.status(401).json({
-      success: false,
-      error: { code: 'unauthorized', message: 'Token invalide' },
-    });
-  }
-};
-
-export const requireRole = (role: UserRole): RequestHandler => {
-  return (req, res, next) => {
-    if (!req.user || (req.user.role !== role && req.user.role !== UserRole.SUPER_ADMIN)) {
-      res.status(403).json({
-        success: false,
-        error: { code: 'forbidden', message: 'Accès refusé' },
-      });
-      return;
+    const authHeader = req.headers.authorization;
+    if (!authHeader?.startsWith('Bearer ')) {
+      throw new UnauthorizedError('Token manquant');
     }
+    const token = authHeader.substring(7);
+    req.user = verifyAccessToken(token);
     next();
+  } catch (err) {
+    next(err);
+  }
+}
+
+export function requireRole(...roles: string[]) {
+  return (req: Request, _res: Response, next: NextFunction): void => {
+    try {
+      if (!req.user || !roles.includes(req.user.role)) {
+        throw new ForbiddenError('Acces interdit');
+      }
+      next();
+    } catch (err) {
+      next(err);
+    }
   };
-};
+}

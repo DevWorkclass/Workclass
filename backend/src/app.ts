@@ -1,70 +1,48 @@
 /**
  * Configuration de l'application Express.
- * Toutes les routes métier sont en POST (cf. règle sécurité).
+ * Les routes domaine sont ajoutées au fur et à mesure des étapes (commits 2-7).
  */
 
 import express from 'express';
-import cors from 'cors';
 import helmet from 'helmet';
+import cors from 'cors';
 import rateLimit from 'express-rate-limit';
-import pinoHttp from 'pino-http';
-import { env } from './config/env.js';
-import { logger } from './utils/logger.js';
-import {
-  errorHandler,
-  notFoundHandler,
-} from './domains/shared/errors/handlers/error.handler.js';
+import { errorHandler, notFoundHandler } from './domains/shared/errors/handlers/error.handler';
 
-import bookingRoutes from './domains/booking/routes/booking.routes.js';
-import ticketsRoutes from './domains/tickets/routes/tickets.routes.js';
-import scanRoutes from './domains/scan/routes/scan.routes.js';
-import feedbackRoutes from './domains/feedback/routes/feedback.routes.js';
-import paymentsRoutes from './domains/payments/routes/payments.routes.js';
+const app = express();
 
-export function createApp(): express.Express {
-  const app = express();
+// --- Sécurité réseau ---
+app.use(helmet());
+app.use(
+  cors({
+    origin: process.env.FRONTEND_URL ?? 'http://localhost:3000',
+    credentials: true,
+  }),
+);
 
-  // Sécurité réseau
-  app.use(helmet());
-  app.use(
-    cors({
-      origin: env.CORS_ORIGIN.split(',').map((s) => s.trim()),
-      credentials: true,
-    }),
-  );
+// --- Rate-limiting global sur /api ---
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 100,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { success: false, error: { code: 'RATE_LIMITED', message: 'Trop de requetes, veuillez reessayer plus tard.' } },
+});
+app.use('/api/', limiter);
 
-  // Body parsing
-  app.use(express.json({ limit: '1mb' }));
-  app.use(express.urlencoded({ extended: false }));
+// --- Body parsing ---
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true }));
 
-  // Logs HTTP
-  app.use(pinoHttp({ logger }));
+// --- Healthcheck (non sensible — GET autorisé) ---
+app.get('/api/health', (_req, res) => {
+  res.json({ success: true, data: { status: 'ok', timestamp: new Date().toISOString() } });
+});
 
-  // Rate limiting global
-  app.use(
-    rateLimit({
-      windowMs: env.RATE_LIMIT_WINDOW_MS,
-      max: env.RATE_LIMIT_MAX,
-      standardHeaders: true,
-      legacyHeaders: false,
-    }),
-  );
+// --- Routes domaine (ajoutées aux commits suivants) ---
 
-  // Healthcheck (seul GET autorisé — non sensible)
-  app.get(`${env.API_BASE_PATH}/health`, (_req, res) => {
-    res.json({ success: true, data: { status: 'ok', uptime: process.uptime() } });
-  });
+// --- 404 + handler d'erreurs (doivent rester en dernier) ---
+app.use(notFoundHandler);
+app.use(errorHandler);
 
-  // Routes métier (toutes en POST)
-  app.use(`${env.API_BASE_PATH}/booking`, bookingRoutes);
-  app.use(`${env.API_BASE_PATH}/tickets`, ticketsRoutes);
-  app.use(`${env.API_BASE_PATH}/scan`, scanRoutes);
-  app.use(`${env.API_BASE_PATH}/feedback`, feedbackRoutes);
-  app.use(`${env.API_BASE_PATH}/payments`, paymentsRoutes);
-
-  // 404 + erreur
-  app.use(notFoundHandler);
-  app.use(errorHandler);
-
-  return app;
-}
+export { app };

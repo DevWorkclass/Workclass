@@ -10,6 +10,7 @@ import rateLimit from 'express-rate-limit';
 import { errorHandler, notFoundHandler } from './domains/shared/errors/handlers/error.handler';
 import { bookingRoutes } from './domains/booking/routes/booking.routes';
 import { ticketsRoutes } from './domains/tickets/routes/tickets.routes';
+import { scanRoutes } from './domains/scan/routes/scan.routes';
 
 const app = express();
 
@@ -44,6 +45,7 @@ app.get('/api/health', (_req, res) => {
 // --- Routes domaine ---
 app.use('/api', bookingRoutes);
 app.use('/api', ticketsRoutes);
+app.use('/api', scanRoutes);
 
 // --- 404 + handler d'erreurs (doivent rester en dernier) ---
 app.use(notFoundHandler);

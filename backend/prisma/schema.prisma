@@ -1,0 +1,300 @@
+// ============================================================================
+// Prisma Schema — Work Class Gabon v1
+// ----------------------------------------------------------------------------
+// Source de vérité du schéma DB côté backend.
+// Les migrations SQL brutes vivent dans `prisma/migrations/00X_xxx/migration.sql`
+// pour traçabilité et review (RLS, triggers, contraintes avancées).
+// ============================================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ----------------------------------------------------------------------------
+// Enums
+// ----------------------------------------------------------------------------
+
+enum EventStatus {
+  draft
+  published
+  archived
+}
+
+enum BookingStatus {
+  pending
+  confirmed
+  cancelled
+}
+
+enum PaymentStatus {
+  pending
+  paid
+  failed
+  refunded
+}
+
+enum ModerationStatus {
+  pending
+  approved
+  rejected
+}
+
+enum AdminRole {
+  admin
+  super_admin
+}
+
+enum AuditResult {
+  success
+  failure
+  denied
+}
+
+// ----------------------------------------------------------------------------
+// Events
+// ----------------------------------------------------------------------------
+
+model Event {
+  id          String       @id @default(uuid())
+  title       String
+  slug        String       @unique
+  description String
+  location    String
+  startDate   DateTime     @map("start_date")
+  endDate     DateTime     @map("end_date")
+  coverImage  String?      @map("cover_image")
+  program     Json         @default("[]")
+  speakers    Json         @default("[]")
+  status      EventStatus  @default(draft)
+  createdAt   DateTime     @default(now()) @map("created_at")
+  updatedAt   DateTime     @updatedAt       @map("updated_at")
+
+  ticketTypes      TicketType[]
+  bookings         Booking[]
+  feedbackLinks    FeedbackLink[]
+  feedbackResponses FeedbackResponse[]
+
+  @@index([status])
+  @@index([startDate])
+  @@map("events")
+}
+
+// ----------------------------------------------------------------------------
+// Ticket types
+// ----------------------------------------------------------------------------
+
+model TicketType {
+  id          String   @id @default(uuid())
+  eventId     String   @map("event_id")
+  name        String
+  description String?
+  price       Decimal  @db.Decimal(12, 2)
+  currency    String   @default("XAF")
+  quota       Int
+  soldCount   Int      @default(0) @map("sold_count")
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt       @map("updated_at")
+
+  event    Event     @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  bookings Booking[]
+
+  @@index([eventId])
+  @@index([isActive])
+  @@map("ticket_types")
+}
+
+// ----------------------------------------------------------------------------
+// Bookings
+// ----------------------------------------------------------------------------
+
+model Booking {
+  id            String         @id @default(uuid())
+  eventId       String         @map("event_id")
+  ticketTypeId  String         @map("ticket_type_id")
+  reference     String         @unique // WCG-RES-XXXXXX
+  status        BookingStatus  @default(pending)
+  paymentStatus PaymentStatus  @default(pending) @map("payment_status")
+  totalAmount   Decimal        @db.Decimal(12, 2) @map("total_amount")
+  currency      String         @default("XAF")
+  options       Json           @default("[]")
+  notes         String?
+  createdAt     DateTime       @default(now()) @map("created_at")
+  updatedAt     DateTime       @updatedAt       @map("updated_at")
+
+  event         Event          @relation(fields: [eventId], references: [id], onDelete: Restrict)
+  ticketType    TicketType     @relation(fields: [ticketTypeId], references: [id], onDelete: Restrict)
+  participant   Participant?
+  ticket        Ticket?
+  feedbackLinks FeedbackLink[]
+
+  @@index([eventId])
+  @@index([ticketTypeId])
+  @@index([status])
+  @@index([paymentStatus])
+  @@index([createdAt(sort: Desc)])
+  @@map("bookings")
+}
+
+// ----------------------------------------------------------------------------
+// Participants (RGPD-like)
+// ----------------------------------------------------------------------------
+
+model Participant {
+  id            String    @id @default(uuid())
+  bookingId     String    @unique @map("booking_id")
+  firstName     String    @map("first_name")
+  lastName      String    @map("last_name")
+  email         String    @db.Citext
+  phone         String
+  company       String?
+  position      String?
+  metadata      Json      @default("{}")
+  consentGiven  Boolean   @default(false) @map("consent_given")
+  consentAt     DateTime? @map("consent_at")
+  anonymizedAt  DateTime? @map("anonymized_at")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt       @map("updated_at")
+
+  booking Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+
+  @@index([email])
+  @@map("participants")
+}
+
+// ----------------------------------------------------------------------------
+// Tickets (PDF + QR signé HMAC)
+// ----------------------------------------------------------------------------
+
+model Ticket {
+  id              String    @id @default(uuid())
+  bookingId       String    @unique @map("booking_id")
+  ticketNumber    String    @unique @map("ticket_number") // WCG-YYYY-NNNNNN
+  qrCode          String    @map("qr_code")
+  pdfUrl          String?   @map("pdf_url")
+  scannedAt       DateTime? @map("scanned_at")
+  scannedBy       String?   @map("scanned_by")
+  certificateSent Boolean   @default(false) @map("certificate_sent")
+  certificateUrl  String?   @map("certificate_url")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt       @map("updated_at")
+
+  booking Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+
+  @@index([ticketNumber])
+  @@index([scannedAt])
+  @@map("tickets")
+}
+
+// ----------------------------------------------------------------------------
+// Feedback (liens privés + réponses)
+// ----------------------------------------------------------------------------
+
+model FeedbackLink {
+  id        String   @id @default(uuid())
+  eventId   String   @map("event_id")
+  bookingId String   @map("booking_id")
+  token     String   @unique
+  used      Boolean  @default(false)
+  usedAt    DateTime? @map("used_at")
+  expiresAt DateTime @map("expires_at")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  event    Event             @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  booking  Booking           @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  response FeedbackResponse?
+
+  @@index([token])
+  @@index([used])
+  @@map("feedback_links")
+}
+
+model FeedbackResponse {
+  id               String           @id @default(uuid())
+  feedbackLinkId   String           @unique @map("feedback_link_id")
+  eventId          String           @map("event_id")
+  ratings          Json
+  comment          String?
+  moderationStatus ModerationStatus @default(pending) @map("moderation_status")
+  moderatedAt      DateTime?        @map("moderated_at")
+  moderatedBy      String?          @map("moderated_by")
+  createdAt        DateTime         @default(now()) @map("created_at")
+  updatedAt        DateTime         @updatedAt       @map("updated_at")
+
+  feedbackLink FeedbackLink @relation(fields: [feedbackLinkId], references: [id], onDelete: Cascade)
+  event        Event        @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@index([moderationStatus])
+  @@map("feedback_responses")
+}
+
+// ----------------------------------------------------------------------------
+// Admin (Auth backend — bcrypt + JWT côté Express)
+// ----------------------------------------------------------------------------
+
+model Admin {
+  id           String    @id @default(uuid())
+  email        String    @unique @db.Citext
+  passwordHash String    @map("password_hash") // bcryptjs
+  firstName    String?   @map("first_name")
+  lastName     String?   @map("last_name")
+  role         AdminRole @default(admin)
+  isActive     Boolean   @default(true) @map("is_active")
+  lastLoginAt  DateTime? @map("last_login_at")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt       @map("updated_at")
+
+  @@index([role])
+  @@index([isActive])
+  @@map("admins")
+}
+
+// ----------------------------------------------------------------------------
+// Payments (placeholder v1 / webhook-ready v2)
+// ----------------------------------------------------------------------------
+
+model Payment {
+  id                String        @id @default(uuid())
+  bookingId         String        @map("booking_id")
+  provider          String        // simulation | stripe | paystack | orange_money
+  providerReference String?       @map("provider_reference")
+  amount            Decimal       @db.Decimal(12, 2)
+  currency          String        @default("XAF")
+  status            PaymentStatus @default(pending)
+  rawPayload        Json?         @map("raw_payload")
+  createdAt         DateTime      @default(now()) @map("created_at")
+  updatedAt         DateTime      @updatedAt       @map("updated_at")
+
+  @@index([bookingId])
+  @@index([status])
+  @@map("payments")
+}
+
+// ----------------------------------------------------------------------------
+// Audit logs (RGPD : IP anonymisée, pas de PII en clair)
+// ----------------------------------------------------------------------------
+
+model AuditLog {
+  id           String      @id @default(uuid())
+  actorId      String?     @map("actor_id")
+  actorRole    String?     @map("actor_role")
+  action       String
+  resourceType String      @map("resource_type")
+  resourceId   String?     @map("resource_id")
+  result       AuditResult
+  ipPrefix     String?     @map("ip_prefix")
+  userAgent    String?     @map("user_agent")
+  metadata     Json        @default("{}")
+  createdAt    DateTime    @default(now()) @map("created_at")
+
+  @@index([actorId])
+  @@index([resourceType, resourceId])
+  @@index([action])
+  @@index([createdAt(sort: Desc)])
+  @@map("audit_logs")
+}

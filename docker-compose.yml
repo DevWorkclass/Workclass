@@ -1,0 +1,87 @@
+# ============================================================================
+# docker-compose — Dev local Work Class Gabon
+# Lance : postgres + redis + backend + frontend
+# Usage :
+#   docker compose up -d postgres redis            # services infra
+#   npm run dev:frontend                           # local (HMR)
+#   npm run dev:backend                            # local (tsx watch)
+# Ou tout en conteneur : `docker compose up --build`
+# ============================================================================
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: wcg_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: workclass
+      POSTGRES_PASSWORD: workclass
+      POSTGRES_DB: workclass
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U workclass -d workclass"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    container_name: wcg_redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  backend:
+    image: node:20-alpine
+    container_name: wcg_backend
+    working_dir: /app/backend
+    command: sh -c "npm install --workspaces=false && npm run dev"
+    environment:
+      NODE_ENV: development
+      PORT: "3001"
+      DATABASE_URL: postgresql://workclass:workclass@postgres:5432/workclass?schema=public
+      REDIS_URL: redis://redis:6379
+      CORS_ORIGIN: http://localhost:3000
+    ports:
+      - "3001:3001"
+    volumes:
+      - ./backend:/app/backend
+      - backend_node_modules:/app/backend/node_modules
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  frontend:
+    image: node:20-alpine
+    container_name: wcg_frontend
+    working_dir: /app/frontend
+    command: sh -c "npm install --workspaces=false && npm run dev"
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:3001/api
+      NEXT_PUBLIC_APP_URL: http://localhost:3000
+      NEXT_PUBLIC_APP_ENV: development
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./frontend:/app/frontend
+      - frontend_node_modules:/app/frontend/node_modules
+    depends_on:
+      - backend
+
+volumes:
+  postgres_data:
+  redis_data:
+  backend_node_modules:
+  frontend_node_modules:

@@ -1,0 +1,57 @@
+{
+  "common": {
+    "appName": "Work Class Gabon",
+    "loading": "Loading…",
+    "error": "An error occurred",
+    "retry": "Retry",
+    "save": "Save",
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "back": "Back",
+    "next": "Next",
+    "previous": "Previous",
+    "search": "Search",
+    "submit": "Submit"
+  },
+  "navigation": {
+    "home": "Home",
+    "reservation": "Booking",
+    "participant": "Participant",
+    "admin": "Admin"
+  },
+  "event": {
+    "upcoming": "Upcoming",
+    "location": "Location",
+    "date": "Date",
+    "program": "Program",
+    "speakers": "Speakers"
+  },
+  "booking": {
+    "title": "Book your seat",
+    "yourInfo": "Your details",
+    "firstName": "First name",
+    "lastName": "Last name",
+    "email": "Email",
+    "phone": "Phone",
+    "company": "Company",
+    "position": "Position",
+    "consent": "I accept the terms and privacy policy",
+    "confirm": "Confirm booking",
+    "successTitle": "Booking confirmed",
+    "successMessage": "Your ticket will be sent to your inbox."
+  },
+  "admin": {
+    "dashboard": "Dashboard",
+    "events": "Events",
+    "bookings": "Bookings",
+    "scan": "Scan",
+    "feedback": "Feedback"
+  },
+  "errors": {
+    "required": "This field is required",
+    "invalidEmail": "Invalid email",
+    "invalidPhone": "Invalid phone number",
+    "unauthorized": "Unauthorized",
+    "notFound": "Page not found"
+  }
+}

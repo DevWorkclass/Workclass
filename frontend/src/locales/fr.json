@@ -1,0 +1,57 @@
+{
+  "common": {
+    "appName": "Work Class Gabon",
+    "loading": "Chargement…",
+    "error": "Une erreur est survenue",
+    "retry": "Réessayer",
+    "save": "Enregistrer",
+    "cancel": "Annuler",
+    "confirm": "Confirmer",
+    "back": "Retour",
+    "next": "Suivant",
+    "previous": "Précédent",
+    "search": "Rechercher",
+    "submit": "Envoyer"
+  },
+  "navigation": {
+    "home": "Accueil",
+    "reservation": "Réservation",
+    "participant": "Participant",
+    "admin": "Administration"
+  },
+  "event": {
+    "upcoming": "À venir",
+    "location": "Lieu",
+    "date": "Date",
+    "program": "Programme",
+    "speakers": "Intervenants"
+  },
+  "booking": {
+    "title": "Réserver votre place",
+    "yourInfo": "Vos informations",
+    "firstName": "Prénom",
+    "lastName": "Nom",
+    "email": "Email",
+    "phone": "Téléphone",
+    "company": "Entreprise",
+    "position": "Fonction",
+    "consent": "J'accepte les conditions et la politique de confidentialité",
+    "confirm": "Confirmer la réservation",
+    "successTitle": "Réservation confirmée",
+    "successMessage": "Votre billet vous sera envoyé par email."
+  },
+  "admin": {
+    "dashboard": "Tableau de bord",
+    "events": "Événements",
+    "bookings": "Réservations",
+    "scan": "Scan",
+    "feedback": "Avis"
+  },
+  "errors": {
+    "required": "Champ obligatoire",
+    "invalidEmail": "Email invalide",
+    "invalidPhone": "Numéro de téléphone invalide",
+    "unauthorized": "Accès non autorisé",
+    "notFound": "Page introuvable"
+  }
+}

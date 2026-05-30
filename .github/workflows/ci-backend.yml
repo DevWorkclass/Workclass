@@ -1,0 +1,84 @@
+name: CI Backend
+
+"on":
+  push:
+    branches: [main, develop]
+    paths:
+      - 'backend/**'
+      - 'package.json'
+      - 'package-lock.json'
+      - '.github/workflows/ci-backend.yml'
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - 'backend/**'
+      - 'package.json'
+      - 'package-lock.json'
+      - '.github/workflows/ci-backend.yml'
+
+concurrency:
+  group: ci-backend-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  quality:
+    name: Lint • Typecheck • Test • Build (backend)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: ./backend
+    env:
+      NODE_ENV: test
+      DATABASE_URL: postgresql://workclass:workclass@localhost:5432/workclass_test?schema=public
+      REDIS_URL: redis://localhost:6379
+      JWT_SECRET: ci_test_secret_change_me
+      QR_HMAC_SECRET: ci_test_secret_change_me
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: workclass
+          POSTGRES_PASSWORD: workclass
+          POSTGRES_DB: workclass_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U workclass"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install (workspace racine)
+        run: npm ci
+        working-directory: .
+
+      - name: Prisma generate
+        run: npx prisma generate
+
+      - name: Prisma migrate deploy
+        run: npx prisma migrate deploy
+        continue-on-error: true
+
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run build

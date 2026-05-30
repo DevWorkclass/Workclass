@@ -1,0 +1,50 @@
+# ============================================================================
+# Work Class Gabon — .gitignore
+# FICHIERS DE SUIVI & TRACKING (MASQUÉS SUR GITHUB)
+# ============================================================================
+
+# Dossier de tracking interne
+.tracking/
+.ai-communication/
+.ai-sessions/
+
+# Fichiers de log spécifiques
+SESSION_LOG.md
+BACKEND_TASKS.md
+FILE_OWNERSHIP.md
+ARCHITECTURE_DECISIONS.md
+PROGRESS.md
+
+# Environnement & secrets
+.env.local
+.env.development
+.env.staging
+.env.production
+.env.test
+!.env.example
+
+# Node.js
+node_modules/
+dist/
+build/
+coverage/
+*.log
+
+# Next.js
+frontend/.next/
+frontend/out/
+frontend/.vercel/
+
+# Backend
+backend/dist/
+backend/coverage/
+
+# Prisma
+backend/prisma/*.db
+backend/prisma/migrations/*/migration_lock.toml
+
+# Misc
+.DS_Store
+Thumbs.db
+.claude/setings.json
+.claude/settings.local.json

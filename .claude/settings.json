@@ -1,0 +1,26 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(mkdir -p domains/__TRACKED_VAR__/__TRACKED_VAR__)",
+      "Bash(mkdir -p domains/notifications/services domains/notifications/templates domains/notifications/types)",
+      "Bash(mkdir -p domains/shared/auth/middleware domains/shared/auth/services domains/shared/auth/types)",
+      "Bash(mkdir -p domains/shared/audit/services domains/shared/audit/types)",
+      "Bash(mkdir -p domains/shared/errors/handlers domains/shared/errors/types)",
+      "Bash(mkdir -p backend/prisma/migrations/001_init_schema backend/prisma/migrations/002_rls_policies backend/prisma/migrations/003_audit_triggers)",
+      "Bash(cp supabase/migrations/001_init_schema.sql backend/prisma/migrations/001_init_schema/migration.sql)",
+      "Bash(cp supabase/migrations/002_rls_policies.sql backend/prisma/migrations/002_rls_policies/migration.sql)",
+      "Bash(cp supabase/migrations/003_audit_triggers.sql backend/prisma/migrations/003_audit_triggers/migration.sql)",
+      "Bash(rm -rf routes middleware services types)",
+      "Bash(rm -f config/logger.ts)",
+      "Bash(rm -rf supabase)",
+      "Bash(rm -f frontend/src/lib/pdf-generator.ts frontend/src/lib/qr-generator.ts)",
+      "Bash(rm -f frontend/src/config/supabase.config.ts)",
+      "Bash(rm -rf frontend/src/domains/shared/pdf frontend/src/domains/shared/qr)",
+      "Bash(git config *)",
+      "Bash(npm install *)",
+      "Bash(npx prisma *)",
+      "Bash(git add *)",
+      "Bash(git commit *)"
+    ]
+  }
+}

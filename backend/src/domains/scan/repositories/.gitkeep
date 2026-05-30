@@ -1,0 +1,1 @@
+# Repository scan : pas de table dédiée (le scan met à jour tickets.scanned_at via ticketRepository).

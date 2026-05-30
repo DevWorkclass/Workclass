@@ -8,6 +8,7 @@ import helmet from 'helmet';
 import cors from 'cors';
 import rateLimit from 'express-rate-limit';
 import { errorHandler, notFoundHandler } from './domains/shared/errors/handlers/error.handler';
+import { bookingRoutes } from './domains/booking/routes/booking.routes';
 
 const app = express();
 
@@ -39,7 +40,8 @@ app.get('/api/health', (_req, res) => {
   res.json({ success: true, data: { status: 'ok', timestamp: new Date().toISOString() } });
 });
 
-// --- Routes domaine (ajoutées aux commits suivants) ---
+// --- Routes domaine ---
+app.use('/api', bookingRoutes);
 
 // --- 404 + handler d'erreurs (doivent rester en dernier) ---
 app.use(notFoundHandler);

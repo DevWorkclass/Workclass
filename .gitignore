@@ -16,6 +16,7 @@ ARCHITECTURE_DECISIONS.md
 PROGRESS.md
 
 # Environnement & secrets
+.env
 .env.local
 .env.development
 .env.staging

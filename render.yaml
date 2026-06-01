@@ -1,0 +1,82 @@
+# ============================================================================
+# Render Blueprint — Work Class Gabon Backend
+# https://render.com/docs/blueprint-spec
+# ----------------------------------------------------------------------------
+# Déploie le backend Express depuis le dossier `backend/` via Dockerfile.
+# La base PostgreSQL est externalisée sur Supabase (DATABASE_URL en secret).
+# Redis est optionnel (Upstash recommandé en prod, sinon retombe in-memory).
+# ----------------------------------------------------------------------------
+# Usage :
+#   1. Aller sur https://dashboard.render.com/blueprints
+#   2. Cliquer "New Blueprint Instance" et pointer sur ce repo.
+#   3. Renseigner les valeurs des `sync: false` ci-dessous.
+# ============================================================================
+
+services:
+  - type: web
+    name: workclass-backend
+    runtime: docker
+    plan: starter
+    region: frankfurt
+    rootDir: backend
+    dockerfilePath: Dockerfile
+    dockerContext: .
+    healthCheckPath: /api/health
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: "3001"
+      - key: API_BASE_PATH
+        value: /api
+
+      # --- À renseigner via le Dashboard Render (sync: false) ---
+      - key: DATABASE_URL
+        sync: false # Supabase : postgresql://...@db.<project>.supabase.co:5432/postgres
+      - key: REDIS_URL
+        sync: false # Upstash : rediss://default:<token>@<host>.upstash.io:6380
+      - key: FRONTEND_URL
+        sync: false # https://workclass.vercel.app
+      - key: APP_URL
+        sync: false # https://workclass.vercel.app
+      - key: CORS_ORIGIN
+        sync: false # https://workclass.vercel.app
+
+      # --- Secrets cryptographiques (générer avec `openssl rand -hex 32`) ---
+      - key: JWT_SECRET
+        generateValue: true
+      - key: REFRESH_TOKEN_SECRET
+        generateValue: true
+      - key: QR_HMAC_SECRET
+        generateValue: true
+      - key: FEEDBACK_TOKEN_SECRET
+        generateValue: true
+      - key: JWT_EXPIRES_IN
+        value: 1h
+
+      # --- Emails (Resend) ---
+      - key: RESEND_API_KEY
+        sync: false # re_xxx
+      - key: EMAIL_FROM
+        sync: false # no-reply@workclass-gabon.com
+      - key: EMAIL_FROM_NAME
+        value: Work Class Gabon
+
+      # --- Stockage local (Render disk éphémère — OK v1) ---
+      - key: LOCAL_STORAGE_PATH
+        value: /app/backend/uploads
+
+      # --- Rate limiting ---
+      - key: RATE_LIMIT_WINDOW_MS
+        value: "60000"
+      - key: RATE_LIMIT_MAX
+        value: "100"
+
+      # --- Logs ---
+      - key: LOG_LEVEL
+        value: info
+
+      # --- Seed admin (au premier démarrage) ---
+      - key: SEED_ADMIN_PASSWORD
+        sync: false # Mot de passe initial super_admin (à changer après login)

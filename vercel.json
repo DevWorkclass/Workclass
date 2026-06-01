@@ -1,0 +1,8 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "buildCommand": "npm run build --workspace frontend",
+  "installCommand": "npm install --legacy-peer-deps",
+  "outputDirectory": "frontend/.next",
+  "framework": "nextjs",
+  "ignoreCommand": "git diff HEAD^ HEAD --quiet ./frontend ./package.json package-lock.json"
+}

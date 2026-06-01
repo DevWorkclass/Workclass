@@ -26,7 +26,11 @@
       "Bash(rmdir src/domains/tickets/repositories)",
       "Bash(rm -f src/domains/notifications/templates/confirmation-email.ts src/domains/notifications/templates/certificate-email.ts src/domains/notifications/templates/feedback-link-email.ts)",
       "Bash(rmdir src/domains/notifications/templates)",
-      "Bash(npm run *)"
+      "Bash(npm run *)",
+      "Bash(git remote *)",
+      "Bash(git ls-remote *)",
+      "Bash(git push *)",
+      "Bash(gh auth *)"
     ]
   }
 }

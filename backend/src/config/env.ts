@@ -14,13 +14,18 @@ const envSchema = z.object({
 
   // --- Base de données ---
   DATABASE_URL: z.string().url().optional(),
+  DIRECT_URL: z.string().url().optional(),
 
   // --- Redis ---
   REDIS_URL: z.string().optional(),
 
-  // --- Supabase (optionnel — Auth/Storage) ---
+  // --- Supabase (Storage — optionnel) ---
   SUPABASE_URL: z.string().url().optional(),
   SUPABASE_SERVICE_ROLE_KEY: z.string().optional(),
+  SUPABASE_STORAGE_BUCKET: z.string().default('documents'),
+
+  // --- Seed admin (utilisé par seed.ts) ---
+  SEED_ADMIN_PASSWORD: z.string().optional(),
 
   // --- Sécurité / Signature ---
   QR_HMAC_SECRET: z.string().optional(),

@@ -32,29 +32,39 @@ flowchart LR
 3. Mot de passe DB : générer un mot de passe fort, **le copier**.
 4. Attendre ~2 min la provisioning.
 
-### 1.2 Récupérer la connection string
+### 1.2 Récupérer les connection strings (deux URLs distinctes)
 
-1. Dashboard → **Settings → Database**.
-2. Section **Connection string** → **URI** mode.
-3. Copier l'URL `postgresql://postgres:[YOUR-PASSWORD]@db.<project>.supabase.co:5432/postgres`.
-4. Remplacer `[YOUR-PASSWORD]` par le mot de passe défini en 1.1.
+Dashboard Supabase → **Settings → Database → Connection string** :
 
-> **Important** : pour Prisma, utiliser le **direct connection** (port 5432), pas le pooler (6543).
-> Si Prisma migrate échoue → activer le mode `transaction` du pooler.
+| Variable       | Mode          | Port | Usage                              |
+|----------------|---------------|------|------------------------------------|
+| `DATABASE_URL` | **Transaction** (pooler PgBouncer) | 6543 | Runtime — toutes les requêtes Prisma normales |
+| `DIRECT_URL`   | **Session** (direct PostgreSQL) | 5432 | `prisma migrate deploy` (transactions DDL longues) |
+
+Exemple :
+
+```bash
+# Transaction (pour DATABASE_URL) — ajouter ?pgbouncer=true&connection_limit=1
+DATABASE_URL="postgresql://postgres.<REF>:<PASSWORD>@aws-0-eu-west-3.pooler.supabase.com:6543/postgres?pgbouncer=true&connection_limit=1"
+
+# Session (pour DIRECT_URL)
+DIRECT_URL="postgresql://postgres.<REF>:<PASSWORD>@aws-0-eu-west-3.pooler.supabase.com:5432/postgres"
+```
 
 ### 1.3 Appliquer les migrations
 
-Depuis la machine locale, en ayant `DATABASE_URL` pointé sur Supabase :
+Depuis ta machine locale (les migrations 002 RLS + 003 audit triggers ne sont pas dans Prisma) :
 
 ```bash
 cd backend
-DATABASE_URL="postgresql://postgres:...@db.<project>.supabase.co:5432/postgres" \
-  npx prisma migrate deploy
+DATABASE_URL="..." DIRECT_URL="..." npx prisma migrate deploy
 
 # Migrations SQL brutes (RLS + audit triggers) — non gérées par Prisma
-psql "$DATABASE_URL" -f prisma/migrations/002_rls_policies/migration.sql
-psql "$DATABASE_URL" -f prisma/migrations/003_audit_triggers/migration.sql
+psql "$DIRECT_URL" -f prisma/migrations/002_rls_policies/migration.sql
+psql "$DIRECT_URL" -f prisma/migrations/003_audit_triggers/migration.sql
 ```
+
+> **À noter** : sur Render, `prisma migrate deploy` se lance **automatiquement** à chaque deploy via `preDeployCommand` (cf. `render.yaml`). Tu n'as donc à faire ça en local que pour le premier setup et pour les migrations SQL brutes.
 
 ### 1.4 Seed initial
 

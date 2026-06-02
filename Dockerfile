@@ -1,7 +1,8 @@
 # ============================================================================
 # Backend Work Class Gabon — Dockerfile production (multi-stage).
-# Build : `docker build -f backend/Dockerfile -t wcg-backend backend/`
-# Run   : `docker run --rm -p 3001:3001 --env-file .env wcg-backend`
+# Situé à la racine du monorepo pour compatibilité Render.
+# Build : `docker build -t wcg-backend .`
+# Run   : `docker run --rm -p 3001:3001 --env-file backend/.env wcg-backend`
 # ============================================================================
 
 # ---- Stage 1 : deps (installe toutes les deps + génère Prisma client) -------
@@ -9,9 +10,9 @@ FROM node:20-alpine AS deps
 WORKDIR /app
 RUN apk add --no-cache openssl libc6-compat
 
-COPY package.json package-lock.json* ./
-COPY prisma ./prisma
-# `npm ci` requiert un package-lock.json — si absent, fallback `npm install`.
+COPY backend/package.json backend/package-lock.json* ./
+COPY backend/prisma ./prisma
+# `npm ci` requiert un package-lock.json — fallback `npm install` sinon.
 RUN if [ -f package-lock.json ]; then npm ci; else npm install; fi
 RUN npx prisma generate
 
@@ -19,7 +20,7 @@ RUN npx prisma generate
 FROM node:20-alpine AS builder
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
-COPY . .
+COPY backend/ ./
 RUN npm run build
 
 # ---- Stage 3 : runner (image minimale runtime) -----------------------------
@@ -37,8 +38,8 @@ RUN addgroup -S app && adduser -S app -G app
 # Deps de prod uniquement.
 COPY --from=deps /app/node_modules ./node_modules
 COPY --from=builder /app/dist ./dist
-COPY prisma ./prisma
-COPY package.json ./
+COPY backend/prisma ./prisma
+COPY backend/package.json ./
 
 # Élague les devDeps après copie pour réduire la taille de l'image.
 RUN npm prune --omit=dev && \

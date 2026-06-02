@@ -1,0 +1,48 @@
+# ============================================================================
+# .dockerignore racine — limite le contexte envoyé au daemon Docker (Render).
+# Exclut le frontend (Next.js) qui n'est pas nécessaire au build backend.
+# ============================================================================
+
+# Deps installées (réinstallées dans l'image)
+**/node_modules
+
+# Builds locaux
+**/dist
+**/build
+**/.next
+**/out
+
+# Secrets & env (sauf .env.example qui ne contient pas de vraies valeurs)
+**/.env
+**/.env.local
+**/.env.development
+**/.env.staging
+**/.env.production
+**/.env.test
+
+# Git & docs
+.git
+.gitignore
+**/*.log
+**/coverage
+**/playwright-report
+**/test-results
+
+# Tracking interne (jamais committé, mais double sécurité)
+.tracking
+
+# Frontend (Next.js) — exclu du contexte backend
+frontend
+
+# Docs / config divers
+README.md
+docs
+.github
+.vercel
+.claude
+
+# IDE / OS
+.vscode
+.idea
+.DS_Store
+Thumbs.db

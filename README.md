@@ -98,6 +98,15 @@ npm run dev:frontend    # http://localhost:3000
 
 Vérification : `curl http://localhost:3001/api/health` → `{ "success": true, "data": { "status": "ok" } }`.
 
+### Documentation & test de l'API (Swagger)
+
+L'API est documentée en OpenAPI 3.0 et testable directement depuis le navigateur :
+
+- **Swagger UI** : [http://localhost:3001/api/docs](http://localhost:3001/api/docs) (prod : `https://workclass-backend.onrender.com/api/docs`)
+- **Spec brute** : `/api/docs.json`
+
+Pour tester une route protégée : `POST /api/auth/login` → copier l'`accessToken` → bouton **Authorize** (en haut à droite) → coller le token. Désactivable via `DOCS_ENABLED=false`.
+
 ## Variables d'environnement
 
 Chaque workspace a son `.env.example` :

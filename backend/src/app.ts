@@ -7,6 +7,8 @@ import express from 'express';
 import helmet from 'helmet';
 import cors from 'cors';
 import rateLimit from 'express-rate-limit';
+import swaggerUi from 'swagger-ui-express';
+import { openapiSpec } from './docs/openapi';
 import { errorHandler, notFoundHandler } from './domains/shared/errors/handlers/error.handler';
 import { authRoutes } from './domains/auth/routes/auth.routes';
 import { usersRoutes } from './domains/users/routes/users.routes';
@@ -26,6 +28,23 @@ app.use(
     credentials: true,
   }),
 );
+
+// --- Documentation OpenAPI / Swagger UI ---
+// Montée AVANT le rate-limiter (l'UI charge plusieurs assets) et avec une CSP
+// assouplie (Swagger UI utilise des styles/scripts inline).
+// Désactivable en prod via DOCS_ENABLED=false.
+if (process.env.DOCS_ENABLED !== 'false') {
+  app.get('/api/docs.json', (_req, res) => res.json(openapiSpec));
+  app.use(
+    '/api/docs',
+    helmet({ contentSecurityPolicy: false }),
+    swaggerUi.serve,
+    swaggerUi.setup(openapiSpec, {
+      customSiteTitle: 'Work Class Gabon — API Docs',
+      swaggerOptions: { persistAuthorization: true },
+    }),
+  );
+}
 
 // --- Rate-limiting global sur /api ---
 const limiter = rateLimit({

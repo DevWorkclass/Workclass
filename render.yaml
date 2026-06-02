@@ -19,9 +19,9 @@ services:
     runtime: docker
     plan: starter
     region: frankfurt
-    rootDir: backend
-    dockerfilePath: Dockerfile
-    dockerContext: .
+    # Chemins repo-root (Render n'honore pas correctement rootDir pour Docker)
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
     healthCheckPath: /api/health
     autoDeploy: true
 

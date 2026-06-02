@@ -43,8 +43,15 @@ const envSchema = z.object({
     .transform((v) => v === 'true'),
 
   // --- Emails (Resend) ---
+  // L'adresse d'expéditeur n'est pas critique (email en mode simulation si
+  // RESEND_API_KEY absent) : si elle est manquante OU malformée, on retombe sur
+  // le défaut au lieu de bloquer le démarrage du service. `.catch` couvre les
+  // deux cas (undefined → email() échoue → défaut).
   RESEND_API_KEY: z.string().optional(),
-  EMAIL_FROM_ADDRESS: z.string().email().default('no-reply@workclass-gabon.com'),
+  EMAIL_FROM_ADDRESS: z
+    .string()
+    .email()
+    .catch('no-reply@workclass-gabon.com'),
   EMAIL_FROM_NAME: z.string().default('Work Class Gabon'),
 
   // --- Rate limiting ---

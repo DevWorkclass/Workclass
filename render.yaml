@@ -19,9 +19,9 @@ services:
     runtime: docker
     plan: starter
     region: frankfurt
-    # Chemins repo-root (Render n'honore pas correctement rootDir pour Docker)
-    dockerfilePath: ./backend/Dockerfile
-    dockerContext: ./backend
+    # Pattern Render Docker monorepo : rootDir seul, défauts pour le reste.
+    # → Dockerfile recherché dans `backend/Dockerfile`, contexte = `backend/`.
+    rootDir: backend
     healthCheckPath: /api/health
     autoDeploy: true
 

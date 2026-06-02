@@ -246,6 +246,10 @@ model Admin {
   firstName    String?   @map("first_name")
   lastName     String?   @map("last_name")
   role         AdminRole @default(admin)
+  // Fonctionnalités attribuées (clés de PERMISSIONS). Modifiable à tout moment
+  // par un super_admin / un admin disposant de `users:manage`.
+  // super_admin a implicitement TOUTES les permissions (ce tableau est ignoré pour lui).
+  permissions  String[]  @default([])
   isActive     Boolean   @default(true) @map("is_active")
   lastLoginAt  DateTime? @map("last_login_at")
   createdAt    DateTime  @default(now()) @map("created_at")

@@ -33,12 +33,12 @@
 
 ## Structure du monorepo
 
-```
+```text
 work-class-gabon/
 ├── frontend/          # Next.js 15 (App Router) + Tailwind + shadcn/ui
 ├── backend/           # Node.js + Express + Prisma + Redis
-│   ├── prisma/        # schema.prisma + migrations SQL versionnées
-│   └── src/domains/   # DDD : booking / tickets / scan / feedback / payments / notifications / shared
+│   ├── prisma/        # schema.prisma (source de vérité — db push)
+│   └── src/domains/   # DDD : auth / users / booking / tickets / scan / feedback / payments / notifications / shared
 ├── docs/              # Architecture, Design System, Sécurité, Déploiement, Règles IA
 ├── .github/workflows/ # CI Frontend + Backend
 ├── docker-compose.yml # PostgreSQL + Redis + frontend + backend (dev)
@@ -48,16 +48,16 @@ work-class-gabon/
 
 ## Stack technique
 
-| Couche      | Technologies                                                       |
-|-------------|--------------------------------------------------------------------|
-| Frontend    | Next.js 15, React 19, TypeScript strict, Tailwind, shadcn/ui, Zustand, react-hook-form, next-intl |
-| Backend     | Node.js 20+, Express, TypeScript strict, Prisma 5, Zod             |
-| Base de données | PostgreSQL 16 (Supabase ou self-hosted)                        |
-| Cache       | Redis 7 (Upstash ou self-hosted)                                   |
-| PDF / QR    | pdfkit + qrcode (HMAC-SHA256)                                      |
-| Emails      | Resend                                                             |
-| Auth        | JWT HS256 + bcryptjs (12 rounds)                                   |
-| CI/CD       | GitHub Actions + Vercel + Render                                   |
+| Couche          | Technologies                                                                                      |
+| --------------- | ------------------------------------------------------------------------------------------------- |
+| Frontend        | Next.js 15, React 19, TypeScript strict, Tailwind, shadcn/ui, Zustand, react-hook-form, next-intl |
+| Backend         | Node.js 20+, Express, TypeScript strict, Prisma 5, Zod                                            |
+| Base de données | PostgreSQL 16 (Supabase ou self-hosted)                                                           |
+| Cache           | Redis 7 (Upstash ou self-hosted)                                                                  |
+| PDF / QR        | pdfkit + qrcode (HMAC-SHA256)                                                                     |
+| Emails          | Resend                                                                                            |
+| Auth            | JWT HS256 + bcryptjs (12 rounds)                                                                  |
+| CI/CD           | GitHub Actions + Vercel + Render                                                                  |
 
 ## Démarrage local
 
@@ -84,12 +84,10 @@ cp backend/.env.example  backend/.env.local
 # 4) Lancer PostgreSQL + Redis
 npm run db:up
 
-# 5) Initialiser la base
+# 5) Initialiser la base (schema.prisma = source de vérité, db push)
 cd backend
 npx prisma generate
-npx prisma migrate dev --name init
-psql "$DATABASE_URL" -f prisma/migrations/002_rls_policies/migration.sql
-psql "$DATABASE_URL" -f prisma/migrations/003_audit_triggers/migration.sql
+npx prisma db push
 cd ..
 npm run db:seed
 

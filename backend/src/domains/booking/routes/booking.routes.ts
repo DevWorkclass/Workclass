@@ -11,8 +11,9 @@ import { Router } from 'express';
 import { BookingController } from '../controllers/booking.controller';
 import {
   authMiddleware,
-  requireRole,
+  requirePermission,
 } from '../../shared/auth/middleware/auth.middleware';
+import { PERMISSIONS } from '../../users/types/users.types';
 
 const router = Router();
 const controller = new BookingController();
@@ -23,19 +24,19 @@ router.post('/bookings/lookup', controller.lookup.bind(controller));
 router.get(
   '/admin/bookings',
   authMiddleware,
-  requireRole('admin', 'super_admin'),
+  requirePermission(PERMISSIONS.BOOKINGS_READ),
   controller.list.bind(controller),
 );
 router.post(
   '/admin/bookings/validate',
   authMiddleware,
-  requireRole('admin', 'super_admin'),
+  requirePermission(PERMISSIONS.BOOKINGS_WRITE),
   controller.validate.bind(controller),
 );
 router.post(
   '/admin/bookings/cancel',
   authMiddleware,
-  requireRole('admin', 'super_admin'),
+  requirePermission(PERMISSIONS.BOOKINGS_WRITE),
   controller.cancel.bind(controller),
 );
 

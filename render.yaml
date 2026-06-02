@@ -5,7 +5,7 @@
 # Déploie le backend Express depuis le dossier `backend/` via Dockerfile.
 # Base PostgreSQL externalisée sur Supabase (pooler + direct).
 # Redis externalisé sur Upstash (optionnel, fallback in-memory si absent).
-# Migrations Prisma appliquées automatiquement à chaque deploy via preDeployCommand.
+# Schéma Prisma synchronisé automatiquement à chaque deploy via preDeployCommand (db push).
 # ----------------------------------------------------------------------------
 # Usage :
 #   1. https://dashboard.render.com/blueprints → New Blueprint Instance
@@ -24,9 +24,10 @@ services:
     healthCheckPath: /api/health
     autoDeploy: true
 
-    # Migrations appliquées AVANT le démarrage du nouveau conteneur.
-    # `prisma migrate deploy` est idempotent — sûr de relancer.
-    preDeployCommand: "npx prisma migrate deploy"
+    # Schéma synchronisé AVANT le démarrage du nouveau conteneur.
+    # `schema.prisma` est la source de vérité (db push, pas de migrations versionnées).
+    # --accept-data-loss requis en non-interactif ; sûr ici car aucune migration destructive.
+    preDeployCommand: "npx prisma db push --skip-generate --accept-data-loss"
 
     envVars:
       - key: NODE_ENV

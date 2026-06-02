@@ -11,8 +11,9 @@ import { Router } from 'express';
 import { FeedbackController } from '../controllers/feedback.controller';
 import {
   authMiddleware,
-  requireRole,
+  requirePermission,
 } from '../../shared/auth/middleware/auth.middleware';
+import { PERMISSIONS } from '../../users/types/users.types';
 
 const router = Router();
 const controller = new FeedbackController();
@@ -23,19 +24,19 @@ router.post('/feedback/submit', controller.submit.bind(controller));
 router.post(
   '/admin/feedback/links',
   authMiddleware,
-  requireRole('admin', 'super_admin'),
+  requirePermission(PERMISSIONS.FEEDBACK_MODERATE),
   controller.generateLink.bind(controller),
 );
 router.get(
   '/admin/feedback',
   authMiddleware,
-  requireRole('admin', 'super_admin'),
+  requirePermission(PERMISSIONS.FEEDBACK_READ),
   controller.list.bind(controller),
 );
 router.post(
   '/admin/feedback/moderate',
   authMiddleware,
-  requireRole('admin', 'super_admin'),
+  requirePermission(PERMISSIONS.FEEDBACK_MODERATE),
   controller.moderate.bind(controller),
 );
 

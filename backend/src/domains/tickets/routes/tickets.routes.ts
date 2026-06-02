@@ -7,8 +7,9 @@ import { Router } from 'express';
 import { TicketsController } from '../controllers/tickets.controller';
 import {
   authMiddleware,
-  requireRole,
+  requirePermission,
 } from '../../shared/auth/middleware/auth.middleware';
+import { PERMISSIONS } from '../../users/types/users.types';
 
 const router = Router();
 const controller = new TicketsController();
@@ -16,7 +17,7 @@ const controller = new TicketsController();
 router.post(
   '/tickets/generate',
   authMiddleware,
-  requireRole('admin', 'super_admin'),
+  requirePermission(PERMISSIONS.TICKETS_GENERATE),
   controller.generate.bind(controller),
 );
 

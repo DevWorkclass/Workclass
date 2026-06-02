@@ -8,6 +8,8 @@ import helmet from 'helmet';
 import cors from 'cors';
 import rateLimit from 'express-rate-limit';
 import { errorHandler, notFoundHandler } from './domains/shared/errors/handlers/error.handler';
+import { authRoutes } from './domains/auth/routes/auth.routes';
+import { usersRoutes } from './domains/users/routes/users.routes';
 import { bookingRoutes } from './domains/booking/routes/booking.routes';
 import { ticketsRoutes } from './domains/tickets/routes/tickets.routes';
 import { scanRoutes } from './domains/scan/routes/scan.routes';
@@ -45,6 +47,8 @@ app.get('/api/health', (_req, res) => {
 });
 
 // --- Routes domaine ---
+app.use('/api', authRoutes);
+app.use('/api', usersRoutes);
 app.use('/api', bookingRoutes);
 app.use('/api', ticketsRoutes);
 app.use('/api', scanRoutes);

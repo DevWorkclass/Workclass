@@ -8,8 +8,9 @@ import { Router } from 'express';
 import { ScanController } from '../controllers/scan.controller';
 import {
   authMiddleware,
-  requireRole,
+  requirePermission,
 } from '../../shared/auth/middleware/auth.middleware';
+import { PERMISSIONS } from '../../users/types/users.types';
 
 const router = Router();
 const controller = new ScanController();
@@ -17,13 +18,13 @@ const controller = new ScanController();
 router.post(
   '/scan/verify',
   authMiddleware,
-  requireRole('admin', 'super_admin'),
+  requirePermission(PERMISSIONS.SCAN),
   controller.verify.bind(controller),
 );
 router.post(
   '/scan/confirm',
   authMiddleware,
-  requireRole('admin', 'super_admin'),
+  requirePermission(PERMISSIONS.SCAN),
   controller.confirm.bind(controller),
 );
 

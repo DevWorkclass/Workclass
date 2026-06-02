@@ -8,6 +8,7 @@ import helmet from 'helmet';
 import cors from 'cors';
 import rateLimit from 'express-rate-limit';
 import swaggerUi from 'swagger-ui-express';
+import { env } from './config/env';
 import { openapiSpec } from './docs/openapi';
 import { errorHandler, notFoundHandler } from './domains/shared/errors/handlers/error.handler';
 import { authRoutes } from './domains/auth/routes/auth.routes';
@@ -20,11 +21,27 @@ import { paymentsRoutes } from './domains/payments/routes/payments.routes';
 
 const app = express();
 
+// --- Confiance au reverse-proxy (Render/Vercel) ---
+// Indispensable pour que `req.ip` (rate-limit, audit) reflète le client réel
+// via X-Forwarded-For, et non l'IP du proxy. 1 = un seul hop de proxy.
+app.set('trust proxy', 1);
+
 // --- Sécurité réseau ---
 app.use(helmet());
+
+// Origines autorisées : CORS_ORIGIN (prioritaire) ou FRONTEND_URL, séparées par
+// des virgules pour supporter plusieurs domaines (ex. prod + preview).
+const corsOrigins = (
+  process.env.CORS_ORIGIN ??
+  process.env.FRONTEND_URL ??
+  'http://localhost:3000'
+)
+  .split(',')
+  .map((o) => o.trim())
+  .filter(Boolean);
 app.use(
   cors({
-    origin: process.env.FRONTEND_URL ?? 'http://localhost:3000',
+    origin: corsOrigins,
     credentials: true,
   }),
 );
@@ -33,7 +50,7 @@ app.use(
 // Montée AVANT le rate-limiter (l'UI charge plusieurs assets) et avec une CSP
 // assouplie (Swagger UI utilise des styles/scripts inline).
 // Désactivable en prod via DOCS_ENABLED=false.
-if (process.env.DOCS_ENABLED !== 'false') {
+if (env.DOCS_ENABLED) {
   app.get('/api/docs.json', (_req, res) => res.json(openapiSpec));
   app.use(
     '/api/docs',
@@ -46,19 +63,29 @@ if (process.env.DOCS_ENABLED !== 'false') {
   );
 }
 
-// --- Rate-limiting global sur /api ---
+// --- Rate-limiting global sur /api (paramétrable via RATE_LIMIT_*) ---
 const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 100,
+  windowMs: env.RATE_LIMIT_WINDOW_MS,
+  max: env.RATE_LIMIT_MAX,
   standardHeaders: true,
   legacyHeaders: false,
   message: { success: false, error: { code: 'RATE_LIMITED', message: 'Trop de requetes, veuillez reessayer plus tard.' } },
 });
 app.use('/api/', limiter);
 
-// --- Body parsing ---
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true }));
+// --- Body parsing (limite réduite : aucune route n'attend de gros payloads) ---
+app.use(express.json({ limit: '1mb' }));
+app.use(express.urlencoded({ extended: true, limit: '1mb' }));
+
+// --- Fichiers générés (dev uniquement) ---
+// En prod, les PDF sont poussés vers Supabase Storage (URL signée).
+// En dev sans Supabase, on sert le dossier local pour que les URLs /uploads/* fonctionnent.
+if (!env.SUPABASE_URL || !env.SUPABASE_SERVICE_ROLE_KEY) {
+  app.use(
+    '/uploads',
+    express.static(process.env.LOCAL_STORAGE_PATH ?? './uploads'),
+  );
+}
 
 // --- Healthcheck (non sensible — GET autorisé) ---
 app.get('/api/health', (_req, res) => {

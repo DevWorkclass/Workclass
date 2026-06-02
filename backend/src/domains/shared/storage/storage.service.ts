@@ -1,0 +1,65 @@
+/**
+ * Service de stockage des fichiers générés (PDF billets / certificats).
+ *
+ *  - PROD (Supabase configuré) : upload dans le bucket privé `documents` puis
+ *    renvoi d'une URL signée à durée limitée. Le filesystem Render est éphémère,
+ *    ce chemin est donc obligatoire en production.
+ *  - DEV (sans Supabase) : écriture ASYNCHRONE sur disque local, URL `/uploads/*`
+ *    servie par express.static (cf. app.ts).
+ *
+ * Les fichiers peuvent contenir des données personnelles (nom du participant) :
+ * le bucket Supabase doit rester privé et l'accès passer par URL signée.
+ */
+
+import fs from 'node:fs/promises';
+import path from 'node:path';
+import { env } from '../../../config/env';
+import { getSupabaseServiceClient } from '../../../config/supabase';
+
+const LOCAL_DIR = process.env.LOCAL_STORAGE_PATH ?? './uploads';
+
+/** Durée de validité des URLs signées Supabase (30 jours). */
+const SIGNED_URL_TTL_SECONDS = 60 * 60 * 24 * 30;
+
+function supabaseConfigured(): boolean {
+  return Boolean(env.SUPABASE_URL && env.SUPABASE_SERVICE_ROLE_KEY);
+}
+
+/**
+ * Téléverse un PDF et renvoie une URL exploitable.
+ * @param category sous-dossier logique (ex. `tickets`, `certificates`)
+ * @param filename nom de fichier (ex. `WCG-2026-000001.pdf`)
+ */
+export async function uploadPdf(
+  category: string,
+  filename: string,
+  buffer: Buffer,
+): Promise<string> {
+  const objectPath = `${category}/${filename}`;
+
+  if (supabaseConfigured()) {
+    const supabase = getSupabaseServiceClient();
+    const bucket = env.SUPABASE_STORAGE_BUCKET;
+
+    const { error: uploadError } = await supabase.storage
+      .from(bucket)
+      .upload(objectPath, buffer, { contentType: 'application/pdf', upsert: true });
+    if (uploadError) {
+      throw new Error(`Upload Storage echoue (${objectPath}): ${uploadError.message}`);
+    }
+
+    const { data, error: signError } = await supabase.storage
+      .from(bucket)
+      .createSignedUrl(objectPath, SIGNED_URL_TTL_SECONDS);
+    if (signError || !data) {
+      throw new Error(`URL signee echouee (${objectPath}): ${signError?.message ?? 'inconnue'}`);
+    }
+    return data.signedUrl;
+  }
+
+  // Fallback dev : écriture async sur disque local.
+  const dir = path.join(LOCAL_DIR, category);
+  await fs.mkdir(dir, { recursive: true });
+  await fs.writeFile(path.join(dir, filename), buffer);
+  return `/uploads/${category}/${filename}`;
+}

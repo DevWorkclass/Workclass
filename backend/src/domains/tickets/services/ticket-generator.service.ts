@@ -8,16 +8,13 @@
  *  6. Met à jour le ticket avec qrCode + pdfUrl.
  */
 
-import fs from 'node:fs';
-import path from 'node:path';
 import { prisma } from '../../../config/database';
 import { generateTicketPDF } from '../../../utils/pdf-generator';
 import { generateQRCode } from '../../../utils/qr-generator';
 import { logger } from '../../../utils/logger';
+import { uploadPdf } from '../../shared/storage/storage.service';
 import { NotFoundError, ConflictError } from '../../shared/errors/types/error.types';
 import type { TicketGenerationResult } from '../types/tickets.types';
-
-const UPLOADS_DIR = process.env.LOCAL_STORAGE_PATH ?? './uploads';
 
 export class TicketGeneratorService {
   async generateTicket(bookingId: string): Promise<TicketGenerationResult> {
@@ -53,12 +50,8 @@ export class TicketGeneratorService {
       qrCodeDataUrl,
     });
 
-    // Écriture sur disque local
-    const ticketsDir = path.join(UPLOADS_DIR, 'tickets');
-    if (!fs.existsSync(ticketsDir)) fs.mkdirSync(ticketsDir, { recursive: true });
-    const pdfPath = path.join(ticketsDir, `${ticketNumber}.pdf`);
-    fs.writeFileSync(pdfPath, pdfBuffer);
-    const pdfUrl = `/uploads/tickets/${ticketNumber}.pdf`;
+    // Stockage (Supabase Storage en prod, disque local en dev)
+    const pdfUrl = await uploadPdf('tickets', `${ticketNumber}.pdf`, pdfBuffer);
 
     // Mise à jour finale
     await prisma.ticket.update({

@@ -28,10 +28,19 @@ const envSchema = z.object({
   SEED_ADMIN_PASSWORD: z.string().optional(),
 
   // --- Sécurité / Signature ---
+  // Optionnels au niveau type (fallback dev), mais rendus OBLIGATOIRES en
+  // production via le superRefine ci-dessous (fail-fast au boot).
   QR_HMAC_SECRET: z.string().optional(),
   FEEDBACK_TOKEN_SECRET: z.string().optional(),
   JWT_SECRET: z.string().optional(),
+  REFRESH_TOKEN_SECRET: z.string().optional(),
   JWT_EXPIRES_IN: z.string().default('1h'),
+
+  // --- Documentation API ---
+  DOCS_ENABLED: z
+    .enum(['true', 'false'])
+    .default('true')
+    .transform((v) => v === 'true'),
 
   // --- Emails (Resend) ---
   RESEND_API_KEY: z.string().optional(),
@@ -44,7 +53,28 @@ const envSchema = z.object({
 
   // --- Logs ---
   LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace']).default('info'),
-});
+})
+  // En production, les secrets cryptographiques et la connexion DB sont
+  // OBLIGATOIRES : on refuse de démarrer avec des valeurs par défaut "dev".
+  .superRefine((cfg, ctx) => {
+    if (cfg.NODE_ENV !== 'production') return;
+    const required: (keyof typeof cfg)[] = [
+      'DATABASE_URL',
+      'JWT_SECRET',
+      'REFRESH_TOKEN_SECRET',
+      'QR_HMAC_SECRET',
+      'FEEDBACK_TOKEN_SECRET',
+    ];
+    for (const key of required) {
+      if (!cfg[key]) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: [key],
+          message: `${key} est obligatoire en production`,
+        });
+      }
+    }
+  });
 
 export const env = envSchema.parse(process.env);
 export type Env = z.infer<typeof envSchema>;

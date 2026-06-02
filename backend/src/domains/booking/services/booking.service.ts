@@ -38,23 +38,27 @@ export class BookingService {
       throw new ValidationError('Type de billet incompatible avec l\'evenement');
     }
 
-    const bookingsCount = await this.repository.countActiveForTicketType(
-      data.ticketTypeId,
-    );
-    if (bookingsCount >= ticketType.quota) {
-      throw new ValidationError('Quota epuise pour ce type de billet');
-    }
-
     const optionsTotal = data.options?.reduce((sum, opt) => sum + opt.price, 0) ?? 0;
     const totalAmount = Number(ticketType.price) + optionsTotal;
 
     const reference = this.buildReference();
 
-    const booking = await this.repository.create({
-      ...data,
-      reference,
-      totalAmount,
-    });
+    // Réservation de place ATOMIQUE (UPDATE ... WHERE sold < quota) : empêche le
+    // surbooking sous charge concurrente, sans transaction interactive
+    // (incompatible avec le pooler pgBouncer).
+    const claimed = await this.repository.claimQuota(data.ticketTypeId);
+    if (!claimed) {
+      throw new ValidationError('Quota epuise pour ce type de billet');
+    }
+
+    let booking;
+    try {
+      booking = await this.repository.create({ ...data, reference, totalAmount });
+    } catch (err) {
+      // Compensation : libérer la place réservée si la création échoue.
+      await this.repository.releaseQuota(data.ticketTypeId);
+      throw err;
+    }
 
     await logAudit({
       action: 'BOOKING_CREATED',
@@ -100,6 +104,10 @@ export class BookingService {
     const booking = await this.repository.findById(id);
     if (!booking) throw new NotFoundError('Reservation');
     const updated = await this.repository.updateStatus(id, 'cancelled');
+    // Libère la place réservée (seulement si la résa était encore active).
+    if (booking.status !== 'cancelled') {
+      await this.repository.releaseQuota(booking.ticketTypeId);
+    }
     await logAudit({
       action: 'BOOKING_CANCELLED',
       userId: adminId,

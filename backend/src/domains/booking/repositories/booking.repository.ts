@@ -71,6 +71,27 @@ export class BookingRepository {
     });
   }
 
+  /**
+   * Réserve atomiquement une place : incrémente `sold` seulement si `sold < quota`.
+   * Renvoie `true` si la place est réservée, `false` si le quota est épuisé.
+   * Une seule instruction SQL → compatible pgBouncer (pas de transaction interactive).
+   */
+  async claimQuota(ticketTypeId: string): Promise<boolean> {
+    const affected = await prisma.$executeRaw`
+      UPDATE ticket_types SET sold_count = sold_count + 1
+      WHERE id = ${ticketTypeId} AND sold_count < quota
+    `;
+    return affected > 0;
+  }
+
+  /** Libère une place réservée (compensation / annulation). */
+  async releaseQuota(ticketTypeId: string): Promise<void> {
+    await prisma.$executeRaw`
+      UPDATE ticket_types SET sold_count = sold_count - 1
+      WHERE id = ${ticketTypeId} AND sold_count > 0
+    `;
+  }
+
   async findAll(params: { page?: number; limit?: number; status?: BookingStatus }) {
     const { page = 1, limit = 20, status } = params;
     const skip = (page - 1) * limit;

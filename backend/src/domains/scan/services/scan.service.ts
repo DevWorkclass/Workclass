@@ -4,17 +4,14 @@
  *  - confirmScan : marque scanned_at, génère certificat PDF, retourne URL.
  */
 
-import fs from 'node:fs';
-import path from 'node:path';
 import { prisma } from '../../../config/database';
 import { verifyQRCode } from '../../../utils/qr-generator';
 import { generateCertificatePDF } from '../../../utils/pdf-generator';
+import { uploadPdf } from '../../shared/storage/storage.service';
 import { NotFoundError, ValidationError } from '../../shared/errors/types/error.types';
 import { logAudit } from '../../shared/audit/services/audit.service';
 import { logger } from '../../../utils/logger';
 import type { QRCodeData, ScanErrorCode } from '../types/scan.types';
-
-const UPLOADS_DIR = process.env.LOCAL_STORAGE_PATH ?? './uploads';
 
 interface VerifyResult {
   valid: boolean;
@@ -54,11 +51,13 @@ export class ScanService {
     if (ticket.scannedAt) throw new ValidationError('Ticket deja scanne');
     if (!ticket.booking.participant) throw new NotFoundError('Participant');
 
-    // Marquage scanné
-    const updatedTicket = await prisma.ticket.update({
-      where: { id: ticketId },
+    // Claim atomique anti double-scan : seul le 1er update (scannedAt encore NULL)
+    // réussit. Évite que deux scans concurrents passent tous les deux le check.
+    const claim = await prisma.ticket.updateMany({
+      where: { id: ticketId, scannedAt: null },
       data: { scannedAt: new Date(), scannedBy: scannerId },
     });
+    if (claim.count === 0) throw new ValidationError('Ticket deja scanne');
 
     // Génération du certificat
     const ticketYear = ticket.ticketNumber.split('-')[1] ?? new Date().getFullYear();
@@ -72,13 +71,14 @@ export class ScanService {
       certificateNumber,
     });
 
-    const certsDir = path.join(UPLOADS_DIR, 'certificates');
-    if (!fs.existsSync(certsDir)) fs.mkdirSync(certsDir, { recursive: true });
-    const certPath = path.join(certsDir, `${certificateNumber}.pdf`);
-    fs.writeFileSync(certPath, pdfBuffer);
-    const certificateUrl = `/uploads/certificates/${certificateNumber}.pdf`;
+    // Stockage (Supabase Storage en prod, disque local en dev)
+    const certificateUrl = await uploadPdf(
+      'certificates',
+      `${certificateNumber}.pdf`,
+      pdfBuffer,
+    );
 
-    await prisma.ticket.update({
+    const updatedTicket = await prisma.ticket.update({
       where: { id: ticketId },
       data: { certificateSent: true, certificateUrl },
     });

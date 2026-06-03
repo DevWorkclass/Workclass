@@ -5,47 +5,48 @@
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    /* Work Class Gabon — crème / marine / doré */
+    --background: 43 39% 93%;        /* crème #F4F0E6 */
+    --foreground: 219 68% 16%;       /* marine #0D2145 */
+    --card: 0 0% 100%;               /* cartes blanches sur crème */
+    --card-foreground: 219 68% 16%;
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
-    --primary: 212 100% 40%;
+    --popover-foreground: 219 68% 16%;
+    --primary: 219 68% 16%;          /* marine */
     --primary-foreground: 0 0% 100%;
-    --secondary: 24 100% 50%;
-    --secondary-foreground: 0 0% 100%;
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    --secondary: 45 53% 54%;         /* doré #C8A84B */
+    --secondary-foreground: 219 68% 16%;
+    --muted: 43 25% 88%;
+    --muted-foreground: 222 11% 47%; /* gris #6B7385 */
+    --accent: 45 53% 54%;            /* doré */
+    --accent-foreground: 219 68% 16%;
     --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 212 100% 40%;
-    --radius: 0.5rem;
+    --destructive-foreground: 0 0% 100%;
+    --border: 43 18% 84%;
+    --input: 43 18% 84%;
+    --ring: 45 53% 54%;              /* doré focus */
+    --radius: 0.75rem;
   }
 
   .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
-    --primary: 212 100% 50%;
-    --primary-foreground: 222.2 47.4% 11.2%;
-    --secondary: 24 100% 55%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 212 100% 50%;
+    --background: 219 62% 11%;       /* marine profond */
+    --foreground: 43 39% 93%;        /* crème */
+    --card: 219 60% 14%;
+    --card-foreground: 43 39% 93%;
+    --popover: 219 60% 14%;
+    --popover-foreground: 43 39% 93%;
+    --primary: 45 53% 54%;           /* doré */
+    --primary-foreground: 219 68% 16%;
+    --secondary: 45 53% 54%;
+    --secondary-foreground: 219 68% 16%;
+    --muted: 219 40% 20%;
+    --muted-foreground: 43 20% 75%;
+    --accent: 45 53% 54%;
+    --accent-foreground: 219 68% 16%;
+    --destructive: 0 62.8% 45%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 219 35% 24%;
+    --input: 219 35% 24%;
+    --ring: 45 53% 54%;
   }
 }

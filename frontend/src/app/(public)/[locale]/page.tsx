@@ -1,12 +1,36 @@
 /**
- * Page d'accueil publique (mise en avant événement unique).
- * Implémentation : session UI/UX à venir.
+ * Page d'accueil publique — mise en avant de l'événement unique.
+ * Données: mockData (statique) en attendant le branchement API.
  */
+import { ChronogrammeSection } from '@/components/sections/ChronogrammeSection';
+import { EventDetailSection } from '@/components/sections/EventDetailSection';
+import { FaqSection } from '@/components/sections/FaqSection';
+import { FeatureStrip } from '@/components/sections/FeatureStrip';
+import { FinalCta } from '@/components/sections/FinalCta';
+import { IndustriesSection } from '@/components/sections/IndustriesSection';
+import { PartnerBanner } from '@/components/sections/PartnerBanner';
+import { SpeakersSection } from '@/components/sections/SpeakersSection';
+import { TestimonialsSection } from '@/components/sections/TestimonialsSection';
+import { ThemesSection } from '@/components/sections/ThemesSection';
+import { HeroSection } from '@/domains/public/event/components/HeroSection';
+import { MOCK_EVENT } from '@/data/mockData';
+
 export default function HomePage() {
+  const event = MOCK_EVENT;
+
   return (
-    <main className="container mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold">Work Class Gabon</h1>
-      <p className="mt-2 text-muted-foreground">Architecture initialisée — page à implémenter.</p>
-    </main>
+    <>
+      <HeroSection event={event} />
+      <FeatureStrip />
+      <PartnerBanner />
+      <ThemesSection />
+      <IndustriesSection />
+      <EventDetailSection event={event} />
+      <ChronogrammeSection />
+      <SpeakersSection />
+      <TestimonialsSection />
+      <FaqSection />
+      <FinalCta />
+    </>
   );
 }

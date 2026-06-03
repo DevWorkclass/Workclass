@@ -33,10 +33,26 @@ const config: Config = {
       colors: {
         // Palette de marque Work Class Gabon
         brand: {
-          primary: '#0066CC',
-          'primary-hover': '#0052A3',
-          secondary: '#FF6B00',
-          'secondary-hover': '#CC5500',
+          navy: '#0D2145',
+          'navy-deep': '#102344',
+          'navy-hover': '#0A1A38',
+          gold: '#C8A84B',
+          'gold-hover': '#B5963F',
+          cream: '#F4F0E6',
+          muted: '#6B7385',
+          // Aliases rétro-compat
+          primary: '#0D2145',
+          'primary-hover': '#0A1A38',
+          secondary: '#C8A84B',
+          'secondary-hover': '#B5963F',
+        },
+        logo: {
+          teal: '#1CA1AA',
+          'teal-light': '#79C7CA',
+          green: '#24A775',
+          'green-light': '#6BBD94',
+          yellow: '#ECAB11',
+          'yellow-light': '#F1C669',
         },
         semantic: {
           success: '#22C55E',

@@ -5,10 +5,35 @@
 
 export const colors = {
   brand: {
-    primary: '#0066CC',
-    primaryHover: '#0052A3',
-    secondary: '#FF6B00',
-    secondaryHover: '#CC5500',
+    /** Bleu marine — titres, header, boutons pleins, sections sombres. */
+    navy: '#0D2145',
+    navyDeep: '#102344',
+    navyHover: '#0A1A38',
+    /** Doré — accent, CTA, "Summit", éléments billet. */
+    gold: '#C8A84B',
+    goldHover: '#B5963F',
+    goldSoft: 'rgba(200, 168, 75, 0.1)',
+    /** Crème — fond de page. */
+    cream: '#F4F0E6',
+    /** Gris textes secondaires. */
+    muted: '#6B7385',
+    /** Dégradé carte pass (billet). */
+    passFrom: '#0E2450',
+    passTo: '#2152B6',
+    // Aliases rétro-compat
+    primary: '#0D2145',
+    primaryHover: '#0A1A38',
+    secondary: '#C8A84B',
+    secondaryHover: '#B5963F',
+  },
+  /** Tricolore logo (drapeau Gabon stylisé). */
+  logo: {
+    teal: '#1CA1AA',
+    tealLight: '#79C7CA',
+    green: '#24A775',
+    greenLight: '#6BBD94',
+    yellow: '#ECAB11',
+    yellowLight: '#F1C669',
   },
   semantic: {
     success: '#22C55E',

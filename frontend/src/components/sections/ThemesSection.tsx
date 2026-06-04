@@ -17,13 +17,13 @@ export function ThemesSection() {
   return (
     <section className="container py-16">
       <p className="mb-2 text-sm font-semibold uppercase tracking-[0.2em] text-brand-gold">
-        Thématiques 2026
+        Programme
       </p>
       <h2 className="max-w-2xl text-3xl font-extrabold text-brand-navy">
-        Comprendre les enjeux du business <span className="text-brand-gold">africain</span>
+        Les 3 modules de la <span className="text-brand-gold">workclass</span>
       </h2>
 
-      <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
         {THEMES.map((t) => {
           const Icon = ICONS[t.icon];
           return (

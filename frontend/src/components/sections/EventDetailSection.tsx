@@ -34,7 +34,7 @@ export function EventDetailSection({ event, capacity = 500 }: EventDetailSection
         {/* Infos */}
         <div>
           <div className="flex flex-wrap gap-2">
-            {['Édition 2026', 'Leadership', 'Networking', 'Certification'].map((tag) => (
+            {['1ère édition', 'CCAIM Libreville', '3 modules', 'Export agricole'].map((tag) => (
               <span
                 key={tag}
                 className="rounded-full bg-brand-navy/5 px-3 py-1 text-xs font-medium text-brand-navy"
@@ -45,8 +45,8 @@ export function EventDetailSection({ event, capacity = 500 }: EventDetailSection
           </div>
 
           <h2 className="mt-4 text-3xl font-extrabold text-brand-navy">
-            {event.title.replace('Gabon', '')}
-            <span className="text-brand-gold">Summit</span>
+            Agriculture : de la production à{' '}
+            <span className="text-brand-gold">l&apos;exportation</span>
           </h2>
           <p className="mt-4 text-brand-muted">{event.description}</p>
 

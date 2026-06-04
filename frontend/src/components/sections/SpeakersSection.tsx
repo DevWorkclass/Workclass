@@ -2,9 +2,6 @@
  * Intervenants — « 24 leaders africains à votre écoute ».
  * 4 cartes en avant (initiales sur dégradé), lien vers la liste complète.
  */
-import { ArrowRight } from 'lucide-react';
-import Link from 'next/link';
-
 import { SPEAKERS } from '@/data/homepageContent';
 
 const GRADIENTS = [
@@ -18,19 +15,12 @@ export function SpeakersSection() {
   return (
     <section id="intervenants" className="container py-16">
       <p className="mb-2 text-sm font-semibold uppercase tracking-[0.2em] text-brand-gold">
-        Intervenants
+        Porteurs & co-animation
       </p>
       <div className="flex flex-wrap items-end justify-between gap-4">
         <h2 className="text-3xl font-extrabold text-brand-navy">
-          24 leaders <span className="text-brand-gold">africains</span> à votre écoute
+          Des experts <span className="text-brand-gold">douane, logistique & agri</span>
         </h2>
-        <Link
-          href="#"
-          className="inline-flex items-center gap-1 text-sm font-semibold text-brand-gold"
-        >
-          Voir tous
-          <ArrowRight className="size-4" />
-        </Link>
       </div>
 
       <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">

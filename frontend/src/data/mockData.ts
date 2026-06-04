@@ -10,19 +10,24 @@ import type { Ticket } from '@/domains/admin/tickets/types/tickets.types';
 
 export const MOCK_EVENT: Event = {
   id: '00000000-0000-0000-0000-000000000001',
-  title: 'Work Class Gabon 2026',
-  slug: 'work-class-gabon-2026',
+  title: 'Workclass Commerce International Gabon 2026',
+  slug: 'workclass-commerce-international-gabon-2026',
   description:
-    'Conférence annuelle Work Class Gabon — réseau, masterclass et opportunités professionnelles.',
-  location: 'Libreville, Gabon',
-  startDate: new Date('2026-09-15T09:00:00+01:00'),
-  endDate: new Date('2026-09-16T18:00:00+01:00'),
+    "Permettre aux agripreneurs et coopératives gabonaises d'intégrer chaque étape de la chaîne d'exportation agricole — de la structuration du projet à la maîtrise des instruments réglementaires — pour gagner en compétitivité sur les marchés africains et internationaux.",
+  location: 'CCAIM · Libreville',
+  startDate: new Date('2026-07-04T08:45:00+01:00'),
+  endDate: new Date('2026-07-04T12:45:00+01:00'),
   status: 'published',
   program: [
-    { time: '09:00', title: 'Accueil & check-in' },
-    { time: '10:00', title: 'Keynote d\'ouverture' },
+    { time: '08:45', title: "Accueil & ouverture" },
+    { time: '09:00', title: "Module 01 · L'agripreneur et sa structure" },
+    { time: '10:15', title: 'Module 02 · La réglementation selon les destinations' },
+    { time: '11:30', title: 'Module 03 · Transport, emballage & Incoterms' },
   ],
-  speakers: [{ name: 'Speaker Un', role: 'CEO Work Class' }],
+  speakers: [
+    { name: 'Valérie Benquet', role: 'EC DOUANE & IDELO' },
+    { name: 'Pauline White', role: '2NY Consulting' },
+  ],
   createdAt: new Date(),
   updatedAt: new Date(),
 };

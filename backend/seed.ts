@@ -84,7 +84,7 @@ async function main(): Promise<void> {
       },
     });
 
-    // --- Admin super_admin ---
+    // --- Admin super_admin (générique) ---
     const password = process.env.SEED_ADMIN_PASSWORD ?? 'ChangeMe_DEV_2026!';
     const passwordHash = await bcrypt.hash(password, BCRYPT_ROUNDS);
 
@@ -101,6 +101,35 @@ async function main(): Promise<void> {
       },
     });
 
+    // --- Super admin nommé (taiger) ---
+    // Le mot de passe N'EST JAMAIS en dur : fourni via SEED_SUPERADMIN_PASSWORD.
+    // Ex : SEED_SUPERADMIN_PASSWORD='********' npm run db:seed
+    const superEmail = process.env.SEED_SUPERADMIN_EMAIL ?? 'siatyler7@gmail.com';
+    const superPassword = process.env.SEED_SUPERADMIN_PASSWORD;
+    let superAdminId: string | null = null;
+
+    if (superPassword) {
+      const superHash = await bcrypt.hash(superPassword, BCRYPT_ROUNDS);
+      const superAdmin = await prisma.admin.upsert({
+        where: { email: superEmail },
+        update: { passwordHash: superHash, isActive: true, role: AdminRole.super_admin },
+        create: {
+          email: superEmail,
+          passwordHash: superHash,
+          firstName: 'taiger',
+          lastName: null,
+          role: AdminRole.super_admin,
+          isActive: true,
+        },
+      });
+      superAdminId = superAdmin.id;
+    } else {
+      // eslint-disable-next-line no-console
+      console.warn(
+        '[seed] SEED_SUPERADMIN_PASSWORD absent — super admin nommé (taiger) non créé/mis à jour.',
+      );
+    }
+
     // eslint-disable-next-line no-console
     console.log('[seed] Terminé.', {
       eventId: event.id,
@@ -110,6 +139,8 @@ async function main(): Promise<void> {
       adminPasswordSource: process.env.SEED_ADMIN_PASSWORD
         ? 'env:SEED_ADMIN_PASSWORD'
         : 'default(dev)',
+      superAdminId,
+      superAdminEmail: superAdminId ? superEmail : '(non créé)',
     });
   } finally {
     await prisma.$disconnect();

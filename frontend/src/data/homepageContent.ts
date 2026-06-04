@@ -1,7 +1,7 @@
 /**
- * Contenu statique de la page d'accueil (sections marketing).
- * Texte issu des maquettes — à remplacer par l'API / CMS plus tard.
- * NE PAS utiliser en production tel quel (placeholder copy).
+ * Contenu de la page d'accueil — Workclass Commerce International Gabon 2026.
+ * Source : OnePager LOGWILA + dossier de contenu (mai 2026).
+ * Marque : WORKCLASS · Valorisation des opérations logistiques · GABON 2026.
  */
 
 export interface Feature {
@@ -30,143 +30,164 @@ export interface SpeakerCard {
   company: string;
 }
 
-export interface Testimonial {
-  quote: string;
-  name: string;
-  role: string;
-  rating: number;
-}
-
 export interface FaqItem {
   question: string;
   answer: string;
 }
 
+/** Piliers de la marque (chips drapeau Gabon). */
+export const BRAND_PILLARS = ['Ancrage Gabon', 'Supply chain', 'Ouverture internationale'] as const;
+
+/** Chiffres-clés du contexte (justification de la workclass). */
+export const KEY_STATS: { value: string; label: string }[] = [
+  { value: '60–70 %', label: 'des besoins alimentaires importés' },
+  { value: '450 Mds', label: 'FCFA/an de dépendance en devises' },
+  { value: '54', label: 'marchés africains ouverts par la ZLECAf' },
+  { value: '3', label: 'modules pratiques · 4h de formation' },
+];
+
 export const FEATURES: Feature[] = [
   {
     icon: 'ticket',
     title: 'Billet électronique',
-    description: 'QR code unique généré et envoyé par email après réservation.',
+    description: 'QR code unique généré et envoyé par email après votre inscription.',
   },
   {
     icon: 'scan',
-    title: 'Scan rapide',
-    description: 'Validation instantanée à l’entrée, sans file d’attente.',
+    title: 'Accès contrôlé',
+    description: "Validation instantanée du billet à l'entrée de la CCAIM, sans file d'attente.",
   },
   {
     icon: 'award',
-    title: 'Certificat automatique',
-    description: 'Certificat de participation envoyé après le scan de votre billet.',
+    title: 'Livret & Livre Blanc',
+    description: 'Livret ressources et accès au Livre Blanc SCI remis à chaque participant.',
   },
 ];
 
+/** Les 3 modules de la workclass. */
 export const THEMES: Theme[] = [
   {
     icon: 'briefcase',
-    title: 'Leadership & Vision Stratégique',
-    description: 'Diriger avec impact dans un environnement économique en mutation.',
-  },
-  {
-    icon: 'trending-up',
-    title: 'Finance & Investissement',
-    description: 'Lever des fonds, investir et structurer une croissance durable.',
+    title: "01 · L'agripreneur et sa structure",
+    description: 'Structuration juridique, business plan, coopérative et financement ANPI.',
   },
   {
     icon: 'lightbulb',
-    title: 'Innovation & Transformation',
-    description: 'Digitaliser et réinventer les modèles d’affaires africains.',
+    title: '02 · La réglementation selon les destinations',
+    description: "ZLECAf · UE (RDUE / MACF) · Asie (GACC) : maîtriser les règles d'accès aux marchés.",
   },
   {
     icon: 'rocket',
-    title: 'Entrepreneuriat & Croissance',
-    description: 'Passer de l’idée au scale, créer de la valeur localement.',
+    title: '03 · Transport, emballage & Incoterms',
+    description:
+      "Choix de l'Incoterm, emballage export, transitaire agréé et schéma logistique gabonais.",
   },
 ];
 
+/** Publics et filières concernés. */
 export const INDUSTRIES: string[] = [
-  'Énergie',
-  'Agro-industrie',
-  'Tech & Digital',
-  'Mines & Ressources',
-  'Banque & Finance',
-  'BTP & Immobilier',
-  'Santé',
-  'Éducation',
+  'Agripreneurs',
+  'Coopératives',
+  'Exportateurs',
+  'Opérateurs agricoles',
+  'Transformation locale',
+  'Logistique & transit',
+  'Douane & conformité',
+  'PMI agro',
+];
+
+/** Partenaires institutionnels. */
+export const PARTNERS: { name: string; description: string }[] = [
+  { name: 'CCAIM', description: 'Chambre de Commerce, Agriculture, Industrie, Mines & Artisanat' },
+  { name: 'AGASA', description: 'Agence Gabonaise de Sécurité Alimentaire' },
+  { name: 'CGC', description: 'Conseil Gabonais des Chargeurs' },
+  { name: 'ANPI', description: 'Agence Nationale des Promotions et des Investissements' },
+  { name: 'ZLECAf', description: 'Zone de Libre-Échange Continentale Africaine · Agenda 2063' },
 ];
 
 export const CHRONO_STEPS: ChronoStep[] = [
-  { phase: 'Lancement', title: 'Lancement inscriptions', date: '01 mars 2026', status: 'done' },
-  { phase: 'Lancement', title: 'Offre Early Bird', date: '15 mars 2026', status: 'done' },
-  { phase: 'Avant', title: 'Ouverture officielle', date: '01 mai 2026', status: 'current' },
-  { phase: 'Avant', title: 'Clôture inscriptions', date: '10 juil. 2026', status: 'upcoming' },
-  { phase: 'Avant', title: 'Envoi des billets', date: '12 juil. 2026', status: 'upcoming' },
-  { phase: 'Pendant', title: 'Jour J — Summit', date: '15 juil. 2026', status: 'upcoming' },
-  { phase: 'Post-event', title: 'Certificats envoyés', date: '17 juil. 2026', status: 'upcoming' },
-  { phase: 'Post-event', title: 'Collecte des avis', date: '20 juil. 2026', status: 'upcoming' },
+  { phase: 'Lancement', title: 'Ouverture des inscriptions', date: '15 mai 2026', status: 'done' },
+  { phase: 'Avant', title: 'Confirmation des places', date: '20 juin 2026', status: 'current' },
+  { phase: 'Avant', title: 'Convocation CCAIM & billets', date: '30 juin 2026', status: 'upcoming' },
+  { phase: 'Pendant', title: 'Workclass — 08h45 à 12h45', date: '04 juil. 2026', status: 'upcoming' },
+  {
+    phase: 'Post-event',
+    title: 'Remise livret & Livre Blanc SCI',
+    date: '04 juil. 2026',
+    status: 'upcoming',
+  },
+  {
+    phase: 'Post-event',
+    title: 'Rapport post-événement',
+    date: '11 juil. 2026',
+    status: 'upcoming',
+  },
 ];
 
+/** Porteurs du projet et co-animation. */
 export const SPEAKERS: SpeakerCard[] = [
-  { initials: 'AM', name: 'Alain Moundounga', role: 'CEO', company: 'Gabon Invest' },
-  { initials: 'SC', name: 'Sophie Chambrier', role: 'Directrice', company: 'BGFI Banque' },
-  { initials: 'FK', name: 'Francis Kombila', role: 'Fondateur', company: 'TechHub Libreville' },
-  { initials: 'NM', name: 'Nadia Mavoungou', role: 'Présidente', company: 'Réseau Femmes Pro' },
-];
-
-export const TESTIMONIALS: Testimonial[] = [
   {
-    quote:
-      'Une édition à la hauteur de mes attentes : des intervenants de qualité et un réseau précieux.',
-    name: 'Marie-Ange Obiang',
-    role: 'Consultante',
-    rating: 5,
+    initials: 'VB',
+    name: 'Valérie Benquet',
+    role: 'Co-organisatrice · Ingénierie douanière',
+    company: 'EC DOUANE & IDELO',
   },
   {
-    quote: 'Organisation impeccable, contenu dense et applicable dès le lundi suivant.',
-    name: 'Jean-Baptiste Ndong',
-    role: 'Entrepreneur',
-    rating: 5,
+    initials: 'PW',
+    name: 'Pauline White',
+    role: 'Co-organisatrice · Logistique multimodale',
+    company: '2NY Consulting',
   },
   {
-    quote: 'Le meilleur rendez-vous business de la sous-région. Je recommande sans réserve.',
-    name: 'Patrick Lebega',
-    role: 'Directeur Commercial',
-    rating: 5,
+    initials: 'DC',
+    name: 'Experts Douane & Commerce',
+    role: 'Co-animation · OEA, CEMAC, OMD',
+    company: 'DGDDI',
+  },
+  {
+    initials: 'CG',
+    name: 'Conseil Gabonais des Chargeurs',
+    role: 'Apport · Fret & corridors logistiques',
+    company: 'CGC',
   },
 ];
 
 export const FAQ_ITEMS: FaqItem[] = [
   {
-    question: 'Comment réserver ma place au Work Class Summit 2026 ?',
+    question: 'Quand et où se tient la workclass ?',
+    answer: 'Le 04 juillet 2026, de 08h45 à 12h45, à la CCAIM de Libreville.',
+  },
+  {
+    question: "À qui s'adresse cette workclass ?",
     answer:
-      'Cliquez sur « Réserver », choisissez votre billet, renseignez vos informations puis validez. Vous recevez votre billet PDF par email.',
+      "Aux agripreneurs, exportateurs, coopératives et opérateurs agricoles souhaitant maîtriser la chaîne d'exportation.",
   },
   {
-    question: 'Quels sont les types de billets disponibles et leurs avantages ?',
+    question: 'Quels sont les 3 modules au programme ?',
     answer:
-      'Plusieurs pass sont proposés (Standard, Premium, VIP) avec des accès et options différents (ateliers, repas, networking).',
+      "01 L'agripreneur et sa structure · 02 La réglementation selon les destinations (ZLECAf, UE, Asie) · 03 Transport, emballage & Incoterms.",
   },
   {
-    question: 'Comment cela se passe pour mon billet électronique ?',
-    answer: 'Votre billet contient un QR code unique. Présentez-le à l’entrée pour le scan.',
+    question: 'Que vais-je repartir avec ?',
+    answer:
+      "Un plan d'action export concret pour votre produit, un livret ressources et l'accès au Livre Blanc SCI.",
   },
   {
-    question: 'Puis-je annuler ou modifier ma réservation ?',
-    answer: 'Oui, contactez le support avant la date de clôture des inscriptions.',
+    question: 'Comment réserver ma place ?',
+    answer:
+      'Cliquez sur « Réserver », choisissez votre billet, renseignez vos informations puis validez. Votre billet QR vous est envoyé par email.',
   },
   {
-    question: 'Comment se passe le contrôle d’accès le jour J ?',
-    answer: 'Un scan du QR code de votre billet suffit. Pensez à l’avoir sur votre téléphone.',
+    question: 'Qui porte le projet ?',
+    answer:
+      '2NY Consulting et EC DOUANE & IDELO, avec le soutien de Women In Logistics Africa Gabon (WILA).',
   },
   {
-    question: 'Quels modes de paiement sont acceptés ?',
-    answer: 'Paiement en ligne (simulation en v1). Les paiements réels seront ajoutés prochainement.',
+    question: 'Quels partenaires institutionnels accompagnent la workclass ?',
+    answer: 'CCAIM, AGASA, CGC et ANPI, dans le cadre de la ZLECAf et de l’Agenda 2063.',
   },
   {
-    question: 'Vais-je recevoir un certificat de participation ?',
-    answer: 'Oui, un certificat est généré et envoyé automatiquement après le scan de votre billet.',
-  },
-  {
-    question: 'Comment devenir partenaire ou sponsor ?',
-    answer: 'Écrivez-nous via la page contact, notre équipe partenariats vous répondra rapidement.',
+    question: "Comment contacter l'organisation ?",
+    answer: 'Par email à wilagabon@gmail.com.',
   },
 ];

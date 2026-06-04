@@ -5,6 +5,7 @@
 import Link from 'next/link';
 
 import { Button } from '@/components/ui/button';
+import { BRAND_PILLARS } from '@/data/homepageContent';
 import { formatDateRange } from '@/lib/formatters';
 import type { Event } from '@/domains/public/event/types/event.types';
 
@@ -42,13 +43,24 @@ export function HeroSection({ event }: HeroSectionProps) {
           </p>
 
           <h1 className="text-4xl font-extrabold leading-[1.1] text-brand-navy sm:text-5xl">
-            L&apos;Élite Professionnelle du Gabon{' '}
-            <span className="text-brand-gold">se Réunit.</span>
+            Agriculture : de la production à{' '}
+            <span className="text-brand-gold">l&apos;exportation.</span>
           </h1>
 
           <p className="mt-6 text-lg leading-relaxed text-brand-muted">
             {event.description}
           </p>
+
+          <ul className="mt-6 flex flex-wrap gap-2">
+            {BRAND_PILLARS.map((pillar) => (
+              <li
+                key={pillar}
+                className="rounded-full bg-brand-navy/5 px-3 py-1 text-xs font-semibold text-brand-navy"
+              >
+                {pillar}
+              </li>
+            ))}
+          </ul>
 
           <div className="mt-8 flex flex-wrap gap-3">
             <Button asChild variant="gold" size="lg">

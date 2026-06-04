@@ -2,8 +2,56 @@
 @tailwind components;
 @tailwind utilities;
 
-@import url('./variables.css');
-@import url('./animations.css');
+/* ============================================================================
+   Variables shadcn/ui — Work Class Gabon (crème / marine / doré).
+   Inliné ici : @layer base doit cohabiter avec `@tailwind base`.
+   ============================================================================ */
+@layer base {
+  :root {
+    --background: 43 39% 93%; /* crème #F4F0E6 */
+    --foreground: 219 68% 16%; /* marine #0D2145 */
+    --card: 0 0% 100%;
+    --card-foreground: 219 68% 16%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 219 68% 16%;
+    --primary: 219 68% 16%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 45 53% 54%; /* doré #C8A84B */
+    --secondary-foreground: 219 68% 16%;
+    --muted: 43 25% 88%;
+    --muted-foreground: 222 11% 47%; /* gris #6B7385 */
+    --accent: 45 53% 54%;
+    --accent-foreground: 219 68% 16%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 43 18% 84%;
+    --input: 43 18% 84%;
+    --ring: 45 53% 54%;
+    --radius: 0.75rem;
+  }
+
+  .dark {
+    --background: 219 62% 11%;
+    --foreground: 43 39% 93%;
+    --card: 219 60% 14%;
+    --card-foreground: 43 39% 93%;
+    --popover: 219 60% 14%;
+    --popover-foreground: 43 39% 93%;
+    --primary: 45 53% 54%;
+    --primary-foreground: 219 68% 16%;
+    --secondary: 45 53% 54%;
+    --secondary-foreground: 219 68% 16%;
+    --muted: 219 40% 20%;
+    --muted-foreground: 43 20% 75%;
+    --accent: 45 53% 54%;
+    --accent-foreground: 219 68% 16%;
+    --destructive: 0 62.8% 45%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 219 35% 24%;
+    --input: 219 35% 24%;
+    --ring: 45 53% 54%;
+  }
+}
 
 @layer base {
   * {
@@ -23,5 +71,17 @@
   /* Focus visible accessible (a11y) */
   :focus-visible {
     @apply outline-none ring-2 ring-ring ring-offset-2;
+  }
+}
+
+/* Animations partagées — respecte prefers-reduced-motion. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
   }
 }

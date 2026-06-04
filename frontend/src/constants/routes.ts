@@ -25,7 +25,12 @@ export const ROUTES = {
     dashboard: '/admin/dashboard',
     events: '/admin/evenements',
     bookings: '/admin/reservations',
+    participants: '/admin/participants',
     scan: '/admin/scan',
+    certificates: '/admin/certificats',
     feedback: '/admin/avis',
+    ads: '/admin/publicites',
+    users: '/admin/utilisateurs',
+    settings: '/admin/parametres',
   },
 } as const;

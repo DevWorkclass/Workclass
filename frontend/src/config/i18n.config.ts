@@ -1,21 +1,18 @@
 /**
- * Configuration next-intl — routing fr/en.
+ * Configuration de requête next-intl (chargée par le plugin dans next.config.js).
+ * Résout la locale courante (API `requestLocale`, next-intl ≥ 3.20) et charge
+ * les messages correspondants.
  */
-
 import { getRequestConfig } from 'next-intl/server';
 
-export const SUPPORTED_LOCALES = ['fr', 'en'] as const;
-export const DEFAULT_LOCALE = 'fr';
+import { defaultLocale, isLocale } from './i18n';
 
-export type SupportedLocale = (typeof SUPPORTED_LOCALES)[number];
-
-export default getRequestConfig(async ({ locale }) => {
-  const safeLocale = (SUPPORTED_LOCALES as readonly string[]).includes(locale ?? '')
-    ? (locale as SupportedLocale)
-    : DEFAULT_LOCALE;
+export default getRequestConfig(async ({ requestLocale }) => {
+  const requested = await requestLocale;
+  const locale = requested && isLocale(requested) ? requested : defaultLocale;
 
   return {
-    locale: safeLocale,
-    messages: (await import(`@/locales/${safeLocale}.json`)).default,
+    locale,
+    messages: (await import(`../locales/${locale}.json`)).default,
   };
 });

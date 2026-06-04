@@ -1,6 +1,6 @@
 /**
  * Tokens de couleur — Work Class Gabon v1.
- * À garder en sync avec `tailwind.config.ts` et `styles/variables.css`.
+ * À garder en sync avec `tailwind.config.ts` et `styles/globals.css` (vars CSS).
  */
 
 export const colors = {

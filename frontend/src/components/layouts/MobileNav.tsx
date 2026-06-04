@@ -5,7 +5,7 @@ export function MobileNav() {
   return (
     <nav
       aria-label="Navigation mobile"
-      className="fixed bottom-0 left-0 right-0 border-t md:hidden"
+      className="fixed inset-x-0 bottom-0 border-t md:hidden"
     />
   );
 }

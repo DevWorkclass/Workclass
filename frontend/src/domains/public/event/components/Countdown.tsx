@@ -56,7 +56,7 @@ export function Countdown({ target, className }: CountdownProps) {
           key={key}
           className="flex flex-col items-center rounded-xl bg-brand-navy/5 px-2 py-3"
         >
-          <span className="tabular-nums text-2xl font-bold text-brand-navy">
+          <span className="text-2xl font-bold tabular-nums text-brand-navy">
             {remaining ? String(remaining[key]).padStart(2, '0') : '--'}
           </span>
           <span className="mt-1 text-[0.65rem] font-medium uppercase tracking-wide text-brand-muted">

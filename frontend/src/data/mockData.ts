@@ -4,6 +4,7 @@
  */
 
 import type { Event } from '@/domains/public/event/types/event.types';
+import type { TicketType } from '@/domains/public/booking/types/booking.types';
 import type { Participant } from '@/domains/public/participant/types/participant.types';
 import type { Ticket } from '@/domains/admin/tickets/types/tickets.types';
 
@@ -25,6 +26,34 @@ export const MOCK_EVENT: Event = {
   createdAt: new Date(),
   updatedAt: new Date(),
 };
+
+export const MOCK_TICKET_TYPES: TicketType[] = [
+  {
+    id: 'standard',
+    name: 'Standard',
+    price: 35000,
+    currency: 'FCFA',
+    features: [
+      'Toutes les conférences',
+      'Déjeuner Jour 1',
+      'Certificat de participation',
+      'Kit participant',
+    ],
+  },
+  {
+    id: 'vip-premium',
+    name: 'VIP Premium',
+    price: 75000,
+    currency: 'FCFA',
+    badge: 'Best',
+    features: [
+      'Tout Standard inclus',
+      'Places premier rang',
+      'Cocktail VIP exclusif',
+      'Certificat premium encadré',
+    ],
+  },
+];
 
 export const MOCK_PARTICIPANT: Participant = {
   id: '00000000-0000-0000-0000-0000000000a1',

@@ -1,11 +1,13 @@
 /**
- * Page de réservation (public). Implémentation à venir.
+ * Entrée du parcours de réservation — redirige vers la 1re étape.
  */
-export default function ReservationPage() {
-  return (
-    <main className="container mx-auto px-4 py-8">
-      <h1 className="text-2xl font-bold">Réservation</h1>
-      <p className="mt-2 text-muted-foreground">Formulaire de réservation à implémenter.</p>
-    </main>
-  );
+import { redirect } from 'next/navigation';
+
+interface ReservationPageProps {
+  params: Promise<{ locale: string }>;
+}
+
+export default async function ReservationPage({ params }: ReservationPageProps) {
+  const { locale } = await params;
+  redirect(`/${locale}/reservation/etape-1`);
 }

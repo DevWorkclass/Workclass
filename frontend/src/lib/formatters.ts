@@ -23,6 +23,16 @@ export function formatDateRange(start: Date, end: Date, locale: string = 'fr-FR'
   return `${fmt.format(start)} — ${fmt.format(end)}`;
 }
 
+/** Formate un montant entier (sans décimales) — séparateur de milliers localisé. */
+export function formatAmount(amount: number, locale: string = 'fr-FR'): string {
+  return new Intl.NumberFormat(locale, { maximumFractionDigits: 0 }).format(amount);
+}
+
+/** Formate un prix avec sa devise (ex. "35 000 FCFA"). */
+export function formatPrice(amount: number, currency: string = 'FCFA', locale: string = 'fr-FR'): string {
+  return `${formatAmount(amount, locale)} ${currency}`;
+}
+
 export function formatFullName(firstName: string, lastName: string): string {
   return `${firstName.trim()} ${lastName.trim()}`.trim();
 }

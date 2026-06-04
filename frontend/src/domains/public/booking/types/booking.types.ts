@@ -11,6 +11,16 @@ export interface BookingOption {
   price: number;
 }
 
+export interface TicketType {
+  id: string;
+  name: string;
+  price: number;
+  currency: string;
+  /** Étiquette mise en avant (ex. "Best"). */
+  badge?: string;
+  features: string[];
+}
+
 export interface ParticipantData {
   firstName: string;
   lastName: string;

@@ -74,6 +74,16 @@
   }
 }
 
+/* Scrollbar invisible sur les pistes de carrousels mobiles. */
+.scrollbar-hide::-webkit-scrollbar { display: none; }
+.scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+
+/* Marquee continu (Témoignages mobile). */
+@keyframes marquee {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+
 /* Animations partagées — respecte prefers-reduced-motion. */
 @media (prefers-reduced-motion: reduce) {
   *,

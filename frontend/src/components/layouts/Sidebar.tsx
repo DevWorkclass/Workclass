@@ -7,7 +7,9 @@
 import {
   BarChart3,
   CalendarDays,
+  Home,
   LayoutGrid,
+  LogOut,
   Megaphone,
   MessageSquare,
   ScanLine,
@@ -17,10 +19,11 @@ import {
   UserCog,
 } from 'lucide-react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import type { LucideIcon } from 'lucide-react';
 
 import { ROUTES } from '@/constants/routes';
+import { clearSession } from '@/lib/auth';
 import { cn } from '@/lib/utils';
 
 interface NavItem {
@@ -63,18 +66,26 @@ const SECTIONS: NavSection[] = [
 
 export function Sidebar() {
   const pathname = usePathname();
+  const router = useRouter();
+
+  function handleLogout() {
+    clearSession();
+    router.push(ROUTES.admin.login);
+  }
 
   return (
     <aside
       aria-label="Navigation admin"
       className="flex w-64 shrink-0 flex-col bg-brand-navy text-white"
     >
+      {/* Logo */}
       <div className="flex h-16 items-center px-6">
         <Link href={ROUTES.admin.dashboard} aria-label="Accueil admin">
           <LayoutGrid className="size-7 text-brand-gold" />
         </Link>
       </div>
 
+      {/* Navigation */}
       <nav className="flex-1 space-y-7 overflow-y-auto px-4 py-6">
         {SECTIONS.map((section) => (
           <div key={section.title}>
@@ -106,6 +117,25 @@ export function Sidebar() {
           </div>
         ))}
       </nav>
+
+      {/* Pied de sidebar — actions globales */}
+      <div className="shrink-0 space-y-1 border-t border-white/10 p-4">
+        <Link
+          href={ROUTES.public.home}
+          className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-white/70 transition-colors hover:bg-white/5 hover:text-white"
+        >
+          <Home className="size-4 shrink-0" />
+          Retour à l&apos;accueil
+        </Link>
+        <button
+          type="button"
+          onClick={handleLogout}
+          className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-semantic-error/70 transition-colors hover:bg-semantic-error/10 hover:text-semantic-error"
+        >
+          <LogOut className="size-4 shrink-0" />
+          Déconnexion
+        </button>
+      </div>
     </aside>
   );
 }

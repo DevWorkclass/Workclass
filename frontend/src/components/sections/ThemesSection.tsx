@@ -1,6 +1,7 @@
 import { ArrowRight, Briefcase, Globe, Lightbulb, Rocket, TrendingUp } from 'lucide-react';
 import Link from 'next/link';
 
+import { MobileScrollCarousel } from '@/components/shared/MobileScrollCarousel';
 import { THEMES, type Theme } from '@/data/homepageContent';
 
 const ICONS: Record<Theme['icon'], typeof Briefcase> = {
@@ -17,6 +18,36 @@ const CARD_GRADIENTS = [
   'from-[#0a2510] to-[#15803d]',
   'from-[#251500] to-[#b45309]',
 ];
+
+function ThemeCard({ t, index }: { t: (typeof THEMES)[number]; index: number }) {
+  const Icon = ICONS[t.icon];
+  const gradient = CARD_GRADIENTS[index % CARD_GRADIENTS.length];
+  return (
+    <article className="group relative overflow-hidden rounded-2xl shadow-sm">
+      <div className={`aspect-[3/4] bg-gradient-to-br ${gradient}`}>
+        <div className="flex h-full items-center justify-center opacity-10">
+          <Icon className="size-24 text-white" />
+        </div>
+      </div>
+      <div className="absolute inset-0 flex flex-col justify-end bg-gradient-to-t from-black/80 via-black/20 to-transparent p-5">
+        <span className="mb-1 text-xs font-bold uppercase tracking-widest text-brand-gold">
+          Module {String(index + 1).padStart(2, '0')}
+        </span>
+        <h3 className="text-sm font-bold leading-snug text-white">
+          {t.title.split(' · ').slice(-1)[0]}
+        </h3>
+        <p className="mt-1.5 text-xs leading-relaxed text-white/60">{t.description}</p>
+        <Link
+          href="#"
+          className="mt-3 inline-flex items-center gap-1 text-xs font-bold uppercase tracking-widest text-white/60 transition-colors group-hover:text-brand-gold"
+        >
+          Voir plus
+          <ArrowRight className="size-3 transition-transform group-hover:translate-x-0.5" />
+        </Link>
+      </div>
+    </article>
+  );
+}
 
 export function ThemesSection() {
   return (
@@ -41,45 +72,22 @@ export function ThemesSection() {
           </Link>
         </div>
 
-        <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-          {THEMES.map((t, i) => {
-            const Icon = ICONS[t.icon];
-            const gradient = CARD_GRADIENTS[i % CARD_GRADIENTS.length];
-            return (
-              <article
-                key={t.title}
-                className="group relative overflow-hidden rounded-2xl shadow-sm"
-              >
-                {/* Image-like gradient background */}
-                <div className={`aspect-[3/4] bg-gradient-to-br ${gradient}`}>
-                  {/* Icon subtil en fond */}
-                  <div className="flex h-full items-center justify-center opacity-10">
-                    <Icon className="size-24 text-white" />
-                  </div>
-                </div>
-
-                {/* Overlay dégradé + contenu */}
-                <div className="absolute inset-0 flex flex-col justify-end bg-gradient-to-t from-black/80 via-black/20 to-transparent p-5">
-                  <span className="mb-1 text-xs font-bold uppercase tracking-widest text-brand-gold">
-                    Module {String(i + 1).padStart(2, '0')}
-                  </span>
-                  <h3 className="text-sm font-bold leading-snug text-white">
-                    {t.title.split(' · ').slice(-1)[0]}
-                  </h3>
-                  <p className="mt-1.5 text-xs leading-relaxed text-white/60">{t.description}</p>
-                  <Link
-                    href="#"
-                    className="mt-3 inline-flex items-center gap-1 text-xs font-bold uppercase tracking-widest text-white/60 transition-colors group-hover:text-brand-gold"
-                  >
-                    Voir plus
-                    <ArrowRight className="size-3 transition-transform group-hover:translate-x-0.5" />
-                  </Link>
-                </div>
-              </article>
-            );
-          })}
+        {/* ── Grille desktop (sm+) ── */}
+        <div className="mt-10 hidden gap-5 sm:grid sm:grid-cols-2 lg:grid-cols-4">
+          {THEMES.map((t, i) => (
+            <ThemeCard key={t.title} t={t} index={i} />
+          ))}
         </div>
       </div>
+
+      {/* ── Scroll manuel mobile (< sm) ── */}
+      <MobileScrollCarousel count={THEMES.length} className="mt-8 sm:hidden">
+        {THEMES.map((t, i) => (
+          <div key={t.title} className="w-52 shrink-0 snap-start">
+            <ThemeCard t={t} index={i} />
+          </div>
+        ))}
+      </MobileScrollCarousel>
     </section>
   );
 }

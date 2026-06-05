@@ -4,7 +4,8 @@
  * Connexion administrateur — formulaire connecté au backend (POST /auth/login).
  * Pas de logique métier ici : validation côté serveur, tokens stockés via lib/auth.
  */
-import { Eye, EyeOff, Loader2, LogIn } from 'lucide-react';
+import { ArrowLeft, Eye, EyeOff, Loader2, LogIn } from 'lucide-react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState, type FormEvent } from 'react';
 
@@ -54,7 +55,16 @@ export default function AdminLoginPage() {
     'w-full rounded-lg border border-black/10 bg-brand-cream px-4 py-2.5 text-sm text-brand-navy focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-gold';
 
   return (
-    <main className="grid min-h-screen place-items-center bg-brand-cream px-4 py-12">
+    <main className="relative grid min-h-screen place-items-center bg-brand-cream px-4 py-12">
+      {/* Lien retour accueil */}
+      <Link
+        href={ROUTES.public.home}
+        className="absolute left-5 top-5 flex items-center gap-1.5 text-sm font-medium text-brand-navy/60 transition-colors hover:text-brand-navy"
+      >
+        <ArrowLeft className="size-4" />
+        Retour à l&apos;accueil
+      </Link>
+
       <div className="w-full max-w-sm rounded-2xl border border-black/5 bg-white p-8 shadow-lg">
         <div className="flex justify-center">
           <Logo />

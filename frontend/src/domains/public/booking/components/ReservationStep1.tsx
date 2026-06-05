@@ -5,7 +5,7 @@
  * État local (sélection + quantité) ; transmis à l'étape suivante via query.
  * Le calcul de prix faisant foi reste côté backend ; ici, affichage indicatif.
  */
-import { Check, Minus, Plus } from 'lucide-react';
+import { ArrowLeft, Check, Minus, Plus } from 'lucide-react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { useMemo, useState } from 'react';
@@ -51,6 +51,13 @@ export function ReservationStep1({ event, ticketTypes, maxQuantity = 10 }: Reser
       <div className="container">
         {/* En-tête */}
         <header className="mb-8">
+          <Link
+            href={`/${locale}`}
+            className="mb-5 flex w-fit items-center gap-1.5 text-sm font-medium text-brand-navy/60 transition-colors hover:text-brand-navy"
+          >
+            <ArrowLeft className="size-4" />
+            Retour à l&apos;accueil
+          </Link>
           <p className="flex items-center gap-2 text-sm font-semibold uppercase tracking-[0.2em] text-brand-gold">
             <span className="h-px w-6 bg-brand-gold" aria-hidden />
             Inscription
@@ -166,12 +173,9 @@ export function ReservationStep1({ event, ticketTypes, maxQuantity = 10 }: Reser
             </div>
 
             {/* Actions */}
-            <div className="mt-8 space-y-3">
-              <Button asChild variant="navy" size="lg" className="w-full">
-                <Link href={`/${locale}`}>Évènement</Link>
-              </Button>
+            <div className="mt-8">
               <Button
-                variant="navy"
+                variant="gold"
                 size="lg"
                 className="w-full"
                 onClick={handleContinue}

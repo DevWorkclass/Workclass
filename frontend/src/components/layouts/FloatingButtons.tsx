@@ -25,7 +25,7 @@ export function FloatingButtons() {
       {/* ── Popup contact ── */}
       <div
         className={cn(
-          'w-[min(288px,calc(100vw-32px))] overflow-hidden rounded-2xl border border-brand-navy/10 bg-white shadow-2xl transition-all duration-300 origin-bottom-right',
+          'w-72 overflow-hidden rounded-2xl border border-brand-navy/10 bg-white shadow-2xl transition-all duration-300 origin-bottom-right sm:w-80',
           chatOpen ? 'scale-100 opacity-100' : 'pointer-events-none scale-95 opacity-0',
         )}
       >

@@ -13,11 +13,11 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
 const NAV_LINKS = [
-  { href: '#accueil', label: 'Accueil' },
-  { href: '#evenement', label: "L'Événement" },
-  { href: '#chronogramme', label: 'Chronogramme' },
-  { href: '#intervenants', label: 'Intervenants' },
-  { href: '#faq', label: 'FAQ' },
+  { href: '/', label: 'Accueil' },
+  { href: '/#evenement', label: "L'Événement" },
+  { href: '/#chronogramme', label: 'Chronogramme' },
+  { href: '/#intervenants', label: 'Intervenants' },
+  { href: '/#faq', label: 'FAQ' },
   { href: '/admin/dashboard', label: 'Admin' },
 ] as const;
 

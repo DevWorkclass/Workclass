@@ -12,6 +12,7 @@ import { NotFoundError, ValidationError } from '../../shared/errors/types/error.
 import { logAudit } from '../../shared/audit/services/audit.service';
 import { logger } from '../../../utils/logger';
 import type { QRCodeData, ScanErrorCode } from '../types/scan.types';
+import { EmailService } from '../../notifications/services/email.service';
 
 interface VerifyResult {
   valid: boolean;
@@ -25,6 +26,7 @@ interface ConfirmResult {
 }
 
 export class ScanService {
+  private readonly emailService = new EmailService();
   async verifyQR(qrData: QRCodeData): Promise<VerifyResult> {
     if (!verifyQRCode(qrData)) return { valid: false, error: 'invalid' };
 
@@ -82,6 +84,17 @@ export class ScanService {
       where: { id: ticketId },
       data: { certificateSent: true, certificateUrl },
     });
+
+    // Envoi de l'email avec le certificat
+    try {
+      await this.emailService.sendCertificate(
+        ticket.booking.participant.email,
+        certificateNumber,
+        certificateUrl
+      );
+    } catch (err) {
+      console.error('Erreur lors de l\'envoi du certificat par email:', err);
+    }
 
     await logAudit({
       action: 'TICKET_SCANNED',

@@ -10,10 +10,10 @@ import type { Ticket } from '@/domains/admin/tickets/types/tickets.types';
 
 export const MOCK_EVENT: Event = {
   id: '00000000-0000-0000-0000-000000000001',
-  title: 'Workclass Commerce International Gabon 2026',
-  slug: 'workclass-commerce-international-gabon-2026',
+  title: 'Work Class Summit Gabon 2026',
+  slug: 'work-class-summit-gabon-2026',
   description:
-    "Permettre aux agripreneurs et coopératives gabonaises d'intégrer chaque étape de la chaîne d'exportation agricole — de la structuration du projet à la maîtrise des instruments réglementaires — pour gagner en compétitivité sur les marchés africains et internationaux.",
+    "Le rendez-vous annuel de l'élite professionnelle gabonaise. Business, innovation, leadership et networking au cœur de Libreville — pour connecter les décideurs qui façonnent l'Afrique de demain.",
   location: 'CCAIM · Libreville',
   startDate: new Date('2026-07-04T08:45:00+01:00'),
   endDate: new Date('2026-07-04T12:45:00+01:00'),

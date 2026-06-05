@@ -11,9 +11,16 @@ export interface Feature {
 }
 
 export interface Theme {
-  icon: 'briefcase' | 'trending-up' | 'lightbulb' | 'rocket';
+  icon: 'briefcase' | 'trending-up' | 'lightbulb' | 'rocket' | 'globe';
   title: string;
   description: string;
+}
+
+export interface Testimonial {
+  name: string;
+  role: string;
+  content: string;
+  rating: number;
 }
 
 export interface ChronoStep {
@@ -34,6 +41,63 @@ export interface FaqItem {
   question: string;
   answer: string;
 }
+
+export interface AdSlide {
+  id: string;
+  tag: string;
+  title: string;
+  body: string;
+  cta?: string;
+  href?: string;
+  /** URL de l'image de couverture (remplace le placeholder coloré quand fournie). */
+  imageUrl?: string;
+  visual: {
+    fromColor: string;
+    toColor: string;
+    initial: string;
+    textColor: string;
+  };
+}
+
+/** Slides publicitaires / partenaires (carousel homepage). */
+export const AD_SLIDES: AdSlide[] = [
+  {
+    id: 'wila',
+    tag: 'Partenaire Officiel',
+    title: 'Avec le soutien de WILA',
+    body: 'Women In Logistics Africa Gabon · « Together we are stronger »',
+    cta: 'Découvrir',
+    href: '#',
+    visual: { fromColor: '#0D2145', toColor: '#1d4ed8', initial: 'WILA', textColor: '#C8A84B' },
+  },
+  {
+    id: 'book',
+    tag: 'Publication partenaire',
+    title: 'Venez découvrir le nouvel ouvrage',
+    body: "d'Amandine NTSAME · Disponible en librairie",
+    cta: 'En savoir plus',
+    href: '#',
+    visual: { fromColor: '#7c2d12', toColor: '#c2410c', initial: 'AN', textColor: '#FED7AA' },
+  },
+  {
+    id: 'ccaim',
+    tag: 'Lieu officiel',
+    title: 'CCAIM · Chambre de Commerce',
+    body: 'Agriculture, Industrie, Mines et Artisanat de Libreville',
+    cta: 'Visiter',
+    href: '#',
+    visual: { fromColor: '#064e3b', toColor: '#059669', initial: 'CCM', textColor: '#6ee7b7' },
+  },
+  {
+    id: 'vip',
+    tag: 'Offre limitée',
+    title: 'Places VIP Premium — encore disponibles',
+    body: '75 000 FCFA · Cocktail exclusif · Certificat premium encadré',
+    cta: 'Réserver',
+    href: '/reservation',
+    visual: { fromColor: '#78350f', toColor: '#d97706', initial: 'VIP', textColor: '#fef3c7' },
+  },
+];
 
 /** Piliers de la marque (chips drapeau Gabon). */
 export const BRAND_PILLARS = ['Ancrage Gabon', 'Supply chain', 'Ouverture internationale'] as const;
@@ -81,6 +145,12 @@ export const THEMES: Theme[] = [
     title: '03 · Transport, emballage & Incoterms',
     description:
       "Choix de l'Incoterm, emballage export, transitaire agréé et schéma logistique gabonais.",
+  },
+  {
+    icon: 'globe',
+    title: '04 · Opportunités & Marchés',
+    description:
+      'ZLECAf, accords CEMAC-UE et stratégies de positionnement sur les marchés africains et internationaux.',
   },
 ];
 
@@ -149,6 +219,30 @@ export const SPEAKERS: SpeakerCard[] = [
     name: 'Conseil Gabonais des Chargeurs',
     role: 'Apport · Fret & corridors logistiques',
     company: 'CGC',
+  },
+];
+
+export const TESTIMONIALS: Testimonial[] = [
+  {
+    name: 'Marie-Ange Obiang',
+    role: 'Directrice · Cabinet Stratégo',
+    content:
+      'Organisation parfaite. Meilleure édition à ce jour. Des intervenants de très haut niveau qui ont su transformer la complexité douanière en opportunité concrète.',
+    rating: 5,
+  },
+  {
+    name: 'Jean-Baptiste Ndong',
+    role: 'Entrepreneur · Libreville',
+    content:
+      "Billetterie fluide, intervenants excellents. Je suis reparti avec un plan d'action export concret. Un réseau de qualité et des insights vraiment actionnables.",
+    rating: 5,
+  },
+  {
+    name: 'Patrick Lekogo',
+    role: 'Directeur Commercial · BGFI Bank',
+    content:
+      "Événement corporate de référence au Gabon. L'approche pratique des modules m'a permis de comprendre les véritables enjeux financiers de l'export agricole.",
+    rating: 5,
   },
 ];
 

@@ -177,7 +177,7 @@ export default function AdminDashboardPage() {
       {/* Chronogramme */}
       <section className="mt-6">
         <div className="flex items-center justify-between rounded-2xl border border-black/5 bg-white px-6 py-4 shadow-sm">
-          <h2 className="font-bold text-brand-navy">Chronogramme – Vue d'ensemble</h2>
+          <h2 className="font-bold text-brand-navy">Chronogramme &ndash; Vue d&apos;ensemble</h2>
           <Link
             href={ROUTES.admin.events}
             className="text-sm font-semibold text-brand-gold hover:underline"

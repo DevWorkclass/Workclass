@@ -44,6 +44,7 @@
     "qrcode": "^1.5.4",
     "swagger-ui-express": "^5.0.1",
     "tsx": "^4.19.1",
+    "ws": "^8.21.0",
     "zod": "^3.23.8"
   },
   "devDependencies": {
@@ -58,6 +59,7 @@
     "@types/qrcode": "^1.5.5",
     "@types/supertest": "^6.0.2",
     "@types/swagger-ui-express": "^4.1.8",
+    "@types/ws": "^8.18.1",
     "@typescript-eslint/eslint-plugin": "^8.8.0",
     "@typescript-eslint/parser": "^8.8.0",
     "eslint": "^9.12.0",

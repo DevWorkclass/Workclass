@@ -1,15 +1,23 @@
-/**
- * Tableau de bord admin — vue d'ensemble temps réel (données mock).
- */
-import { Badge } from '@/components/admin/Badge';
+import Link from 'next/link';
+
 import { PageHeader } from '@/components/admin/PageHeader';
+import { RecentBookingsTable } from '@/components/admin/RecentBookingsTable';
 import { StatCard } from '@/components/admin/StatCard';
 import { Button } from '@/components/ui/button';
-import { ADMIN_BOOKINGS, ADMIN_DASHBOARD } from '@/data/adminMockData';
-import { formatAmount } from '@/lib/formatters';
+import { ROUTES } from '@/constants/routes';
+import { ADMIN_ACTIVITY, ADMIN_BOOKINGS, ADMIN_DASHBOARD } from '@/data/adminMockData';
+import type { ActivityColor } from '@/data/adminMockData';
+import { cn } from '@/lib/utils';
 
 const WEEKS = ['S1', 'S2', 'S3', 'S4', 'S5', 'S6'];
 const WEEK_VALUES = [18, 24, 31, 27, 22, 5];
+
+const ACTIVITY_BG: Record<ActivityColor, string> = {
+  navy: 'bg-brand-navy',
+  success: 'bg-semantic-success',
+  purple: 'bg-purple-500',
+  warning: 'bg-semantic-warning',
+};
 
 export default function AdminDashboardPage() {
   const { ticketSplit } = ADMIN_DASHBOARD;
@@ -30,12 +38,13 @@ export default function AdminDashboardPage() {
               Exporter PDF
             </Button>
             <Button variant="gold" size="sm">
-              Inscription manuelle
+              + Inscription manuelle
             </Button>
           </>
         }
       />
 
+      {/* KPI cards */}
       <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard
           label="Réservations totales"
@@ -63,7 +72,9 @@ export default function AdminDashboardPage() {
         />
       </section>
 
+      {/* Charts */}
       <section className="mt-6 grid gap-6 lg:grid-cols-2">
+        {/* Bar chart */}
         <div className="rounded-2xl border border-black/5 bg-white p-6 shadow-sm">
           <h2 className="font-bold text-brand-navy">Réservations par semaine</h2>
           <p className="text-sm text-brand-muted">6 dernières semaines — Summit 2026</p>
@@ -80,12 +91,13 @@ export default function AdminDashboardPage() {
           </div>
         </div>
 
+        {/* Donut chart */}
         <div className="rounded-2xl border border-black/5 bg-white p-6 shadow-sm">
           <h2 className="font-bold text-brand-navy">Répartition des billets</h2>
           <p className="text-sm text-brand-muted">Standard vs VIP Premium</p>
           <div className="mt-6 flex items-center gap-8">
             <div
-              className="relative grid size-32 place-items-center rounded-full"
+              className="relative grid size-32 shrink-0 place-items-center rounded-full"
               style={{
                 background: `conic-gradient(#C8A84B 0 ${stdEnd}%, #3B82F6 ${stdEnd}% ${vipEnd}%, #E5E7EB ${vipEnd}% 100%)`,
               }}
@@ -97,17 +109,17 @@ export default function AdminDashboardPage() {
             <ul className="space-y-3 text-sm">
               <li className="flex items-center gap-2">
                 <span className="size-3 rounded-full bg-brand-gold" />
-                Standard
+                <span className="text-brand-muted">Standard</span>
                 <span className="ml-auto font-bold text-brand-navy">{standard}</span>
               </li>
               <li className="flex items-center gap-2">
                 <span className="size-3 rounded-full bg-semantic-info" />
-                VIP Premium
+                <span className="text-brand-muted">VIP Premium</span>
                 <span className="ml-auto font-bold text-brand-navy">{vip}</span>
               </li>
               <li className="flex items-center gap-2">
                 <span className="size-3 rounded-full bg-gray-200" />
-                Disponibles
+                <span className="text-brand-muted">Disponibles</span>
                 <span className="ml-auto font-bold text-brand-navy">{available}</span>
               </li>
             </ul>
@@ -115,42 +127,63 @@ export default function AdminDashboardPage() {
         </div>
       </section>
 
-      <section className="mt-6 rounded-2xl border border-black/5 bg-white p-6 shadow-sm">
-        <h2 className="font-bold text-brand-navy">Dernières réservations</h2>
-        <div className="mt-4 overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="text-left text-xs uppercase tracking-wider text-brand-muted">
-                <th className="pb-3 font-semibold">Participant</th>
-                <th className="pb-3 font-semibold">Billet</th>
-                <th className="pb-3 font-semibold">Montant</th>
-                <th className="pb-3 font-semibold">Statut</th>
-              </tr>
-            </thead>
-            <tbody>
-              {ADMIN_BOOKINGS.map((b) => (
-                <tr key={b.reference} className="border-t border-black/5">
-                  <td className="py-3">
-                    <p className="font-semibold text-brand-navy">{b.participant}</p>
-                    <p className="text-xs text-brand-muted">{b.date}</p>
-                  </td>
-                  <td className="py-3 text-brand-navy">{b.ticket}</td>
-                  <td className="py-3 font-semibold text-brand-gold">{formatAmount(b.amount)}</td>
-                  <td className="py-3">
-                    {b.status === 'confirmed' ? (
-                      <Badge tone="success" dot>
-                        Confirmé
-                      </Badge>
-                    ) : (
-                      <Badge tone="warning" dot>
-                        En attente
-                      </Badge>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+      {/* Recent bookings + Activity feed */}
+      <section className="mt-6 grid gap-6 lg:grid-cols-5">
+        {/* Table — 3 / 5 cols */}
+        <div className="rounded-2xl border border-black/5 bg-white p-6 shadow-sm lg:col-span-3">
+          <RecentBookingsTable bookings={ADMIN_BOOKINGS} />
+        </div>
+
+        {/* Activity feed — 2 / 5 cols */}
+        <div className="rounded-2xl border border-black/5 bg-white p-6 shadow-sm lg:col-span-2">
+          <div className="mb-4 flex items-center justify-between">
+            <h2 className="font-bold text-brand-navy">Activité récente</h2>
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-semantic-success/10 px-2.5 py-0.5 text-xs font-semibold text-semantic-success">
+              <span className="size-1.5 animate-pulse rounded-full bg-semantic-success" aria-hidden />
+              Live
+            </span>
+          </div>
+
+          <ul className="space-y-4">
+            {ADMIN_ACTIVITY.map((item) => (
+              <li key={item.id} className="flex items-start gap-3">
+                <span
+                  className={cn(
+                    'flex size-8 shrink-0 items-center justify-center rounded-full text-xs font-bold text-white',
+                    ACTIVITY_BG[item.color],
+                  )}
+                  aria-hidden
+                >
+                  {item.initial}
+                </span>
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-semibold text-brand-navy">{item.title}</p>
+                  <p className="truncate text-xs text-brand-muted">{item.detail}</p>
+                </div>
+                <span className="shrink-0 text-xs text-brand-muted">{item.ago}</span>
+              </li>
+            ))}
+          </ul>
+
+          <Link
+            href={ROUTES.admin.bookings}
+            className="mt-5 block text-center text-xs font-semibold text-brand-gold hover:underline"
+          >
+            Voir tout →
+          </Link>
+        </div>
+      </section>
+
+      {/* Chronogramme */}
+      <section className="mt-6">
+        <div className="flex items-center justify-between rounded-2xl border border-black/5 bg-white px-6 py-4 shadow-sm">
+          <h2 className="font-bold text-brand-navy">Chronogramme – Vue d'ensemble</h2>
+          <Link
+            href={ROUTES.admin.events}
+            className="text-sm font-semibold text-brand-gold hover:underline"
+          >
+            Voir détail →
+          </Link>
         </div>
       </section>
     </>

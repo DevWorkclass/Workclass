@@ -18,7 +18,7 @@ const NAV_LINKS = [
   { href: '#chronogramme', label: 'Chronogramme' },
   { href: '#intervenants', label: 'Intervenants' },
   { href: '#faq', label: 'FAQ' },
-  { href: '/reservation', label: 'Admin' },
+  { href: '/admin/dashboard', label: 'Admin' },
 ] as const;
 
 export function Header() {

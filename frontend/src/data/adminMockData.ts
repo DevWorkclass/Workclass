@@ -284,6 +284,60 @@ export const ADMIN_SETTINGS: AdminSettings = {
   loginJournal: true,
 };
 
+export type ActivityColor = 'navy' | 'success' | 'purple' | 'warning';
+
+export interface AdminActivityItem {
+  id: string;
+  initial: string;
+  color: ActivityColor;
+  title: string;
+  detail: string;
+  ago: string;
+}
+
+export const ADMIN_ACTIVITY: AdminActivityItem[] = [
+  {
+    id: 'act-1',
+    initial: 'N',
+    color: 'navy',
+    title: 'Nouvelle réservation',
+    detail: 'VIP Premium · Georges Ela',
+    ago: 'il y a 5 min',
+  },
+  {
+    id: 'act-2',
+    initial: 'P',
+    color: 'success',
+    title: 'Paiement validé',
+    detail: '35 000 FCFA · J.-B. Ndong',
+    ago: 'il y a 8 min',
+  },
+  {
+    id: 'act-3',
+    initial: 'A',
+    color: 'purple',
+    title: 'Attentes soumises',
+    detail: 'Marie-Ange Obiang',
+    ago: 'il y a 9 min',
+  },
+  {
+    id: 'act-4',
+    initial: 'P',
+    color: 'warning',
+    title: 'Paiement en attente',
+    detail: '75 000 FCFA · P. Lekogo',
+    ago: 'il y a 42 min',
+  },
+  {
+    id: 'act-5',
+    initial: 'N',
+    color: 'navy',
+    title: 'Nouvelle réservation',
+    detail: 'Standard · Carole Dekale',
+    ago: 'il y a 1 h',
+  },
+];
+
 export const ADMIN_DASHBOARD = {
   totalBookings: 127,
   bookingsDelta: '+14 cette semaine',

@@ -13,11 +13,15 @@ import type { BookingInput } from '../types/booking.types';
 import { ValidationError, NotFoundError } from '../../shared/errors/types/error.types';
 import { logAudit } from '../../shared/audit/services/audit.service';
 import { generateSecureToken } from '../../../utils/crypto';
+import { TicketGeneratorService } from '../../tickets/services/ticket-generator.service';
+import { EmailService } from '../../notifications/services/email.service';
 
 const REFERENCE_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 
 export class BookingService {
   private readonly repository = new BookingRepository();
+  private readonly ticketGenerator = new TicketGeneratorService();
+  private readonly emailService = new EmailService();
 
   /**
    * Crée une réservation (publique).
@@ -77,9 +81,6 @@ export class BookingService {
     return booking;
   }
 
-  /**
-   * Valide une réservation (admin).
-   */
   async validateBooking(id: string, adminId: string) {
     const booking = await this.repository.findById(id);
     if (!booking) throw new NotFoundError('Reservation');
@@ -87,6 +88,24 @@ export class BookingService {
       throw new ValidationError('Reservation non validable');
     }
     const updated = await this.repository.updateStatus(id, 'confirmed');
+
+    try {
+      // Génération du billet
+      const { ticketNumber, pdfUrl } = await this.ticketGenerator.generateTicket(id);
+
+      // Envoi de l'email
+      if (updated.participant) {
+        await this.emailService.sendTicketConfirmation(
+          updated.participant.email,
+          ticketNumber,
+          pdfUrl
+        );
+      }
+    } catch (err) {
+      // Si la génération échoue (ex: billet déjà généré), on continue sans bloquer la validation
+      console.error('Erreur generation/envoi billet:', err);
+    }
+
     await logAudit({
       action: 'BOOKING_VALIDATED',
       userId: adminId,

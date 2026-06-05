@@ -1,10 +1,10 @@
 /**
  * Service email.
- * Mode dev / sans `RESEND_API_KEY` : simulation via logs (pas d'envoi réseau).
- * Mode prod : envoi via Resend SDK (import dynamique pour éviter le coût en dev).
+ * Mode prod : envoi via Nodemailer avec Google SMTP.
  */
 
 import { logger } from '../../../utils/logger';
+import nodemailer from 'nodemailer';
 
 interface EmailAttachment {
   filename: string;
@@ -24,12 +24,27 @@ const EMAIL_FROM =
   'no-reply@workclass-gabon.com';
 
 export class EmailService {
+  private transporter: nodemailer.Transporter | null = null;
+
+  constructor() {
+    if (process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS) {
+      this.transporter = nodemailer.createTransport({
+        host: process.env.SMTP_HOST,
+        port: parseInt(process.env.SMTP_PORT || '465', 10),
+        secure: process.env.SMTP_PORT === '465', // true for 465, false for other ports
+        auth: {
+          user: process.env.SMTP_USER,
+          pass: process.env.SMTP_PASS,
+        },
+      });
+    }
+  }
+
   /**
-   * Envoi générique. Simulé en dev ou si `RESEND_API_KEY` absent.
+   * Envoi générique. Simulé si les variables SMTP sont absentes.
    */
   async send(data: EmailData): Promise<void> {
-    const isDev = process.env.NODE_ENV === 'development';
-    if (isDev || !process.env.RESEND_API_KEY) {
+    if (!this.transporter) {
       logger.info(
         {
           channel: 'email',
@@ -38,22 +53,20 @@ export class EmailService {
           subject: data.subject,
           attachments: data.attachments?.map((a) => a.filename) ?? [],
         },
-        '[email] simulation (RESEND_API_KEY absent ou dev)',
+        '[email] simulation (variables SMTP absentes)',
       );
       return;
     }
 
     try {
-      const { Resend } = await import('resend');
-      const resend = new Resend(process.env.RESEND_API_KEY);
-      await resend.emails.send({
+      await this.transporter.sendMail({
         from: EMAIL_FROM,
         to: data.to,
         subject: data.subject,
         html: data.html,
         attachments: data.attachments,
       });
-      logger.info({ to: data.to }, 'Email envoye');
+      logger.info({ to: data.to }, 'Email envoye avec succes');
     } catch (error) {
       logger.error({ err: error }, 'Erreur envoi email');
       throw error;

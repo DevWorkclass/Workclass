@@ -17,7 +17,7 @@ export function MobileScrollCarousel({ count, children, className }: MobileScrol
   // Refs stables — évitent les dépendances cycliques dans les effets.
   const activeRef = useRef(0);
   const pauseRef = useRef(false);
-  const pauseTimerRef = useRef<ReturnType<typeof setTimeout>>();
+  const pauseTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   // Empêche que le scroll programmatique déclenche la pause.
   const isProgrammaticRef = useRef(false);
 

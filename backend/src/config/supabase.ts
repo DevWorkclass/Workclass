@@ -18,7 +18,7 @@ export function getSupabaseServiceClient(): SupabaseClient {
   cached = createClient(env.SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY, {
     auth: { autoRefreshToken: false, persistSession: false },
     realtime: {
-      transport: WebSocket
+      transport: WebSocket as any
     }
   });
   return cached;

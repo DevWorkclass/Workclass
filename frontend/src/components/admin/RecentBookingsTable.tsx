@@ -26,7 +26,7 @@ export function RecentBookingsTable({ bookings }: { bookings: AdminBookingRow[] 
         <h2 className="font-bold text-brand-navy">Dernières réservations</h2>
         <div className="flex items-center gap-3">
           <div className="relative">
-            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-brand-muted" />
+            <Search className="absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-brand-muted" />
             <input
               value={query}
               onChange={(e) => setQuery(e.target.value)}

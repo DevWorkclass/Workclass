@@ -12,6 +12,8 @@ interface CountdownProps {
   /** Date cible (début événement). */
   target: Date;
   className?: string;
+  /** Variant de couleur selon le fond de la section parente. */
+  variant?: 'light' | 'dark';
 }
 
 interface Remaining {
@@ -39,7 +41,7 @@ const CELLS: Array<{ key: keyof Omit<Remaining, 'done'>; label: string }> = [
   { key: 'seconds', label: 'Sec' },
 ];
 
-export function Countdown({ target, className }: CountdownProps) {
+export function Countdown({ target, className, variant = 'light' }: CountdownProps) {
   // null au premier rendu serveur → évite le mismatch d'hydratation.
   const [remaining, setRemaining] = useState<Remaining | null>(null);
 
@@ -54,12 +56,25 @@ export function Countdown({ target, className }: CountdownProps) {
       {CELLS.map(({ key, label }) => (
         <div
           key={key}
-          className="flex flex-col items-center rounded-xl bg-brand-navy/5 px-2 py-3"
+          className={cn(
+            'flex flex-col items-center rounded-xl px-2 py-3',
+            variant === 'dark' ? 'bg-white/10' : 'bg-brand-navy/5',
+          )}
         >
-          <span className="text-2xl font-bold tabular-nums text-brand-navy">
+          <span
+            className={cn(
+              'text-2xl font-bold tabular-nums',
+              variant === 'dark' ? 'text-white' : 'text-brand-navy',
+            )}
+          >
             {remaining ? String(remaining[key]).padStart(2, '0') : '--'}
           </span>
-          <span className="mt-1 text-[0.65rem] font-medium uppercase tracking-wide text-brand-muted">
+          <span
+            className={cn(
+              'mt-1 text-[0.65rem] font-medium uppercase tracking-wide',
+              variant === 'dark' ? 'text-white/50' : 'text-brand-muted',
+            )}
+          >
             {label}
           </span>
         </div>

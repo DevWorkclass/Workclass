@@ -4,7 +4,6 @@
  */
 
 import { logger } from '../../../utils/logger';
-import nodemailer from 'nodemailer';
 import { google } from 'googleapis';
 // @ts-ignore - lib interne
 import MailComposer from 'nodemailer/lib/mail-composer';

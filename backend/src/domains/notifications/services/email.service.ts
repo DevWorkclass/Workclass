@@ -5,6 +5,9 @@
 
 import { logger } from '../../../utils/logger';
 import nodemailer from 'nodemailer';
+import { google } from 'googleapis';
+// @ts-ignore - lib interne
+import MailComposer from 'nodemailer/lib/mail-composer';
 
 interface EmailAttachment {
   filename: string;
@@ -24,7 +27,8 @@ const EMAIL_FROM =
   'no-reply@workclass-gabon.com';
 
 export class EmailService {
-  private transporter: nodemailer.Transporter | null = null;
+  private isConfigured = false;
+  private oauth2Client: any = null;
 
   constructor() {
     if (
@@ -33,24 +37,23 @@ export class EmailService {
       process.env.GMAIL_CLIENT_SECRET &&
       process.env.GMAIL_REFRESH_TOKEN
     ) {
-      this.transporter = nodemailer.createTransport({
-        service: 'gmail',
-        auth: {
-          type: 'OAuth2',
-          user: process.env.SMTP_USER,
-          clientId: process.env.GMAIL_CLIENT_ID,
-          clientSecret: process.env.GMAIL_CLIENT_SECRET,
-          refreshToken: process.env.GMAIL_REFRESH_TOKEN,
-        },
+      this.isConfigured = true;
+      this.oauth2Client = new google.auth.OAuth2(
+        process.env.GMAIL_CLIENT_ID,
+        process.env.GMAIL_CLIENT_SECRET,
+        'https://developers.google.com/oauthplayground'
+      );
+      this.oauth2Client.setCredentials({
+        refresh_token: process.env.GMAIL_REFRESH_TOKEN,
       });
     }
   }
 
   /**
-   * Envoi générique. Simulé si les variables SMTP sont absentes.
+   * Envoi générique via HTTPS (Google API)
    */
   async send(data: EmailData): Promise<void> {
-    if (!this.transporter) {
+    if (!this.isConfigured) {
       logger.info(
         {
           channel: 'email',
@@ -59,20 +62,36 @@ export class EmailService {
           subject: data.subject,
           attachments: data.attachments?.map((a) => a.filename) ?? [],
         },
-        '[email] simulation (variables SMTP absentes)',
+        '[email] simulation (variables OAuth2 absentes)',
       );
       return;
     }
 
     try {
-      await this.transporter.sendMail({
+      const mailOptions = {
         from: EMAIL_FROM,
         to: data.to,
         subject: data.subject,
         html: data.html,
         attachments: data.attachments,
+      };
+
+      const mail = new MailComposer(mailOptions);
+      const messageBuffer = await mail.compile().build();
+      const raw = messageBuffer.toString('base64')
+        .replace(/\+/g, '-')
+        .replace(/\//g, '_')
+        .replace(/=+$/, '');
+
+      const gmail = google.gmail({ version: 'v1', auth: this.oauth2Client });
+      await gmail.users.messages.send({
+        userId: 'me',
+        requestBody: {
+          raw: raw,
+        },
       });
-      logger.info({ to: data.to }, 'Email envoye avec succes');
+
+      logger.info({ to: data.to }, 'Email envoye avec succes (via Gmail API)');
     } catch (error) {
       logger.error({ err: error }, 'Erreur envoi email');
       throw error;

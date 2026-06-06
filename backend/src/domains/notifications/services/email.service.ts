@@ -27,17 +27,22 @@ export class EmailService {
   private transporter: nodemailer.Transporter | null = null;
 
   constructor() {
-    if (process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS) {
+    if (
+      process.env.SMTP_USER &&
+      process.env.GMAIL_CLIENT_ID &&
+      process.env.GMAIL_CLIENT_SECRET &&
+      process.env.GMAIL_REFRESH_TOKEN
+    ) {
       this.transporter = nodemailer.createTransport({
-        host: process.env.SMTP_HOST,
-        port: parseInt(process.env.SMTP_PORT || '465', 10),
-        secure: process.env.SMTP_PORT === '465', // true for 465, false for other ports
+        service: 'gmail',
         auth: {
+          type: 'OAuth2',
           user: process.env.SMTP_USER,
-          pass: process.env.SMTP_PASS,
+          clientId: process.env.GMAIL_CLIENT_ID,
+          clientSecret: process.env.GMAIL_CLIENT_SECRET,
+          refreshToken: process.env.GMAIL_REFRESH_TOKEN,
         },
-        family: 4, // Force IPv4 to prevent ENETUNREACH (IPv6 issues on Render)
-      } as nodemailer.TransportOptions);
+      });
     }
   }
 

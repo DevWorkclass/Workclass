@@ -20,6 +20,7 @@ import { EmptyState } from '@/components/shared/EmptyState';
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner';
 import { ROUTES } from '@/constants/routes';
 import type { Permission, PermissionCatalogItem } from '@/constants/permissions';
+import { PermissionGuard } from '@/components/admin/PermissionGuard';
 import { ApiError, apiAuth } from '@/lib/api';
 
 interface AdminUser {
@@ -63,6 +64,14 @@ function formatLastLogin(iso: string | null): string {
 }
 
 export default function AdminUsersPage() {
+  return (
+    <PermissionGuard permission="users:manage">
+      <UsersContent />
+    </PermissionGuard>
+  );
+}
+
+function UsersContent() {
   const router = useRouter();
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [catalog, setCatalog] = useState<PermissionCatalogItem[]>([]);

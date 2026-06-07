@@ -23,7 +23,9 @@ import { usePathname, useRouter } from 'next/navigation';
 import type { LucideIcon } from 'lucide-react';
 
 import { ROUTES } from '@/constants/routes';
-import { clearSession } from '@/lib/auth';
+import { ROUTE_PERMISSIONS } from '@/constants/permissions';
+import { clearSession, hasPermission } from '@/lib/auth';
+import { useAuthUser } from '@/domains/shared/auth/hooks/useAuthUser';
 import { cn } from '@/lib/utils';
 
 interface NavItem {
@@ -67,6 +69,17 @@ const SECTIONS: NavSection[] = [
 export function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
+  const { user } = useAuthUser();
+
+  // N'affiche que les entrées autorisées par les permissions du compte.
+  // super_admin voit tout (cf. hasPermission). Tant que la session n'est pas lue,
+  // `user` est null → on masque les entrées à permission (évite un flash).
+  const sections = SECTIONS.map((section) => ({
+    ...section,
+    items: section.items.filter((item) =>
+      hasPermission(user, ROUTE_PERMISSIONS[item.href] ?? null),
+    ),
+  })).filter((section) => section.items.length > 0);
 
   function handleLogout() {
     clearSession();
@@ -87,7 +100,7 @@ export function Sidebar() {
 
       {/* Navigation */}
       <nav className="flex-1 space-y-7 overflow-y-auto px-4 py-6">
-        {SECTIONS.map((section) => (
+        {sections.map((section) => (
           <div key={section.title}>
             <p className="px-3 text-xs font-semibold uppercase tracking-wider text-white/40">
               {section.title}

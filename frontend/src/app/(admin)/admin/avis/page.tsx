@@ -8,6 +8,7 @@ import { useMemo, useState } from 'react';
 import { PageHeader } from '@/components/admin/PageHeader';
 import { StatCard } from '@/components/admin/StatCard';
 import { Button } from '@/components/ui/button';
+import { PermissionGuard } from '@/components/admin/PermissionGuard';
 import { ADMIN_REVIEWS } from '@/data/adminMockData';
 
 function Stars({ rating }: { rating: number }) {
@@ -20,6 +21,14 @@ function Stars({ rating }: { rating: number }) {
 }
 
 export default function AdminFeedbackPage() {
+  return (
+    <PermissionGuard permission="feedback:read">
+      <FeedbackContent />
+    </PermissionGuard>
+  );
+}
+
+function FeedbackContent() {
   const [query, setQuery] = useState('');
 
   const rows = useMemo(() => {

@@ -45,3 +45,20 @@ export function clearSession(): void {
   if (typeof window === 'undefined') return;
   window.localStorage.removeItem(STORAGE_KEY);
 }
+
+/**
+ * Vérifie qu'un compte possède une permission.
+ *  - `super_admin` : possède TOUTES les permissions (implicite).
+ *  - `admin` : uniquement les permissions explicitement attribuées.
+ * `null` (route sans permission requise) → tout admin authentifié passe.
+ * Aligné avec le backend (`requirePermission`).
+ */
+export function hasPermission(
+  user: AdminUser | null,
+  permission: string | null,
+): boolean {
+  if (!user) return false;
+  if (user.role === 'super_admin') return true;
+  if (permission === null) return true;
+  return user.permissions.includes(permission);
+}

@@ -26,3 +26,22 @@ export interface PermissionCatalogItem {
   key: Permission;
   label: string;
 }
+
+/**
+ * Permission requise pour accéder à chaque page admin.
+ * `null` = page générale accessible à tout admin authentifié.
+ * `super_admin` contourne tout (cf. `hasPermission`).
+ * Clé = chemin de `ROUTES.admin.*`.
+ */
+export const ROUTE_PERMISSIONS: Record<string, Permission | null> = {
+  '/admin/dashboard': null,
+  '/admin/evenements': null,
+  '/admin/reservations': 'bookings:read',
+  '/admin/participants': 'bookings:read',
+  '/admin/scan': 'scan',
+  '/admin/avis': 'feedback:read',
+  '/admin/publicites': null,
+  '/admin/certificats': 'tickets:generate',
+  '/admin/utilisateurs': 'users:manage',
+  '/admin/parametres': null,
+};

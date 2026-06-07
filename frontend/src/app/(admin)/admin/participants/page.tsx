@@ -9,9 +9,18 @@ import { Badge } from '@/components/admin/Badge';
 import { PageHeader } from '@/components/admin/PageHeader';
 import { StatCard } from '@/components/admin/StatCard';
 import { Button } from '@/components/ui/button';
+import { PermissionGuard } from '@/components/admin/PermissionGuard';
 import { ADMIN_PARTICIPANTS } from '@/data/adminMockData';
 
 export default function AdminParticipantsPage() {
+  return (
+    <PermissionGuard permission="bookings:read">
+      <ParticipantsContent />
+    </PermissionGuard>
+  );
+}
+
+function ParticipantsContent() {
   const [query, setQuery] = useState('');
 
   const rows = useMemo(() => {

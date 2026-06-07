@@ -11,6 +11,7 @@ import { Badge } from '@/components/admin/Badge';
 import { PageHeader } from '@/components/admin/PageHeader';
 import { StatCard } from '@/components/admin/StatCard';
 import { Button } from '@/components/ui/button';
+import { PermissionGuard } from '@/components/admin/PermissionGuard';
 import { ADMIN_SCAN_RECENT, type AdminScanEntry } from '@/data/adminMockData';
 
 const POOL: AdminScanEntry[] = [
@@ -24,6 +25,14 @@ function nowLabel(): string {
 }
 
 export default function AdminScanPage() {
+  return (
+    <PermissionGuard permission="scan">
+      <ScanContent />
+    </PermissionGuard>
+  );
+}
+
+function ScanContent() {
   const [recent, setRecent] = useState<AdminScanEntry[]>(ADMIN_SCAN_RECENT);
   const [validated, setValidated] = useState(0);
   const [refused, setRefused] = useState(0);

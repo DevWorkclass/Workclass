@@ -9,6 +9,7 @@ import { Badge } from '@/components/admin/Badge';
 import { PageHeader } from '@/components/admin/PageHeader';
 import { StatCard } from '@/components/admin/StatCard';
 import { Button } from '@/components/ui/button';
+import { PermissionGuard } from '@/components/admin/PermissionGuard';
 import { ADMIN_BOOKINGS } from '@/data/adminMockData';
 import { formatPrice } from '@/lib/formatters';
 
@@ -28,6 +29,14 @@ const PAYMENT_BADGE = {
 };
 
 export default function AdminBookingsPage() {
+  return (
+    <PermissionGuard permission="bookings:read">
+      <BookingsContent />
+    </PermissionGuard>
+  );
+}
+
+function BookingsContent() {
   const [query, setQuery] = useState('');
   const [status, setStatus] = useState<StatusFilter>('all');
   const [ticket, setTicket] = useState<TicketFilter>('all');

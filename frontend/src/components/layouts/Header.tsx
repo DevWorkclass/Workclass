@@ -11,14 +11,15 @@ import { useState } from 'react';
 import { Logo } from '@/components/shared/Logo';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { ROUTES } from '@/constants/routes';
 
 const NAV_LINKS = [
-  { href: '/', label: 'Accueil' },
+  { href: ROUTES.public.home, label: 'Accueil' },
   { href: '/#evenement', label: "L'Événement" },
   { href: '/#chronogramme', label: 'Chronogramme' },
   { href: '/#intervenants', label: 'Intervenants' },
   { href: '/#faq', label: 'FAQ' },
-  { href: '/admin/dashboard', label: 'Admin' },
+  { href: ROUTES.admin.login, label: 'Admin' },
 ] as const;
 
 export function Header() {
@@ -30,7 +31,7 @@ export function Header() {
       className="sticky top-0 z-50 border-b border-brand-navy/10 bg-brand-cream/95 backdrop-blur supports-[backdrop-filter]:bg-brand-cream/80"
     >
       <div className="container flex h-16 items-center justify-between">
-        <Link href="/" aria-label="Accueil Work Class Gabon">
+        <Link href={ROUTES.public.home} aria-label="Accueil Work Class Gabon">
           <Logo />
         </Link>
 
@@ -48,7 +49,7 @@ export function Header() {
 
         <div className="hidden lg:block">
           <Button asChild variant="gold" size="sm">
-            <Link href="/reservation">Réserver</Link>
+            <Link href={ROUTES.public.reservation.base}>Réserver</Link>
           </Button>
         </div>
 
@@ -83,7 +84,7 @@ export function Header() {
             </Link>
           ))}
           <Button asChild variant="gold" size="sm" className="mt-2">
-            <Link href="/reservation" onClick={() => setOpen(false)}>
+            <Link href={ROUTES.public.reservation.base} onClick={() => setOpen(false)}>
               Réserver
             </Link>
           </Button>

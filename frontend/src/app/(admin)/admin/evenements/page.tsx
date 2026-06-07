@@ -1,6 +1,7 @@
 /**
  * Admin — Événements. Liste + carte de gestion (données mock).
  */
+import Link from 'next/link';
 import { Badge } from '@/components/admin/Badge';
 import { PageHeader } from '@/components/admin/PageHeader';
 import { Button } from '@/components/ui/button';
@@ -16,9 +17,11 @@ export default function AdminEventsPage() {
         title="Événements"
         subtitle="Créez et gérez vos événements"
         actions={
-          <Button variant="gold" size="sm">
-            + Créer un événement
-          </Button>
+          <Link href="/admin/evenements/nouveau">
+            <Button variant="gold" size="sm">
+              + Créer un événement
+            </Button>
+          </Link>
         }
       />
 
@@ -68,8 +71,8 @@ export default function AdminEventsPage() {
         </article>
 
         {/* Créer un nouvel événement */}
-        <button
-          type="button"
+        <Link
+          href="/admin/evenements/nouveau"
           className="grid min-h-56 place-items-center rounded-2xl border-2 border-dashed border-black/10 bg-white/40 text-center transition-colors hover:border-brand-gold/50 hover:bg-white"
         >
           <span>
@@ -79,7 +82,7 @@ export default function AdminEventsPage() {
             </span>
             <span className="mt-1 block text-sm text-brand-muted">Cliquez pour commencer</span>
           </span>
-        </button>
+        </Link>
       </section>
     </>
   );

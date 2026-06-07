@@ -5,21 +5,23 @@ import Link from 'next/link';
 
 import { Logo } from '@/components/shared/Logo';
 
+import { ROUTES } from '@/constants/routes';
+
 const COLUMNS = [
   {
     title: 'Événement',
     links: [
-      { href: '#evenement', label: "L'Événement" },
-      { href: '#chronogramme', label: 'Chronogramme' },
-      { href: '#intervenants', label: 'Intervenants' },
+      { href: '/#evenement', label: "L'Événement" },
+      { href: '/#chronogramme', label: 'Chronogramme' },
+      { href: '/#intervenants', label: 'Intervenants' },
     ],
   },
   {
     title: 'Réservation',
     links: [
-      { href: '/reservation', label: 'Réserver' },
-      { href: '/participant', label: 'Mon billet' },
-      { href: '#faq', label: 'FAQ' },
+      { href: ROUTES.public.reservation.base, label: 'Réserver' },
+      { href: ROUTES.public.participant.base, label: 'Mon billet' },
+      { href: '/#faq', label: 'FAQ' },
     ],
   },
   {

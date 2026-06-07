@@ -6,6 +6,7 @@ import { usePathname } from 'next/navigation';
 import { useEffect, useState, type ReactNode } from 'react';
 
 import { ROUTES } from '@/constants/routes';
+import { UserMenu } from '@/components/admin/UserMenu';
 import { Sidebar } from './Sidebar';
 
 interface AdminLayoutProps {
@@ -40,19 +41,27 @@ export function AdminLayout({ children }: AdminLayoutProps) {
       ) : null}
 
       <div className="flex min-w-0 flex-1 flex-col">
-        {/* Barre top mobile : hamburger + logo (cachée en ≥ lg) */}
-        <div className="flex h-14 items-center gap-3 border-b border-black/5 bg-white px-4 lg:hidden">
+        {/* Barre top (tous écrans) : hamburger + logo en mobile, profil/déconnexion à droite */}
+        <div className="flex h-14 items-center gap-3 border-b border-black/5 bg-white px-4 sm:px-6 lg:px-10">
           <button
             type="button"
             onClick={() => setOpen(true)}
             aria-label="Ouvrir le menu"
-            className="grid size-9 place-items-center rounded-lg text-brand-navy hover:bg-brand-cream"
+            className="grid size-9 place-items-center rounded-lg text-brand-navy hover:bg-brand-cream lg:hidden"
           >
             <Menu className="size-5" />
           </button>
-          <Link href={ROUTES.admin.dashboard} aria-label="Accueil admin">
+          <Link
+            href={ROUTES.admin.dashboard}
+            aria-label="Accueil admin"
+            className="lg:hidden"
+          >
             <LayoutGrid className="size-6 text-brand-gold" />
           </Link>
+
+          <div className="ml-auto">
+            <UserMenu />
+          </div>
         </div>
 
         <main className="flex-1 overflow-x-hidden px-4 py-6 sm:px-6 sm:py-8 lg:p-10">

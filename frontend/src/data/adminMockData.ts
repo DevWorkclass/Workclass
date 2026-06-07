@@ -6,6 +6,7 @@
 
 export interface AdminBookingRow {
   reference: string;
+  event: string;
   participant: string;
   email: string;
   ticket: 'Standard' | 'VIP Premium';
@@ -57,6 +58,7 @@ export interface AdminScanEntry {
 export const ADMIN_BOOKINGS: AdminBookingRow[] = [
   {
     reference: 'WCG-RES-A1B2C3',
+    event: 'Work Class Gabon 2026',
     participant: 'Marie-Ange Obiang',
     email: 'ma.obiang@stratego.ga',
     ticket: 'VIP Premium',
@@ -67,6 +69,7 @@ export const ADMIN_BOOKINGS: AdminBookingRow[] = [
   },
   {
     reference: 'WCG-RES-D4E5F6',
+    event: 'Work Class Gabon 2026',
     participant: 'Jean-Baptiste Ndong',
     email: 'jb.ndong@gmail.com',
     ticket: 'Standard',
@@ -77,6 +80,7 @@ export const ADMIN_BOOKINGS: AdminBookingRow[] = [
   },
   {
     reference: 'WCG-RES-G7H8J9',
+    event: 'Masterclass Leadership — Port-Gentil',
     participant: 'Patrick Lekogo',
     email: 'p.lekogo@bgfi.ga',
     ticket: 'VIP Premium',
@@ -87,6 +91,7 @@ export const ADMIN_BOOKINGS: AdminBookingRow[] = [
   },
   {
     reference: 'WCG-RES-K1L2M3',
+    event: 'Masterclass Leadership — Port-Gentil',
     participant: 'Sandrine Ella',
     email: 's.ella@seeg.ga',
     ticket: 'Standard',

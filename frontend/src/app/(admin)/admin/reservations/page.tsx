@@ -52,6 +52,17 @@ function BookingsContent() {
     });
   }, [query, status, ticket]);
 
+  // Regroupe les réservations filtrées par événement.
+  const groups = useMemo(() => {
+    const map = new Map<string, typeof rows>();
+    for (const b of rows) {
+      const list = map.get(b.event) ?? [];
+      list.push(b);
+      map.set(b.event, list);
+    }
+    return [...map.entries()].sort((a, b) => a[0].localeCompare(b[0]));
+  }, [rows]);
+
   const counts = {
     confirmed: ADMIN_BOOKINGS.filter((b) => b.status === 'confirmed').length,
     pending: ADMIN_BOOKINGS.filter((b) => b.status === 'pending').length,
@@ -103,73 +114,88 @@ function BookingsContent() {
         <StatCard label="Total" value={ADMIN_BOOKINGS.length} accent="blue" />
       </section>
 
-      <section className="mt-6 rounded-2xl border border-black/5 bg-white p-6 shadow-sm">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <h2 className="font-bold text-brand-navy">Toutes les réservations</h2>
-          <input
-            type="search"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Nom, référence, email…"
-            aria-label="Rechercher une réservation"
-            className="w-64 max-w-full rounded-full border border-black/10 bg-brand-cream px-4 py-2 text-sm text-brand-navy placeholder:text-brand-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-gold"
-          />
-        </div>
+      <div className="mt-6 flex flex-wrap items-center justify-between gap-3">
+        <h2 className="font-bold text-brand-navy">Réservations par événement</h2>
+        <input
+          type="search"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Nom, référence, email…"
+          aria-label="Rechercher une réservation"
+          className="w-64 max-w-full rounded-full border border-black/10 bg-white px-4 py-2 text-sm text-brand-navy placeholder:text-brand-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-gold"
+        />
+      </div>
 
-        <div className="mt-4 overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="text-left text-xs uppercase tracking-wider text-brand-muted">
-                <th className="pb-3 font-semibold">Référence</th>
-                <th className="pb-3 font-semibold">Participant</th>
-                <th className="pb-3 font-semibold">Billet</th>
-                <th className="pb-3 font-semibold">Paiement</th>
-                <th className="pb-3 font-semibold">Date</th>
-                <th className="pb-3 font-semibold">Statut</th>
-                <th className="pb-3 font-semibold">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((b) => (
-                <tr key={b.reference} className="border-t border-black/5">
-                  <td className="py-3 font-mono text-xs text-brand-navy">{b.reference}</td>
-                  <td className="py-3">
-                    <p className="font-semibold text-brand-navy">{b.participant}</p>
-                    <p className="text-xs text-brand-muted">{b.email}</p>
-                  </td>
-                  <td className="py-3 text-brand-navy">
-                    {b.ticket}
-                    <span className="block text-xs text-brand-gold">{formatPrice(b.amount)}</span>
-                  </td>
-                  <td className="py-3">
-                    <Badge tone={PAYMENT_BADGE[b.paymentStatus].tone}>
-                      {PAYMENT_BADGE[b.paymentStatus].label}
-                    </Badge>
-                  </td>
-                  <td className="py-3 text-brand-navy">{b.date}</td>
-                  <td className="py-3">
-                    <Badge tone={STATUS_BADGE[b.status].tone} dot>
-                      {STATUS_BADGE[b.status].label}
-                    </Badge>
-                  </td>
-                  <td className="py-3">
-                    <Button variant="outline" size="sm">
-                      Voir
-                    </Button>
-                  </td>
-                </tr>
-              ))}
-              {rows.length === 0 ? (
-                <tr>
-                  <td colSpan={7} className="py-8 text-center text-brand-muted">
-                    Aucune réservation ne correspond aux filtres.
-                  </td>
-                </tr>
-              ) : null}
-            </tbody>
-          </table>
+      {groups.length === 0 ? (
+        <section className="mt-4 rounded-2xl border border-black/5 bg-white p-8 text-center text-brand-muted shadow-sm">
+          Aucune réservation ne correspond aux filtres.
+        </section>
+      ) : (
+        <div className="mt-4 space-y-6">
+          {groups.map(([eventName, bookings]) => (
+            <section
+              key={eventName}
+              className="rounded-2xl border border-black/5 bg-white p-6 shadow-sm"
+            >
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <h3 className="font-bold text-brand-navy">{eventName}</h3>
+                <Badge tone="info">
+                  {bookings.length} réservation{bookings.length > 1 ? 's' : ''}
+                </Badge>
+              </div>
+
+              <div className="mt-4 overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="text-left text-xs uppercase tracking-wider text-brand-muted">
+                      <th className="pb-3 font-semibold">Référence</th>
+                      <th className="pb-3 font-semibold">Participant</th>
+                      <th className="pb-3 font-semibold">Billet</th>
+                      <th className="pb-3 font-semibold">Paiement</th>
+                      <th className="pb-3 font-semibold">Date</th>
+                      <th className="pb-3 font-semibold">Statut</th>
+                      <th className="pb-3 font-semibold">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {bookings.map((b) => (
+                      <tr key={b.reference} className="border-t border-black/5">
+                        <td className="py-3 font-mono text-xs text-brand-navy">{b.reference}</td>
+                        <td className="py-3">
+                          <p className="font-semibold text-brand-navy">{b.participant}</p>
+                          <p className="text-xs text-brand-muted">{b.email}</p>
+                        </td>
+                        <td className="py-3 text-brand-navy">
+                          {b.ticket}
+                          <span className="block text-xs text-brand-gold">
+                            {formatPrice(b.amount)}
+                          </span>
+                        </td>
+                        <td className="py-3">
+                          <Badge tone={PAYMENT_BADGE[b.paymentStatus].tone}>
+                            {PAYMENT_BADGE[b.paymentStatus].label}
+                          </Badge>
+                        </td>
+                        <td className="py-3 text-brand-navy">{b.date}</td>
+                        <td className="py-3">
+                          <Badge tone={STATUS_BADGE[b.status].tone} dot>
+                            {STATUS_BADGE[b.status].label}
+                          </Badge>
+                        </td>
+                        <td className="py-3">
+                          <Button variant="outline" size="sm">
+                            Voir
+                          </Button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </section>
+          ))}
         </div>
-      </section>
+      )}
     </>
   );
 }

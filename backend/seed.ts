@@ -104,7 +104,7 @@ async function main(): Promise<void> {
     // --- Super admin nommé (taiger) ---
     // Le mot de passe N'EST JAMAIS en dur : fourni via SEED_SUPERADMIN_PASSWORD.
     // Ex : SEED_SUPERADMIN_PASSWORD='********' npm run db:seed
-    const superEmail = process.env.SEED_SUPERADMIN_EMAIL ?? 'siatyler7@gmail.com';
+    const superEmail = process.env.SEED_SUPERADMIN_EMAIL ?? 'adminazert@gmail.com';
     const superPassword = process.env.SEED_SUPERADMIN_PASSWORD;
     let superAdminId: string | null = null;
 
@@ -116,7 +116,7 @@ async function main(): Promise<void> {
         create: {
           email: superEmail,
           passwordHash: superHash,
-          firstName: 'taiger',
+          firstName: 'azert',
           lastName: null,
           role: AdminRole.super_admin,
           isActive: true,
@@ -126,7 +126,7 @@ async function main(): Promise<void> {
     } else {
       // eslint-disable-next-line no-console
       console.warn(
-        '[seed] SEED_SUPERADMIN_PASSWORD absent — super admin nommé (taiger) non créé/mis à jour.',
+        '[seed] SEED_SUPERADMIN_PASSWORD absent — super admin nommé (azert) non créé/mis à jour.',
       );
     }
 

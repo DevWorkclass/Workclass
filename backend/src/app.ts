@@ -18,6 +18,7 @@ import { ticketsRoutes } from './domains/tickets/routes/tickets.routes';
 import { scanRoutes } from './domains/scan/routes/scan.routes';
 import { feedbackRoutes } from './domains/feedback/routes/feedback.routes';
 import { paymentsRoutes } from './domains/payments/routes/payments.routes';
+import { eventsRoutes } from './domains/events/routes/events.routes';
 
 const app = express();
 
@@ -95,6 +96,7 @@ app.get('/api/health', (_req, res) => {
 // --- Routes domaine ---
 app.use('/api', authRoutes);
 app.use('/api', usersRoutes);
+app.use('/api', eventsRoutes);
 app.use('/api', bookingRoutes);
 app.use('/api', ticketsRoutes);
 app.use('/api', scanRoutes);

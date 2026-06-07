@@ -8,12 +8,14 @@ import { ArrowLeft, Eye, EyeOff, Loader2, LogIn } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState, type FormEvent } from 'react';
+import { motion } from 'framer-motion';
 
 import { Logo } from '@/components/shared/Logo';
 import { Button } from '@/components/ui/button';
 import { ROUTES } from '@/constants/routes';
 import { ApiError, apiFetch } from '@/lib/api';
 import { setSession, type AuthSession } from '@/lib/auth';
+import { LoginAnimation } from '@/components/admin/LoginAnimation';
 
 interface LoginResponse {
   success: boolean;
@@ -52,84 +54,126 @@ export default function AdminLoginPage() {
   }
 
   const inputClass =
-    'w-full rounded-lg border border-black/10 bg-brand-cream px-4 py-2.5 text-sm text-brand-navy focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-gold';
+    'w-full rounded-xl border border-black/10 bg-black/5 px-4 py-3 text-sm text-brand-navy placeholder:text-brand-navy/40 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-gold focus-visible:bg-white';
 
   return (
-    <main className="relative grid min-h-screen place-items-center bg-brand-cream px-4 py-12">
-      {/* Lien retour accueil */}
-      <Link
-        href={ROUTES.public.home}
-        className="absolute left-5 top-5 flex items-center gap-1.5 text-sm font-medium text-brand-navy/60 transition-colors hover:text-brand-navy"
-      >
-        <ArrowLeft className="size-4" />
-        Retour à l&apos;accueil
-      </Link>
+    <main className="flex min-h-screen bg-brand-cream">
+      {/* Colonne Gauche: Animation et branding (Desktop uniquement) */}
+      <LoginAnimation />
 
-      <div className="w-full max-w-sm rounded-2xl border border-black/5 bg-white p-8 shadow-lg">
-        <div className="flex justify-center">
-          <Logo />
-        </div>
-        <h1 className="mt-6 text-center text-2xl font-extrabold text-brand-navy">
-          Connexion administrateur
-        </h1>
-        <p className="mt-1 text-center text-sm text-brand-muted">
-          Accès réservé à l&apos;équipe Work Class Gabon.
-        </p>
-
-        <form onSubmit={handleSubmit} className="mt-8 space-y-4" noValidate>
-          <label className="block">
-            <span className="text-xs font-semibold uppercase tracking-wider text-brand-muted">
-              Email
-            </span>
-            <input
-              type="email"
-              autoComplete="email"
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className={`mt-2 ${inputClass}`}
-            />
-          </label>
-
-          <label className="block">
-            <span className="text-xs font-semibold uppercase tracking-wider text-brand-muted">
-              Mot de passe
-            </span>
-            <div className="relative mt-2">
-              <input
-                type={showPassword ? 'text' : 'password'}
-                autoComplete="current-password"
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className={`${inputClass} pr-11`}
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword((v) => !v)}
-                aria-label={showPassword ? 'Masquer le mot de passe' : 'Afficher le mot de passe'}
-                className="absolute inset-y-0 right-0 grid w-11 place-items-center text-brand-muted"
-              >
-                {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
-              </button>
+      {/* Colonne Droite: Formulaire de connexion */}
+      <div className="relative flex w-full flex-col justify-center px-6 py-12 lg:w-[600px] lg:shrink-0 lg:px-16 xl:px-24">
+        {/* Lien retour accueil */}
+        <motion.div
+          initial={{ opacity: 0, x: 20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.5 }}
+          className="absolute left-6 top-6 lg:left-12 lg:top-12"
+        >
+          <Link
+            href={ROUTES.public.home}
+            className="group flex items-center gap-2 text-sm font-medium text-brand-navy/50 transition-colors hover:text-brand-navy"
+          >
+            <div className="flex size-8 items-center justify-center rounded-full bg-black/5 transition-transform group-hover:-translate-x-1 group-hover:bg-black/10">
+              <ArrowLeft className="size-4" />
             </div>
-          </label>
+            <span>Retour à l&apos;accueil</span>
+          </Link>
+        </motion.div>
 
-          {error ? (
-            <p role="alert" className="rounded-lg bg-semantic-error/10 px-3 py-2 text-sm text-semantic-error">
-              {error}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.1 }}
+          className="mx-auto w-full max-w-sm"
+        >
+          <div className="flex justify-center lg:justify-start">
+            <Logo />
+          </div>
+          
+          <div className="mt-10 lg:mt-12">
+            <h1 className="text-3xl font-extrabold tracking-tight text-brand-navy lg:text-4xl">
+              Bon retour.
+            </h1>
+            <p className="mt-2 text-base text-brand-navy/60">
+              Connectez-vous pour accéder à votre espace administrateur.
             </p>
-          ) : null}
+          </div>
 
-          <Button type="submit" variant="navy" size="lg" className="w-full" disabled={loading}>
-            {loading ? (
-              <Loader2 className="size-4 animate-spin" />
-            ) : (
-              <LogIn className="size-4" />
-            )}
-            {loading ? 'Connexion…' : 'Se connecter'}
-          </Button>
-        </form>
+          <form onSubmit={handleSubmit} className="mt-10 space-y-6" noValidate>
+            <div className="space-y-4">
+              <label className="block space-y-2">
+                <span className="text-xs font-bold uppercase tracking-wider text-brand-navy/70">
+                  Adresse Email
+                </span>
+                <input
+                  type="email"
+                  autoComplete="email"
+                  placeholder="admin@workclass.ga"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className={inputClass}
+                />
+              </label>
+
+              <label className="block space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold uppercase tracking-wider text-brand-navy/70">
+                    Mot de passe
+                  </span>
+                  {/* On pourrait ajouter un lien "Mot de passe oublié ?" ici */}
+                </div>
+                <div className="relative">
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    autoComplete="current-password"
+                    placeholder="••••••••"
+                    required
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className={`${inputClass} pr-12`}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword((v) => !v)}
+                    aria-label={showPassword ? 'Masquer le mot de passe' : 'Afficher le mot de passe'}
+                    className="absolute inset-y-0 right-0 flex w-12 items-center justify-center text-brand-navy/40 transition-colors hover:text-brand-navy"
+                  >
+                    {showPassword ? <EyeOff className="size-5" /> : <Eye className="size-5" />}
+                  </button>
+                </div>
+              </label>
+            </div>
+
+            {error ? (
+              <motion.div 
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                className="overflow-hidden"
+              >
+                <p role="alert" className="rounded-xl border border-semantic-error/20 bg-semantic-error/10 px-4 py-3 text-sm font-medium text-semantic-error">
+                  {error}
+                </p>
+              </motion.div>
+            ) : null}
+
+            <Button 
+              type="submit" 
+              variant="navy" 
+              size="lg" 
+              className="group w-full h-12 text-base font-semibold shadow-lg shadow-brand-navy/20 transition-all hover:-translate-y-0.5 hover:shadow-xl hover:shadow-brand-navy/30" 
+              disabled={loading}
+            >
+              {loading ? (
+                <Loader2 className="mr-2 size-5 animate-spin" />
+              ) : (
+                <LogIn className="mr-2 size-5 transition-transform group-hover:scale-110" />
+              )}
+              {loading ? 'Authentification…' : 'Connexion'}
+            </Button>
+          </form>
+        </motion.div>
       </div>
     </main>
   );

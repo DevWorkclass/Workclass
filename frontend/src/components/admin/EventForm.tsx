@@ -53,8 +53,9 @@ export function EventForm() {
 
       router.push('/admin/evenements');
       router.refresh();
-    } catch (err: any) {
-      setError(err.message || "Une erreur est survenue lors de la création de l'événement.");
+    } catch (err) {
+      const e = err as Error;
+      setError(e.message || "Une erreur est survenue lors de la création de l'événement.");
     }
   };
 
@@ -69,7 +70,7 @@ export function EventForm() {
       <div className="grid gap-6 md:grid-cols-2">
         <div className="space-y-2 md:col-span-2">
           <label htmlFor="title" className="block text-sm font-semibold text-brand-navy">
-            Titre de l'événement *
+            Titre de l&apos;événement *
           </label>
           <input
             {...register('title')}
@@ -153,7 +154,7 @@ export function EventForm() {
 
         <div className="space-y-2">
           <label htmlFor="coverImage" className="block text-sm font-semibold text-brand-navy">
-            URL de l'image de couverture (optionnel)
+            URL de l&apos;image de couverture (optionnel)
           </label>
           <input
             {...register('coverImage')}
@@ -176,7 +177,7 @@ export function EventForm() {
           Annuler
         </Button>
         <Button type="submit" variant="gold" disabled={isSubmitting}>
-          {isSubmitting ? 'Création en cours...' : 'Créer l\'événement'}
+          {isSubmitting ? 'Création en cours...' : "Créer l'événement"}
         </Button>
       </div>
     </form>

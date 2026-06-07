@@ -162,7 +162,7 @@ export default function AdminLoginPage() {
               type="submit" 
               variant="navy" 
               size="lg" 
-              className="group w-full h-12 text-base font-semibold shadow-lg shadow-brand-navy/20 transition-all hover:-translate-y-0.5 hover:shadow-xl hover:shadow-brand-navy/30" 
+              className="group h-12 w-full text-base font-semibold shadow-lg shadow-brand-navy/20 transition-all hover:-translate-y-0.5 hover:shadow-xl hover:shadow-brand-navy/30" 
               disabled={loading}
             >
               {loading ? (

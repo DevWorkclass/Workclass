@@ -21,6 +21,7 @@ export const PERMISSIONS = {
   FEEDBACK_MODERATE: 'feedback:moderate',
   PAYMENTS_MANAGE: 'payments:manage',
   USERS_MANAGE: 'users:manage',
+  CONTENT_MANAGE: 'content:manage',
 } as const;
 
 export type Permission = (typeof PERMISSIONS)[keyof typeof PERMISSIONS];
@@ -41,6 +42,7 @@ export const PERMISSION_CATALOG: { key: Permission; label: string }[] = [
   { key: PERMISSIONS.FEEDBACK_MODERATE, label: 'Modérer les avis' },
   { key: PERMISSIONS.PAYMENTS_MANAGE, label: 'Gérer les paiements' },
   { key: PERMISSIONS.USERS_MANAGE, label: 'Gérer les utilisateurs' },
+  { key: PERMISSIONS.CONTENT_MANAGE, label: 'Gérer le contenu du site' },
 ];
 
 /** Vue publique d'un compte admin (jamais de passwordHash). */

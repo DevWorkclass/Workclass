@@ -23,6 +23,8 @@ const envSchema = z.object({
   SUPABASE_URL: z.string().url().optional(),
   SUPABASE_SERVICE_ROLE_KEY: z.string().optional(),
   SUPABASE_STORAGE_BUCKET: z.string().default('documents'),
+  // Bucket PUBLIC pour les images affichées sur le site (domaines, etc.).
+  SUPABASE_PUBLIC_BUCKET: z.string().default('public'),
 
   // --- Seed admin (utilisé par seed.ts) ---
   SEED_ADMIN_PASSWORD: z.string().optional(),

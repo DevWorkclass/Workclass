@@ -14,6 +14,8 @@ export interface Theme {
   icon: 'briefcase' | 'trending-up' | 'lightbulb' | 'rocket' | 'globe';
   title: string;
   description: string;
+  /** Image d'illustration éditable depuis l'admin (sinon dégradé + icône). */
+  imageUrl?: string;
 }
 
 export interface Testimonial {

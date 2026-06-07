@@ -1,8 +1,12 @@
+'use client';
+
 import { ArrowRight, Briefcase, Globe, Lightbulb, Rocket, TrendingUp } from 'lucide-react';
 import Link from 'next/link';
+import { useEffect, useState } from 'react';
 
 import { MobileScrollCarousel } from '@/components/shared/MobileScrollCarousel';
 import { THEMES, type Theme } from '@/data/homepageContent';
+import { apiFetch } from '@/lib/api';
 
 const ICONS: Record<Theme['icon'], typeof Briefcase> = {
   briefcase: Briefcase,
@@ -19,16 +23,25 @@ const CARD_GRADIENTS = [
   'from-[#251500] to-[#b45309]',
 ];
 
-function ThemeCard({ t, index }: { t: (typeof THEMES)[number]; index: number }) {
+function ThemeCard({ t, index }: { t: Theme; index: number }) {
   const Icon = ICONS[t.icon];
   const gradient = CARD_GRADIENTS[index % CARD_GRADIENTS.length];
   return (
     <article className="group relative overflow-hidden rounded-2xl shadow-sm">
-      <div className={`aspect-[3/4] bg-gradient-to-br ${gradient}`}>
-        <div className="flex h-full items-center justify-center opacity-10">
-          <Icon className="size-24 text-white" />
+      {t.imageUrl ? (
+        <div
+          className="aspect-[3/4] bg-cover bg-center"
+          style={{ backgroundImage: `url(${t.imageUrl})` }}
+          role="img"
+          aria-label={t.title}
+        />
+      ) : (
+        <div className={`aspect-[3/4] bg-gradient-to-br ${gradient}`}>
+          <div className="flex h-full items-center justify-center opacity-10">
+            <Icon className="size-24 text-white" />
+          </div>
         </div>
-      </div>
+      )}
       <div className="absolute inset-0 flex flex-col justify-end bg-gradient-to-t from-black/80 via-black/20 to-transparent p-5">
         <span className="mb-1 text-xs font-bold uppercase tracking-widest text-brand-gold">
           Module {String(index + 1).padStart(2, '0')}
@@ -50,6 +63,19 @@ function ThemeCard({ t, index }: { t: (typeof THEMES)[number]; index: number }) 
 }
 
 export function ThemesSection() {
+  // Domaines éditables depuis l'admin ; fallback sur les valeurs statiques.
+  const [themes, setThemes] = useState<Theme[]>(THEMES);
+
+  useEffect(() => {
+    apiFetch<{ data: Theme[] }>('/content/home-themes')
+      .then((res) => {
+        if (Array.isArray(res.data) && res.data.length > 0) setThemes(res.data);
+      })
+      .catch(() => {
+        /* fallback statique déjà en place */
+      });
+  }, []);
+
   return (
     <section className="bg-brand-cream py-16">
       <div className="container">
@@ -74,15 +100,15 @@ export function ThemesSection() {
 
         {/* ── Grille desktop (sm+) ── */}
         <div className="mt-10 hidden gap-5 sm:grid sm:grid-cols-2 lg:grid-cols-4">
-          {THEMES.map((t, i) => (
+          {themes.map((t, i) => (
             <ThemeCard key={t.title} t={t} index={i} />
           ))}
         </div>
       </div>
 
       {/* ── Scroll manuel mobile (< sm) ── */}
-      <MobileScrollCarousel count={THEMES.length} className="mt-8 sm:hidden">
-        {THEMES.map((t, i) => (
+      <MobileScrollCarousel count={themes.length} className="mt-8 sm:hidden">
+        {themes.map((t, i) => (
           <div key={t.title} className="w-52 shrink-0 snap-start">
             <ThemeCard t={t} index={i} />
           </div>

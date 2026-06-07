@@ -17,6 +17,7 @@ export const PERMISSION_KEYS = [
   'feedback:moderate',
   'payments:manage',
   'users:manage',
+  'content:manage',
 ] as const;
 
 export type Permission = (typeof PERMISSION_KEYS)[number];

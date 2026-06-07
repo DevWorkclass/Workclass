@@ -8,6 +8,9 @@ import { useState } from 'react';
 
 import { PageHeader } from '@/components/admin/PageHeader';
 import { Button } from '@/components/ui/button';
+import { DomainesSettings } from '@/components/admin/DomainesSettings';
+import { useAuthUser } from '@/domains/shared/auth/hooks/useAuthUser';
+import { hasPermission } from '@/lib/auth';
 import { ADMIN_SETTINGS } from '@/data/adminMockData';
 
 type Settings = typeof ADMIN_SETTINGS;
@@ -78,6 +81,8 @@ function Card({ title, children }: { title: string; children: React.ReactNode })
 }
 
 export default function AdminSettingsPage() {
+  const { user } = useAuthUser();
+  const canManageContent = hasPermission(user, 'content:manage');
   const [form, setForm] = useState<Settings>(ADMIN_SETTINGS);
 
   const set = <K extends keyof Settings>(key: K, value: Settings[K]) =>
@@ -199,6 +204,8 @@ export default function AdminSettingsPage() {
             />
           </div>
         </Card>
+
+        {canManageContent && <DomainesSettings />}
       </div>
     </>
   );

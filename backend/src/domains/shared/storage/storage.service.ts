@@ -63,3 +63,38 @@ export async function uploadPdf(
   await fs.writeFile(path.join(dir, filename), buffer);
   return `/uploads/${category}/${filename}`;
 }
+
+/**
+ * Téléverse une image dans le bucket PUBLIC et renvoie une URL publique stable
+ * (les images des domaines sont affichées sur le site public, pas d'URL signée).
+ * @param filename nom de fichier (ex. `domaine-1700000000.webp`)
+ * @param contentType type MIME (ex. `image/webp`)
+ */
+export async function uploadImage(
+  filename: string,
+  buffer: Buffer,
+  contentType: string,
+): Promise<string> {
+  const objectPath = `images/${filename}`;
+
+  if (supabaseConfigured()) {
+    const supabase = getSupabaseServiceClient();
+    const bucket = env.SUPABASE_PUBLIC_BUCKET;
+
+    const { error: uploadError } = await supabase.storage
+      .from(bucket)
+      .upload(objectPath, buffer, { contentType, upsert: true });
+    if (uploadError) {
+      throw new Error(`Upload image echoue (${objectPath}): ${uploadError.message}`);
+    }
+
+    const { data } = supabase.storage.from(bucket).getPublicUrl(objectPath);
+    return data.publicUrl;
+  }
+
+  // Fallback dev : disque local servi par express.static (/uploads/*).
+  const dir = path.join(LOCAL_DIR, 'images');
+  await fs.mkdir(dir, { recursive: true });
+  await fs.writeFile(path.join(dir, filename), buffer);
+  return `/uploads/images/${filename}`;
+}

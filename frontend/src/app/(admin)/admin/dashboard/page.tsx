@@ -5,11 +5,46 @@
  * Aucune logique de calcul ici : l'agrégation est faite côté serveur.
  */
 import { useEffect, useState } from 'react';
+import Link from 'next/link';
+import { CalendarPlus, QrCode, Users, FileDown, Award, Star } from 'lucide-react';
 
 import { PageHeader } from '@/components/admin/PageHeader';
 import { StatCard } from '@/components/admin/StatCard';
+import { ROUTES } from '@/constants/routes';
 import { apiAuth, ApiError } from '@/lib/api';
 import { formatPrice } from '@/lib/formatters';
+
+/** Actions rapides du tableau de bord. */
+const QUICK_ACTIONS: { label: string; href: string; icon: typeof QrCode }[] = [
+  { label: 'Créer un événement', href: ROUTES.admin.events + '/nouveau', icon: CalendarPlus },
+  { label: 'Scanner un billet', href: ROUTES.admin.scan, icon: QrCode },
+  { label: 'Réservations', href: ROUTES.admin.bookings, icon: Users },
+  { label: 'Participants', href: ROUTES.admin.participants, icon: FileDown },
+  { label: 'Certificats', href: ROUTES.admin.certificates, icon: Award },
+  { label: 'Avis', href: ROUTES.admin.feedback, icon: Star },
+];
+
+function QuickActions() {
+  return (
+    <section className="mt-6">
+      <h2 className="mb-3 font-bold text-brand-navy">Actions rapides</h2>
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+        {QUICK_ACTIONS.map(({ label, href, icon: Icon }) => (
+          <Link
+            key={href}
+            href={href}
+            className="flex flex-col items-center gap-2 rounded-2xl border border-black/5 bg-white p-4 text-center shadow-sm transition-colors hover:border-brand-gold/50 hover:bg-brand-cream/40"
+          >
+            <span className="grid size-10 place-items-center rounded-full bg-brand-gold/10 text-brand-gold">
+              <Icon className="size-5" aria-hidden />
+            </span>
+            <span className="text-xs font-semibold text-brand-navy">{label}</span>
+          </Link>
+        ))}
+      </div>
+    </section>
+  );
+}
 
 interface KpiSnapshot {
   totals: {
@@ -128,7 +163,9 @@ export default function AdminDashboardPage() {
     <>
       <PageHeader title="Tableau de bord" subtitle="Indicateurs temps réel" />
 
-      {loading && <p className="text-sm text-brand-muted">Chargement des indicateurs…</p>}
+      <QuickActions />
+
+      {loading && <p className="mt-6 text-sm text-brand-muted">Chargement des indicateurs…</p>}
       {error && (
         <p role="alert" className="rounded-md bg-semantic-error/10 p-4 text-sm text-semantic-error">
           {error}

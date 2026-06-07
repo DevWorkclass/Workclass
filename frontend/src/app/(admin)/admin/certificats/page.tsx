@@ -1,12 +1,35 @@
+'use client';
+
 /**
- * Admin — Certificats (génération automatique post-événement). Données mock.
+ * Admin — Certificats. Branché backend.
+ *  - Liste : GET /api/admin/tickets (billets + état certificat + présence scannée)
+ * Le certificat est généré/envoyé automatiquement à la confirmation du scan.
+ * Cette page est en lecture seule (suivi des statuts + liens de téléchargement).
  */
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useRouter } from 'next/navigation';
+
 import { Badge } from '@/components/admin/Badge';
 import { PageHeader } from '@/components/admin/PageHeader';
 import { StatCard } from '@/components/admin/StatCard';
 import { Button } from '@/components/ui/button';
 import { PermissionGuard } from '@/components/admin/PermissionGuard';
-import { ADMIN_CERTIFICATES } from '@/data/adminMockData';
+import { EmptyState } from '@/components/shared/EmptyState';
+import { LoadingSpinner } from '@/components/shared/LoadingSpinner';
+import { ROUTES } from '@/constants/routes';
+import { ApiError, apiAuth } from '@/lib/api';
+
+interface AdminTicket {
+  id: string;
+  ticketNumber: string;
+  scannedAt: string | null;
+  certificateSent: boolean;
+  certificateUrl: string | null;
+  booking: {
+    event: { title: string } | null;
+    participant: { firstName: string; lastName: string } | null;
+  } | null;
+}
 
 export default function AdminCertificatesPage() {
   return (
@@ -17,97 +40,126 @@ export default function AdminCertificatesPage() {
 }
 
 function CertificatesContent() {
+  const router = useRouter();
+  const [tickets, setTickets] = useState<AdminTicket[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleAuthError = useCallback(
+    (err: unknown): boolean => {
+      if (err instanceof ApiError && err.status === 401) {
+        router.replace(ROUTES.admin.login);
+        return true;
+      }
+      return false;
+    },
+    [router],
+  );
+
+  useEffect(() => {
+    let active = true;
+    apiAuth<{ data: AdminTicket[] }>('/admin/tickets?limit=200')
+      .then((res) => active && setTickets(res.data))
+      .catch((err) => {
+        if (active && !handleAuthError(err)) setError('Impossible de charger les certificats.');
+      })
+      .finally(() => active && setLoading(false));
+    return () => {
+      active = false;
+    };
+  }, [handleAuthError]);
+
+  const stats = useMemo(
+    () => ({
+      generated: tickets.filter((t) => t.certificateUrl).length,
+      sent: tickets.filter((t) => t.certificateSent).length,
+      present: tickets.filter((t) => t.scannedAt).length,
+    }),
+    [tickets],
+  );
+
   return (
     <>
-      <PageHeader
-        title="Certificats"
-        subtitle="Génération automatique post-événement"
-        actions={
-          <>
-            <Button variant="outline" size="sm">
-              Aperçu
-            </Button>
-            <Button variant="gold" size="sm">
-              Envoyer à tous
-            </Button>
-          </>
-        }
-      />
+      <PageHeader title="Certificats" subtitle="Suivi post-événement (génération automatique au scan)" />
 
       <section className="grid gap-4 sm:grid-cols-3">
-        <StatCard label="Générés" value={0} hint="Post-événement (16 Juil. +)" accent="gold" />
-        <StatCard label="Envoyés" value={0} hint="Après clôture" accent="green" />
-        <StatCard label="Participants éligibles" value={227} hint="↑ Inscrits confirmés" accent="blue" />
+        <StatCard label="Certificats générés" value={stats.generated} accent="gold" />
+        <StatCard label="Envoyés" value={stats.sent} accent="green" />
+        <StatCard label="Présents (scannés)" value={stats.present} accent="blue" />
       </section>
 
-      {/* Aperçu du certificat */}
-      <section className="mt-6 rounded-2xl border border-black/5 bg-white p-6 shadow-sm">
-        <h2 className="font-bold text-brand-navy">Aperçu du certificat</h2>
-        <div className="mt-6 flex justify-center">
-          <div className="w-full max-w-xl rounded-xl border-2 border-brand-gold/50 bg-gradient-to-br from-brand-gold/10 to-white p-10 text-center">
-            <p className="text-xs font-semibold uppercase tracking-[0.25em] text-brand-muted">
-              Work Class Gabon · certifie que
-            </p>
-            <p className="mt-5 text-3xl font-extrabold text-brand-navy">[Nom du Participant]</p>
-            <p className="mt-3 text-sm text-brand-muted">a participé au</p>
-            <p className="mt-2 text-xl font-bold text-brand-gold">Work Class Summit Gabon 2026</p>
-            <p className="mt-2 text-sm text-brand-muted">
-              15 &amp; 16 Juillet 2026 · Palais des Congrès, Libreville
-            </p>
-            <div className="mt-8 flex justify-between border-t border-brand-gold/20 pt-5 text-sm">
-              <div className="text-left">
-                <p className="text-brand-muted">Signature du Directeur</p>
-              </div>
-              <div className="text-right">
-                <p className="text-brand-muted">Date de délivrance</p>
-                <p className="font-bold text-brand-navy">17 Juillet 2026</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Table statuts */}
-      <section className="mt-6 rounded-2xl border border-black/5 bg-white p-6 shadow-sm">
+      <section className="mt-6 rounded-2xl border border-black/5 bg-white p-4 shadow-sm sm:p-6">
         <h2 className="font-bold text-brand-navy">Participants — Statut certificats</h2>
-        <div className="mt-4 overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="text-left text-xs uppercase tracking-wider text-brand-muted">
-                <th className="pb-3 font-semibold">Participant</th>
-                <th className="pb-3 font-semibold">Billet</th>
-                <th className="pb-3 font-semibold">Présence confirmée</th>
-                <th className="pb-3 font-semibold">Certificat généré</th>
-                <th className="pb-3 font-semibold">Envoyé</th>
-                <th className="pb-3 font-semibold">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {ADMIN_CERTIFICATES.map((c) => (
-                <tr key={c.participant} className="border-t border-black/5">
-                  <td className="py-3 font-semibold text-brand-navy">{c.participant}</td>
-                  <td className="py-3 text-brand-navy">{c.ticket}</td>
-                  <td className="py-3">
-                    <Badge tone={c.presenceConfirmed ? 'success' : 'neutral'}>
-                      {c.presenceConfirmed ? 'Confirmée' : 'À confirmer'}
-                    </Badge>
-                  </td>
-                  <td className="py-3">
-                    <Badge tone={c.generated ? 'success' : 'warning'}>
-                      {c.generated ? 'Généré' : 'En attente'}
-                    </Badge>
-                  </td>
-                  <td className="py-3 text-brand-muted">{c.sent ? '✓' : '—'}</td>
-                  <td className="py-3">
-                    <Button variant="outline" size="sm">
-                      Préparer
-                    </Button>
-                  </td>
+
+        {loading ? (
+          <div className="mt-6">
+            <LoadingSpinner label="Chargement des certificats…" />
+          </div>
+        ) : error ? (
+          <p role="alert" className="mt-4 rounded-md bg-semantic-error/10 p-4 text-sm text-semantic-error">
+            {error}
+          </p>
+        ) : tickets.length === 0 ? (
+          <EmptyState
+            title="Aucun billet"
+            description="Les certificats apparaîtront après génération des billets et scan des entrées."
+          />
+        ) : (
+          <div className="mt-4 overflow-x-auto">
+            <table className="w-full min-w-[640px] text-sm">
+              <thead>
+                <tr className="text-left text-xs uppercase tracking-wider text-brand-muted">
+                  <th className="pb-3 font-semibold">Participant</th>
+                  <th className="hidden pb-3 font-semibold md:table-cell">Billet</th>
+                  <th className="pb-3 font-semibold">Présence</th>
+                  <th className="pb-3 font-semibold">Certificat</th>
+                  <th className="pb-3 text-right font-semibold">Actions</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {tickets.map((t) => {
+                  const name = t.booking?.participant
+                    ? `${t.booking.participant.firstName} ${t.booking.participant.lastName}`
+                    : '—';
+                  return (
+                    <tr key={t.id} className="border-t border-black/5 align-top">
+                      <td className="max-w-[180px] py-3 pr-2">
+                        <p className="truncate font-semibold text-brand-navy">{name}</p>
+                        <p className="truncate text-xs text-brand-muted">
+                          {t.booking?.event?.title ?? ''}
+                        </p>
+                      </td>
+                      <td className="hidden py-3 pr-2 font-mono text-xs text-brand-navy md:table-cell">
+                        {t.ticketNumber}
+                      </td>
+                      <td className="py-3 pr-2">
+                        <Badge tone={t.scannedAt ? 'success' : 'neutral'}>
+                          {t.scannedAt ? 'Confirmée' : 'À confirmer'}
+                        </Badge>
+                      </td>
+                      <td className="py-3 pr-2">
+                        <Badge tone={t.certificateSent ? 'success' : 'warning'}>
+                          {t.certificateSent ? 'Envoyé' : 'En attente'}
+                        </Badge>
+                      </td>
+                      <td className="py-3 text-right">
+                        {t.certificateUrl ? (
+                          <a href={t.certificateUrl} target="_blank" rel="noreferrer">
+                            <Button variant="outline" size="sm">
+                              Télécharger
+                            </Button>
+                          </a>
+                        ) : (
+                          <span className="text-xs text-brand-muted">—</span>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
       </section>
     </>
   );

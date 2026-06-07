@@ -1,15 +1,73 @@
+'use client';
+
 /**
- * Admin — Événements. Liste + carte de gestion (données mock).
+ * Admin — Événements. Branché backend.
+ *  - Liste : GET /api/events (tous les événements, tri par date de création)
  */
+import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Badge } from '@/components/admin/Badge';
+import { useRouter } from 'next/navigation';
+
+import { Badge, type BadgeTone } from '@/components/admin/Badge';
 import { PageHeader } from '@/components/admin/PageHeader';
 import { Button } from '@/components/ui/button';
+import { EmptyState } from '@/components/shared/EmptyState';
+import { LoadingSpinner } from '@/components/shared/LoadingSpinner';
+import { ROUTES } from '@/constants/routes';
+import { ApiError, apiAuth } from '@/lib/api';
+
+interface AdminEvent {
+  id: string;
+  title: string;
+  slug: string;
+  location: string;
+  startDate: string;
+  endDate: string;
+  status: 'draft' | 'published' | 'archived';
+}
+
+const STATUS_BADGE: Record<AdminEvent['status'], { tone: BadgeTone; label: string }> = {
+  published: { tone: 'success', label: 'Publié' },
+  draft: { tone: 'warning', label: 'Brouillon' },
+  archived: { tone: 'neutral', label: 'Archivé' },
+};
+
+function formatRange(start: string, end: string): string {
+  const opts: Intl.DateTimeFormatOptions = { day: '2-digit', month: 'short', year: 'numeric' };
+  const s = new Date(start).toLocaleDateString('fr-FR', opts);
+  const e = new Date(end).toLocaleDateString('fr-FR', opts);
+  return s === e ? s : `${s} → ${e}`;
+}
 
 export default function AdminEventsPage() {
-  const booked = 227;
-  const capacity = 500;
-  const progress = Math.round((booked / capacity) * 100);
+  const router = useRouter();
+  const [events, setEvents] = useState<AdminEvent[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleAuthError = useCallback(
+    (err: unknown): boolean => {
+      if (err instanceof ApiError && err.status === 401) {
+        router.replace(ROUTES.admin.login);
+        return true;
+      }
+      return false;
+    },
+    [router],
+  );
+
+  useEffect(() => {
+    let active = true;
+    apiAuth<{ data: AdminEvent[] }>('/events')
+      .then((res) => active && setEvents(res.data))
+      .catch((err) => {
+        if (active && !handleAuthError(err)) setError('Impossible de charger les événements.');
+      })
+      .finally(() => active && setLoading(false));
+    return () => {
+      active = false;
+    };
+  }, [handleAuthError]);
 
   return (
     <>
@@ -17,7 +75,7 @@ export default function AdminEventsPage() {
         title="Événements"
         subtitle="Créez et gérez vos événements"
         actions={
-          <Link href="/admin/evenements/nouveau">
+          <Link href={`${ROUTES.admin.events}/nouveau`}>
             <Button variant="gold" size="sm">
               + Créer un événement
             </Button>
@@ -25,65 +83,62 @@ export default function AdminEventsPage() {
         }
       />
 
-      <section className="grid gap-6 lg:grid-cols-2">
-        {/* Carte événement */}
-        <article className="overflow-hidden rounded-2xl border border-black/5 bg-white shadow-sm">
-          <div className="relative aspect-[16/7] bg-brand-navy-deep">
-            <span className="absolute right-4 top-4">
-              <Badge tone="success" dot>
-                Actif & Inscriptions ouvertes
-              </Badge>
-            </span>
-          </div>
-          <div className="p-6">
-            <h2 className="text-lg font-bold text-brand-navy">Work Class Summit 2026</h2>
-            <p className="mt-1 text-sm text-brand-muted">
-              15 &amp; 16 Juillet 2026 · Palais des Congrès de Libreville
-            </p>
+      {loading ? (
+        <div className="mt-2">
+          <LoadingSpinner label="Chargement des événements…" />
+        </div>
+      ) : error ? (
+        <p role="alert" className="rounded-md bg-semantic-error/10 p-4 text-sm text-semantic-error">
+          {error}
+        </p>
+      ) : (
+        <section className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
+          {events.map((ev) => (
+            <article
+              key={ev.id}
+              className="flex flex-col overflow-hidden rounded-2xl border border-black/5 bg-white shadow-sm"
+            >
+              <div className="relative aspect-[16/7] bg-brand-navy-deep">
+                <span className="absolute right-4 top-4">
+                  <Badge tone={STATUS_BADGE[ev.status].tone} dot>
+                    {STATUS_BADGE[ev.status].label}
+                  </Badge>
+                </span>
+              </div>
+              <div className="flex flex-1 flex-col p-5">
+                <h2 className="truncate text-lg font-bold text-brand-navy">{ev.title}</h2>
+                <p className="mt-1 text-sm text-brand-muted">{formatRange(ev.startDate, ev.endDate)}</p>
+                <p className="truncate text-sm text-brand-muted">{ev.location}</p>
+                <div className="mt-auto pt-4">
+                  <Link href={`${ROUTES.public.home}${ev.slug}`} target="_blank">
+                    <Button variant="outline" size="sm">
+                      Voir la page
+                    </Button>
+                  </Link>
+                </div>
+              </div>
+            </article>
+          ))}
 
-            <div className="mt-4 flex flex-wrap items-baseline gap-x-6 gap-y-1 text-sm">
-              <span className="font-bold text-brand-navy">
-                {booked} / {capacity}
+          <Link
+            href={`${ROUTES.admin.events}/nouveau`}
+            className="grid min-h-56 place-items-center rounded-2xl border-2 border-dashed border-black/10 bg-white/40 text-center transition-colors hover:border-brand-gold/50 hover:bg-white"
+          >
+            <span>
+              <span className="mx-auto block text-3xl text-brand-muted">+</span>
+              <span className="mt-2 block font-semibold text-brand-navy">
+                Créer un nouvel événement
               </span>
-              <span className="font-bold text-brand-gold">8,4M FCFA</span>
-              <span className="font-bold text-brand-navy">4,8/5</span>
-            </div>
-
-            <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-brand-cream">
-              <div className="h-full rounded-full bg-brand-gold" style={{ width: `${progress}%` }} />
-            </div>
-
-            <div className="mt-5 flex flex-wrap gap-2">
-              <Button variant="outline" size="sm">
-                Modifier
-              </Button>
-              <Button variant="outline" size="sm">
-                Voir la page
-              </Button>
-              <Button variant="outline" size="sm">
-                Stats
-              </Button>
-              <Button variant="ghost" size="sm" className="text-semantic-error">
-                Dépublier
-              </Button>
-            </div>
-          </div>
-        </article>
-
-        {/* Créer un nouvel événement */}
-        <Link
-          href="/admin/evenements/nouveau"
-          className="grid min-h-56 place-items-center rounded-2xl border-2 border-dashed border-black/10 bg-white/40 text-center transition-colors hover:border-brand-gold/50 hover:bg-white"
-        >
-          <span>
-            <span className="mx-auto block text-3xl text-brand-muted">+</span>
-            <span className="mt-2 block font-semibold text-brand-navy">
-              Créer un nouvel événement
             </span>
-            <span className="mt-1 block text-sm text-brand-muted">Cliquez pour commencer</span>
-          </span>
-        </Link>
-      </section>
+          </Link>
+
+          {events.length === 0 && (
+            <div className="sm:col-span-2 xl:col-span-3">
+              <EmptyState title="Aucun événement" description="Commencez par créer votre premier événement." />
+            </div>
+          )}
+        </section>
+      )}
     </>
   );
 }

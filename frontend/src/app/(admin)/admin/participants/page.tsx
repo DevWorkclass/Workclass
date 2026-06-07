@@ -1,17 +1,36 @@
 'use client';
 
 /**
- * Admin — Participants. Liste filtrable + indicateurs (données mock).
+ * Admin — Participants. Branché backend (dérivé des réservations).
+ *  - Liste : GET /api/admin/bookings (chaque réservation porte son participant + quantité)
+ * Le nombre de places = somme des quantités ; les entreprises = participants avec société.
  */
-import { useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useRouter } from 'next/navigation';
 
 import { Badge } from '@/components/admin/Badge';
 import { PageHeader } from '@/components/admin/PageHeader';
 import { StatCard } from '@/components/admin/StatCard';
-import { Button } from '@/components/ui/button';
 import { PermissionGuard } from '@/components/admin/PermissionGuard';
 import { ExportButtons } from '@/components/admin/ExportButtons';
-import { ADMIN_PARTICIPANTS } from '@/data/adminMockData';
+import { EmptyState } from '@/components/shared/EmptyState';
+import { LoadingSpinner } from '@/components/shared/LoadingSpinner';
+import { ROUTES } from '@/constants/routes';
+import { ApiError, apiAuth } from '@/lib/api';
+
+interface AdminBooking {
+  id: string;
+  quantity: number;
+  status: 'pending' | 'confirmed' | 'cancelled';
+  event: { title: string } | null;
+  ticketType: { name: string } | null;
+  participant: {
+    firstName: string;
+    lastName: string;
+    email: string;
+    company: string | null;
+  } | null;
+}
 
 export default function AdminParticipantsPage() {
   return (
@@ -22,36 +41,83 @@ export default function AdminParticipantsPage() {
 }
 
 function ParticipantsContent() {
+  const router = useRouter();
+  const [bookings, setBookings] = useState<AdminBooking[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [query, setQuery] = useState('');
+
+  const handleAuthError = useCallback(
+    (err: unknown): boolean => {
+      if (err instanceof ApiError && err.status === 401) {
+        router.replace(ROUTES.admin.login);
+        return true;
+      }
+      return false;
+    },
+    [router],
+  );
+
+  useEffect(() => {
+    let active = true;
+    apiAuth<{ data: AdminBooking[] }>('/admin/bookings?limit=200')
+      .then((res) => active && setBookings(res.data))
+      .catch((err) => {
+        if (active && !handleAuthError(err)) setError('Impossible de charger les participants.');
+      })
+      .finally(() => active && setLoading(false));
+    return () => {
+      active = false;
+    };
+  }, [handleAuthError]);
+
+  // Un participant par réservation (le titulaire), réservations non annulées.
+  const participants = useMemo(
+    () =>
+      bookings
+        .filter((b) => b.participant && b.status !== 'cancelled')
+        .map((b) => ({
+          id: b.id,
+          name: `${b.participant!.firstName} ${b.participant!.lastName}`,
+          email: b.participant!.email,
+          company: b.participant!.company ?? '',
+          ticket: b.ticketType?.name ?? '—',
+          event: b.event?.title ?? '—',
+          quantity: b.quantity,
+          status: b.status,
+        })),
+    [bookings],
+  );
 
   const rows = useMemo(() => {
     const q = query.trim().toLowerCase();
-    if (!q) return ADMIN_PARTICIPANTS;
-    return ADMIN_PARTICIPANTS.filter((p) =>
+    if (!q) return participants;
+    return participants.filter((p) =>
       [p.name, p.email, p.company].some((v) => v.toLowerCase().includes(q)),
     );
-  }, [query]);
+  }, [participants, query]);
+
+  const stats = useMemo(() => {
+    const seats = participants.reduce((sum, p) => sum + p.quantity, 0);
+    const companies = new Set(participants.filter((p) => p.company).map((p) => p.company)).size;
+    return { total: participants.length, seats, companies };
+  }, [participants]);
 
   return (
     <>
       <PageHeader
         title="Participants"
-        subtitle="227 inscrits au Summit 2026"
+        subtitle={`${stats.seats} place${stats.seats > 1 ? 's' : ''} réservée${stats.seats > 1 ? 's' : ''}`}
         actions={<ExportButtons path="/admin/participants/export" fallbackName="participants" />}
       />
 
       <section className="grid gap-4 sm:grid-cols-3">
-        <StatCard label="Total inscrits" value={227} hint="↑ +14 cette semaine" accent="gold" />
-        <StatCard
-          label="Attentes soumises"
-          value={143}
-          hint="↑ 63% taux de réponse"
-          accent="green"
-        />
-        <StatCard label="Entreprises" value={48} hint="secteurs représentés" accent="blue" />
+        <StatCard label="Inscrits" value={stats.total} accent="gold" />
+        <StatCard label="Places réservées" value={stats.seats} accent="green" />
+        <StatCard label="Entreprises" value={stats.companies} accent="blue" />
       </section>
 
-      <section className="mt-6 rounded-2xl border border-black/5 bg-white p-6 shadow-sm">
+      <section className="mt-6 rounded-2xl border border-black/5 bg-white p-4 shadow-sm sm:p-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <h2 className="font-bold text-brand-navy">Liste des participants</h2>
           <input
@@ -64,62 +130,53 @@ function ParticipantsContent() {
           />
         </div>
 
-        <div className="mt-4 overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="text-left text-xs uppercase tracking-wider text-brand-muted">
-                <th className="pb-3 font-semibold">Participant</th>
-                <th className="pb-3 font-semibold">Entreprise</th>
-                <th className="pb-3 font-semibold">Billet</th>
-                <th className="pb-3 font-semibold">Attentes</th>
-                <th className="pb-3 font-semibold">Statut</th>
-                <th className="pb-3 font-semibold">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((p) => (
-                <tr key={p.email} className="border-t border-black/5">
-                  <td className="py-3">
-                    <p className="font-semibold text-brand-navy">{p.name}</p>
-                    <p className="text-xs text-brand-muted">{p.email}</p>
-                  </td>
-                  <td className="py-3 text-brand-navy">{p.company}</td>
-                  <td className="py-3 text-brand-navy">{p.ticket}</td>
-                  <td className="py-3">
-                    {p.expectationsSubmitted ? (
-                      <Badge tone="success">Soumises ✓</Badge>
-                    ) : (
-                      <Badge tone="neutral">En attente</Badge>
-                    )}
-                  </td>
-                  <td className="py-3">
-                    {p.status === 'confirmed' ? (
-                      <Badge tone="success" dot>
-                        Confirmé
-                      </Badge>
-                    ) : (
-                      <Badge tone="warning" dot>
-                        En attente
-                      </Badge>
-                    )}
-                  </td>
-                  <td className="py-3">
-                    <Button variant="outline" size="sm">
-                      Voir
-                    </Button>
-                  </td>
+        {loading ? (
+          <div className="mt-6">
+            <LoadingSpinner label="Chargement des participants…" />
+          </div>
+        ) : error ? (
+          <p role="alert" className="mt-4 rounded-md bg-semantic-error/10 p-4 text-sm text-semantic-error">
+            {error}
+          </p>
+        ) : rows.length === 0 ? (
+          <EmptyState title="Aucun participant" description="Aucun participant ne correspond à la recherche." />
+        ) : (
+          <div className="mt-4 overflow-x-auto">
+            <table className="w-full min-w-[560px] text-sm">
+              <thead>
+                <tr className="text-left text-xs uppercase tracking-wider text-brand-muted">
+                  <th className="pb-3 font-semibold">Participant</th>
+                  <th className="hidden pb-3 font-semibold sm:table-cell">Entreprise</th>
+                  <th className="hidden pb-3 font-semibold md:table-cell">Événement</th>
+                  <th className="pb-3 font-semibold">Billet</th>
+                  <th className="pb-3 text-right font-semibold">Places</th>
                 </tr>
-              ))}
-              {rows.length === 0 ? (
-                <tr>
-                  <td colSpan={6} className="py-8 text-center text-brand-muted">
-                    Aucun participant trouvé.
-                  </td>
-                </tr>
-              ) : null}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {rows.map((p) => (
+                  <tr key={p.id} className="border-t border-black/5 align-top">
+                    <td className="max-w-[200px] py-3 pr-2">
+                      <p className="truncate font-semibold text-brand-navy">{p.name}</p>
+                      <p className="truncate text-xs text-brand-muted">{p.email}</p>
+                    </td>
+                    <td className="hidden max-w-[140px] py-3 pr-2 sm:table-cell">
+                      <span className="block truncate text-brand-navy">{p.company || '—'}</span>
+                    </td>
+                    <td className="hidden max-w-[160px] py-3 pr-2 md:table-cell">
+                      <span className="block truncate text-brand-navy">{p.event}</span>
+                    </td>
+                    <td className="py-3 pr-2 text-brand-navy">
+                      <span className="block truncate">{p.ticket}</span>
+                    </td>
+                    <td className="py-3 text-right font-semibold text-brand-navy">
+                      <Badge tone={p.status === 'confirmed' ? 'success' : 'warning'}>×{p.quantity}</Badge>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </section>
     </>
   );

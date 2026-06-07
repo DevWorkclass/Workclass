@@ -96,8 +96,8 @@ function UsersContent() {
     setError(null);
     try {
       const [usersRes, catalogRes] = await Promise.all([
-        apiAuth<{ data: AdminUser[] }>('/api/admin/users?limit=100'),
-        apiAuth<{ data: PermissionCatalogItem[] }>('/api/admin/users/permissions'),
+        apiAuth<{ data: AdminUser[] }>('/admin/users?limit=100'),
+        apiAuth<{ data: PermissionCatalogItem[] }>('/admin/users/permissions'),
       ]);
       setUsers(usersRes.data);
       setCatalog(catalogRes.data);
@@ -287,7 +287,7 @@ function PermissionsModal({
     setSaving(true);
     setError(null);
     try {
-      const res = await apiAuth<{ data: AdminUser }>('/api/admin/users/permissions', {
+      const res = await apiAuth<{ data: AdminUser }>('/admin/users/permissions', {
         method: 'POST',
         body: JSON.stringify({ id: user.id, permissions: [...selected] }),
       });

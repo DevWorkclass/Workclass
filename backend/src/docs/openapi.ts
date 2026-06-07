@@ -33,6 +33,7 @@ export const openapiSpec = {
   tags: [
     { name: 'Auth', description: 'Authentification des comptes administrateurs' },
     { name: 'Users', description: 'Gestion des comptes admin + permissions (users:manage)' },
+    { name: 'Events', description: 'Gestion des événements (admin/super_admin)' },
     { name: 'Bookings', description: 'Réservations (public + admin)' },
     { name: 'Tickets', description: 'Génération des billets (tickets:generate)' },
     { name: 'Scan', description: "Contrôle d'accès par QR (scan)" },
@@ -153,6 +154,34 @@ export const openapiSpec = {
           },
         },
       },
+      Event: {
+        type: 'object',
+        properties: {
+          id: { type: 'string', format: 'uuid' },
+          title: { type: 'string' },
+          slug: { type: 'string' },
+          description: { type: 'string' },
+          location: { type: 'string' },
+          startDate: { type: 'string', format: 'date-time' },
+          endDate: { type: 'string', format: 'date-time' },
+          coverImage: { type: 'string', nullable: true },
+          status: { type: 'string', enum: ['draft', 'published', 'archived'] },
+          createdAt: { type: 'string', format: 'date-time' },
+        },
+      },
+      CreateEventRequest: {
+        type: 'object',
+        required: ['title', 'description', 'location', 'startDate', 'endDate'],
+        properties: {
+          title: { type: 'string', example: 'Work Class Summit 2026' },
+          description: { type: 'string', example: 'Le sommet annuel...' },
+          location: { type: 'string', example: 'Libreville' },
+          startDate: { type: 'string', format: 'date-time' },
+          endDate: { type: 'string', format: 'date-time' },
+          coverImage: { type: 'string', format: 'url', nullable: true },
+          status: { type: 'string', enum: ['draft', 'published', 'archived'], default: 'draft' },
+        },
+      },
     },
   },
   paths: {
@@ -222,6 +251,38 @@ export const openapiSpec = {
         responses: {
           200: { description: 'Profil', content: { 'application/json': { schema: { type: 'object', properties: { success: { type: 'boolean' }, data: { $ref: '#/components/schemas/AdminPublic' } } } } } },
           401: { description: 'Non authentifié' },
+        },
+      },
+    },
+
+    '/events': {
+      get: {
+        tags: ['Events'],
+        summary: 'Lister tous les événements (admin)',
+        security: bearer,
+        responses: {
+          200: {
+            description: 'Liste des événements',
+            content: { 'application/json': { schema: { type: 'object', properties: { success: { type: 'boolean' }, data: { type: 'array', items: { $ref: '#/components/schemas/Event' } } } } } },
+          },
+          401: { description: 'Non authentifié' },
+        },
+      },
+      post: {
+        tags: ['Events'],
+        summary: 'Créer un nouvel événement (admin/super_admin)',
+        security: bearer,
+        requestBody: {
+          required: true,
+          content: { 'application/json': { schema: { $ref: '#/components/schemas/CreateEventRequest' } } },
+        },
+        responses: {
+          201: {
+            description: 'Événement créé',
+            content: { 'application/json': { schema: { type: 'object', properties: { success: { type: 'boolean' }, data: { $ref: '#/components/schemas/Event' } } } } },
+          },
+          400: { description: 'Validation échouée' },
+          403: { description: 'Rôle insuffisant' },
         },
       },
     },

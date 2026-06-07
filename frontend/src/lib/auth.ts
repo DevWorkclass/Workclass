@@ -12,7 +12,7 @@ export interface AdminUser {
   email: string;
   firstName: string | null;
   lastName: string | null;
-  role: 'admin' | 'super_admin' | 'manager' | 'scanner' | string;
+  role: 'admin' | 'super_admin';
   permissions: string[];
   isActive: boolean;
 }

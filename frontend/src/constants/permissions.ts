@@ -1,44 +1,28 @@
 /**
- * Permissions granulaires par rôle.
- * Format `resource:action`. Étendable sans refonte de la matrice.
+ * Permissions granulaires — MIROIR des clés backend.
+ * Source de vérité unique : `backend/src/domains/users/types/users.types.ts`
+ * (catalogue + libellés renvoyés par `GET /api/admin/users/permissions`).
+ *
+ * Modèle réel : un `admin` ne dispose que des permissions explicitement attribuées ;
+ * un `super_admin` les possède toutes implicitement. Il n'existe PAS de mapping
+ * statique rôle→permissions côté front (cf. suppression de `rbac.ts`).
  */
 
-export const PERMISSIONS = {
-  admin: [
-    'events:read',
-    'events:write',
-    'bookings:read',
-    'bookings:write',
-    'tickets:read',
-    'tickets:write',
-    'scan:execute',
-    'feedback:read',
-    'feedback:moderate',
-    'participants:read',
-    'participants:export',
-  ],
-  super_admin: [
-    'events:read',
-    'events:write',
-    'events:delete',
-    'bookings:read',
-    'bookings:write',
-    'bookings:delete',
-    'tickets:read',
-    'tickets:write',
-    'scan:execute',
-    'feedback:read',
-    'feedback:moderate',
-    'participants:read',
-    'participants:export',
-    'participants:anonymize',
-    'admins:manage',
-    'audit:read',
-  ],
-  public: ['events:read', 'booking:create', 'ticket:read'],
-} as const;
+export const PERMISSION_KEYS = [
+  'bookings:read',
+  'bookings:write',
+  'tickets:generate',
+  'scan',
+  'feedback:read',
+  'feedback:moderate',
+  'payments:manage',
+  'users:manage',
+] as const;
 
-export type Permission =
-  | (typeof PERMISSIONS.admin)[number]
-  | (typeof PERMISSIONS.super_admin)[number]
-  | (typeof PERMISSIONS.public)[number];
+export type Permission = (typeof PERMISSION_KEYS)[number];
+
+/** Entrée du catalogue renvoyée par l'API (clé + libellé FR). */
+export interface PermissionCatalogItem {
+  key: Permission;
+  label: string;
+}

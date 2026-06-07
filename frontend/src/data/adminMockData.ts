@@ -24,14 +24,6 @@ export interface AdminParticipantRow {
   status: 'confirmed' | 'pending';
 }
 
-export interface AdminUserRow {
-  name: string;
-  email: string;
-  role: 'super_admin' | 'manager' | 'scanner';
-  lastLogin: string;
-  active: boolean;
-}
-
 export interface AdminReviewRow {
   participant: string;
   rating: number;
@@ -137,44 +129,6 @@ export const ADMIN_PARTICIPANTS: AdminParticipantRow[] = [
     ticket: 'Standard',
     expectationsSubmitted: true,
     status: 'confirmed',
-  },
-];
-
-export const ADMIN_USERS: AdminUserRow[] = [
-  {
-    name: 'Admin Principal',
-    email: 'admin@workclassgabon.ga',
-    role: 'super_admin',
-    lastLogin: "Aujourd'hui 09:12",
-    active: true,
-  },
-  {
-    name: 'Sonia Mba',
-    email: 's.mba@workclassgabon.ga',
-    role: 'manager',
-    lastLogin: 'Hier 16:45',
-    active: true,
-  },
-  {
-    name: 'Rémi Nkoulou',
-    email: 'r.nkoulou@workclassgabon.ga',
-    role: 'scanner',
-    lastLogin: '03/05/2026',
-    active: true,
-  },
-  {
-    name: 'Karine Obame',
-    email: 'k.obame@workclassgabon.ga',
-    role: 'scanner',
-    lastLogin: '01/05/2026',
-    active: true,
-  },
-  {
-    name: 'Thierry Pounga',
-    email: 't.pounga@workclassgabon.ga',
-    role: 'manager',
-    lastLogin: '20/04/2026',
-    active: false,
   },
 ];
 

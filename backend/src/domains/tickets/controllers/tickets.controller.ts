@@ -22,4 +22,19 @@ export class TicketsController {
       next(error);
     }
   }
+
+  async list(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const page = parseInt(String(req.query.page ?? '1'), 10) || 1;
+      const limit = parseInt(String(req.query.limit ?? '20'), 10) || 20;
+      const result = await this.service.listTickets({ page, limit });
+      res.json({
+        success: true,
+        data: result.tickets,
+        meta: { total: result.total, page, limit },
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
 }

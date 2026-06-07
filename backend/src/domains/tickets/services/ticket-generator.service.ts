@@ -17,6 +17,33 @@ import { NotFoundError, ConflictError } from '../../shared/errors/types/error.ty
 import type { TicketGenerationResult } from '../types/tickets.types';
 
 export class TicketGeneratorService {
+  /**
+   * Liste paginée des billets (gestion des certificats côté admin).
+   * Inclut participant, événement et état du certificat.
+   */
+  async listTickets(params: { page?: number; limit?: number }) {
+    const page = params.page ?? 1;
+    const limit = params.limit ?? 20;
+    const skip = (page - 1) * limit;
+    const [tickets, total] = await Promise.all([
+      prisma.ticket.findMany({
+        skip,
+        take: limit,
+        orderBy: { createdAt: 'desc' },
+        include: {
+          booking: {
+            include: {
+              participant: { select: { firstName: true, lastName: true, email: true } },
+              event: { select: { title: true } },
+            },
+          },
+        },
+      }),
+      prisma.ticket.count(),
+    ]);
+    return { tickets, total };
+  }
+
   async generateTicket(bookingId: string): Promise<TicketGenerationResult> {
     const booking = await prisma.booking.findUnique({
       where: { id: bookingId },

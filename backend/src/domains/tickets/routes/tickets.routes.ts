@@ -20,5 +20,11 @@ router.post(
   requirePermission(PERMISSIONS.TICKETS_GENERATE),
   controller.generate.bind(controller),
 );
+router.get(
+  '/admin/tickets',
+  authMiddleware,
+  requirePermission(PERMISSIONS.TICKETS_GENERATE),
+  controller.list.bind(controller),
+);
 
 export { router as ticketsRoutes };

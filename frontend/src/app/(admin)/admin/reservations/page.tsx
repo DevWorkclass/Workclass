@@ -10,6 +10,7 @@ import { PageHeader } from '@/components/admin/PageHeader';
 import { StatCard } from '@/components/admin/StatCard';
 import { Button } from '@/components/ui/button';
 import { PermissionGuard } from '@/components/admin/PermissionGuard';
+import { ExportButtons } from '@/components/admin/ExportButtons';
 import { ADMIN_BOOKINGS } from '@/data/adminMockData';
 import { formatPrice } from '@/lib/formatters';
 
@@ -100,9 +101,11 @@ function BookingsContent() {
               <option value="Standard">Standard</option>
               <option value="VIP Premium">VIP Premium</option>
             </select>
-            <Button variant="gold" size="sm">
-              Exporter CSV
-            </Button>
+            <ExportButtons
+              path="/admin/bookings/export"
+              filters={status === 'all' ? {} : { status }}
+              fallbackName="reservations"
+            />
           </>
         }
       />

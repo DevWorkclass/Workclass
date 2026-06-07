@@ -23,7 +23,8 @@ export const API_ENDPOINTS = {
     bookingGet: '/api/admin/bookings/get',            // POST  body: { id }
     bookingValidate: '/api/admin/bookings/validate',  // POST  body: { id }
     bookingCancel: '/api/admin/bookings/cancel',      // POST  body: { id, reason? }
-    participantsExport: '/api/admin/participants/export', // POST  body: filters
+    bookingsExport: '/api/admin/bookings/export',     // POST  body: { format, status?, eventId? }
+    participantsExport: '/api/admin/participants/export', // POST  body: { format, eventId? }
   },
   tickets: {
     generate: '/api/tickets/generate',  // POST  body: { bookingId }
@@ -45,6 +46,15 @@ export const API_ENDPOINTS = {
   payments: {
     initiate: '/api/payments/initiate',  // POST  body: { bookingId, provider }
     webhook: '/api/webhooks/payment',    // POST (signé par le provider)
+  },
+  content: {
+    homeThemes: '/api/content/home-themes',            // GET (public, non sensible)
+    setHomeThemes: '/api/admin/content/home-themes',   // POST body: { themes }
+    uploadImage: '/api/admin/content/upload-image',    // POST multipart (champ « image »)
+  },
+  metrics: {
+    visit: '/api/metrics/visit',         // POST (public, compteur visites)
+    kpi: '/api/admin/metrics/kpi',       // GET (admin, agrégat KPI)
   },
   health: '/api/health',  // GET (non sensible)
 } as const;

@@ -19,6 +19,9 @@ import { scanRoutes } from './domains/scan/routes/scan.routes';
 import { feedbackRoutes } from './domains/feedback/routes/feedback.routes';
 import { paymentsRoutes } from './domains/payments/routes/payments.routes';
 import { eventsRoutes } from './domains/events/routes/events.routes';
+import { exportsRoutes } from './domains/exports/routes/exports.routes';
+import { metricsRoutes } from './domains/metrics/routes/metrics.routes';
+import { contentRoutes } from './domains/content/routes/content.routes';
 
 const app = express();
 
@@ -102,6 +105,9 @@ app.use('/api', ticketsRoutes);
 app.use('/api', scanRoutes);
 app.use('/api', feedbackRoutes);
 app.use('/api', paymentsRoutes);
+app.use('/api', exportsRoutes);
+app.use('/api', metricsRoutes);
+app.use('/api', contentRoutes);
 
 // --- 404 + handler d'erreurs (doivent rester en dernier) ---
 app.use(notFoundHandler);

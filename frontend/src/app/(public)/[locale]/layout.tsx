@@ -4,6 +4,7 @@ import { notFound } from 'next/navigation';
 import type { ReactNode } from 'react';
 
 import { PublicLayout } from '@/components/layouts/PublicLayout';
+import { VisitTracker } from '@/components/shared/VisitTracker';
 import { isLocale, locales } from '@/config/i18n';
 
 /** Pré-génère les variantes de locale (/fr, /en). */
@@ -28,6 +29,7 @@ export default async function PublicRouteLayout({ children, params }: PublicRout
 
   return (
     <NextIntlClientProvider messages={messages}>
+      <VisitTracker />
       <PublicLayout>{children}</PublicLayout>
     </NextIntlClientProvider>
   );

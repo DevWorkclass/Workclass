@@ -10,6 +10,7 @@ import { PageHeader } from '@/components/admin/PageHeader';
 import { StatCard } from '@/components/admin/StatCard';
 import { Button } from '@/components/ui/button';
 import { PermissionGuard } from '@/components/admin/PermissionGuard';
+import { ExportButtons } from '@/components/admin/ExportButtons';
 import { ADMIN_PARTICIPANTS } from '@/data/adminMockData';
 
 export default function AdminParticipantsPage() {
@@ -36,16 +37,7 @@ function ParticipantsContent() {
       <PageHeader
         title="Participants"
         subtitle="227 inscrits au Summit 2026"
-        actions={
-          <>
-            <Button variant="outline" size="sm">
-              Import
-            </Button>
-            <Button variant="gold" size="sm">
-              Export CSV
-            </Button>
-          </>
-        }
+        actions={<ExportButtons path="/admin/participants/export" fallbackName="participants" />}
       />
 
       <section className="grid gap-4 sm:grid-cols-3">

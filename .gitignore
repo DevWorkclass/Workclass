@@ -44,6 +44,7 @@ backend/uploads/
 # Prisma
 backend/prisma/*.db
 backend/prisma/migrations/*/migration_lock.toml
+backend/prisma/schema.prisma
 
 # Misc
 .DS_Store

@@ -22,6 +22,7 @@ export interface BookingOption {
 export interface BookingInput {
   eventId: string;
   ticketTypeId: string;
+  quantity: number;
   participant: ParticipantData;
   options?: BookingOption[];
 }

@@ -18,6 +18,7 @@ export class BookingRepository {
         eventId: data.eventId,
         ticketTypeId: data.ticketTypeId,
         reference: data.reference,
+        quantity: data.quantity,
         status: 'pending',
         paymentStatus: 'pending',
         totalAmount: data.totalAmount,
@@ -72,24 +73,40 @@ export class BookingRepository {
   }
 
   /**
-   * Réserve atomiquement une place : incrémente `sold` seulement si `sold < quota`.
-   * Renvoie `true` si la place est réservée, `false` si le quota est épuisé.
+   * Réserve atomiquement `quantity` places : incrémente `sold` seulement si
+   * `sold + quantity <= quota`. Renvoie `true` si les places sont réservées,
+   * `false` si le quota restant est insuffisant.
    * Une seule instruction SQL → compatible pgBouncer (pas de transaction interactive).
    */
-  async claimQuota(ticketTypeId: string): Promise<boolean> {
+  async claimQuota(ticketTypeId: string, quantity: number): Promise<boolean> {
     const affected = await prisma.$executeRaw`
-      UPDATE ticket_types SET sold_count = sold_count + 1
-      WHERE id = ${ticketTypeId} AND sold_count < quota
+      UPDATE ticket_types SET sold_count = sold_count + ${quantity}
+      WHERE id = ${ticketTypeId} AND sold_count + ${quantity} <= quota
     `;
     return affected > 0;
   }
 
-  /** Libère une place réservée (compensation / annulation). */
-  async releaseQuota(ticketTypeId: string): Promise<void> {
+  /** Libère `quantity` places réservées (compensation / annulation). */
+  async releaseQuota(ticketTypeId: string, quantity: number): Promise<void> {
     await prisma.$executeRaw`
-      UPDATE ticket_types SET sold_count = sold_count - 1
-      WHERE id = ${ticketTypeId} AND sold_count > 0
+      UPDATE ticket_types SET sold_count = GREATEST(sold_count - ${quantity}, 0)
+      WHERE id = ${ticketTypeId}
     `;
+  }
+
+  /**
+   * Récupère toutes les réservations correspondant aux filtres, sans pagination,
+   * pour génération d'un export (CSV/PDF). Inclut participant, event, billet.
+   */
+  async findForExport(params: { status?: BookingStatus; eventId?: string }) {
+    const where: Prisma.BookingWhereInput = {};
+    if (params.status) where.status = params.status;
+    if (params.eventId) where.eventId = params.eventId;
+    return prisma.booking.findMany({
+      where,
+      orderBy: { createdAt: 'desc' },
+      include: { participant: true, event: true, ticketType: true, ticket: true },
+    });
   }
 
   async findAll(params: { page?: number; limit?: number; status?: BookingStatus }) {

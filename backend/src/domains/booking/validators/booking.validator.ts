@@ -7,6 +7,8 @@ import { z } from 'zod';
 export const createBookingSchema = z.object({
   eventId: z.string().uuid('ID evenement invalide'),
   ticketTypeId: z.string().uuid('ID type de billet invalide'),
+  // Nombre de places reservees (une personne peut en reserver plusieurs).
+  quantity: z.number().int().min(1, 'Au moins une place').max(20, 'Maximum 20 places').default(1),
   participant: z.object({
     firstName: z.string().min(2, 'Prenom requis'),
     lastName: z.string().min(2, 'Nom requis'),

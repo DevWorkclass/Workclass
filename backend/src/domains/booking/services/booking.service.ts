@@ -43,14 +43,15 @@ export class BookingService {
     }
 
     const optionsTotal = data.options?.reduce((sum, opt) => sum + opt.price, 0) ?? 0;
-    const totalAmount = Number(ticketType.price) + optionsTotal;
+    // Le prix du billet est multiplié par le nombre de places réservées.
+    const totalAmount = Number(ticketType.price) * data.quantity + optionsTotal;
 
     const reference = this.buildReference();
 
-    // Réservation de place ATOMIQUE (UPDATE ... WHERE sold < quota) : empêche le
-    // surbooking sous charge concurrente, sans transaction interactive
+    // Réservation des places ATOMIQUE (UPDATE ... WHERE sold + N <= quota) :
+    // empêche le surbooking sous charge concurrente, sans transaction interactive
     // (incompatible avec le pooler pgBouncer).
-    const claimed = await this.repository.claimQuota(data.ticketTypeId);
+    const claimed = await this.repository.claimQuota(data.ticketTypeId, data.quantity);
     if (!claimed) {
       throw new ValidationError('Quota epuise pour ce type de billet');
     }
@@ -59,8 +60,8 @@ export class BookingService {
     try {
       booking = await this.repository.create({ ...data, reference, totalAmount });
     } catch (err) {
-      // Compensation : libérer la place réservée si la création échoue.
-      await this.repository.releaseQuota(data.ticketTypeId);
+      // Compensation : libérer les places réservées si la création échoue.
+      await this.repository.releaseQuota(data.ticketTypeId, data.quantity);
       throw err;
     }
 
@@ -68,7 +69,7 @@ export class BookingService {
       action: 'BOOKING_CREATED',
       resource: 'booking',
       resourceId: booking.id,
-      details: { reference, eventId: data.eventId, amount: totalAmount },
+      details: { reference, eventId: data.eventId, quantity: data.quantity, amount: totalAmount },
       result: 'success',
     });
 
@@ -123,9 +124,9 @@ export class BookingService {
     const booking = await this.repository.findById(id);
     if (!booking) throw new NotFoundError('Reservation');
     const updated = await this.repository.updateStatus(id, 'cancelled');
-    // Libère la place réservée (seulement si la résa était encore active).
+    // Libère les places réservées (seulement si la résa était encore active).
     if (booking.status !== 'cancelled') {
-      await this.repository.releaseQuota(booking.ticketTypeId);
+      await this.repository.releaseQuota(booking.ticketTypeId, booking.quantity);
     }
     await logAudit({
       action: 'BOOKING_CANCELLED',

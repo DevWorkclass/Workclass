@@ -72,6 +72,8 @@ model Event {
   coverImage  String?      @map("cover_image")
   program     Json         @default("[]")
   speakers    Json         @default("[]")
+  // Recommandations propres à l'événement (consignes/conseils aux participants).
+  recommendations String?  @map("recommendations")
   status      EventStatus  @default(draft)
   createdAt   DateTime     @default(now()) @map("created_at")
   updatedAt   DateTime     @updatedAt       @map("updated_at")
@@ -120,6 +122,8 @@ model Booking {
   eventId       String         @map("event_id")
   ticketTypeId  String         @map("ticket_type_id")
   reference     String         @unique // WCG-RES-XXXXXX
+  // Nombre de places réservées (une personne peut réserver plusieurs places).
+  quantity      Int            @default(1)
   status        BookingStatus  @default(pending)
   paymentStatus PaymentStatus  @default(pending) @map("payment_status")
   totalAmount   Decimal        @db.Decimal(12, 2) @map("total_amount")
@@ -303,4 +307,17 @@ model AuditLog {
   @@index([action])
   @@index([createdAt(sort: Desc)])
   @@map("audit_logs")
+}
+
+// ----------------------------------------------------------------------------
+// Site settings (contenu éditable : images des domaines, etc.)
+// Modèle clé/valeur JSON. Ex. clé `home_themes` = liste des domaines + images.
+// ----------------------------------------------------------------------------
+
+model SiteSetting {
+  key       String   @id
+  value     Json
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("site_settings")
 }

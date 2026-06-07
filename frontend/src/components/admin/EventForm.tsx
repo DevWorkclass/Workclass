@@ -15,6 +15,7 @@ const eventSchema = z.object({
   startDate: z.string().min(1, 'La date de début est requise'),
   endDate: z.string().min(1, 'La date de fin est requise'),
   coverImage: z.string().url('URL invalide').optional().or(z.literal('')),
+  recommendations: z.string().max(2000, 'Recommandations trop longues').optional().or(z.literal('')),
   status: z.enum(['draft', 'published', 'archived']).default('draft'),
 });
 
@@ -164,6 +165,22 @@ export function EventForm() {
             placeholder="https://..."
           />
           {errors.coverImage && <p className="text-xs text-semantic-error">{errors.coverImage.message}</p>}
+        </div>
+
+        <div className="space-y-2 md:col-span-2">
+          <label htmlFor="recommendations" className="block text-sm font-semibold text-brand-navy">
+            Recommandations (propre à l&apos;événement)
+          </label>
+          <textarea
+            {...register('recommendations')}
+            id="recommendations"
+            rows={3}
+            className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-brand-gold focus:outline-none focus:ring-1 focus:ring-brand-gold"
+            placeholder="Ex: tenue correcte exigée, arriver 30 min avant, apporter une pièce d'identité..."
+          />
+          {errors.recommendations && (
+            <p className="text-xs text-semantic-error">{errors.recommendations.message}</p>
+          )}
         </div>
       </div>
 

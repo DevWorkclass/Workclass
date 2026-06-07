@@ -31,6 +31,7 @@ export class EventsService {
       startDate: new Date(data.startDate),
       endDate: new Date(data.endDate),
       coverImage: data.coverImage || null,
+      recommendations: data.recommendations || null,
       status: data.status,
       program: data.program || [],
       speakers: data.speakers || [],

@@ -11,10 +11,15 @@ const SEPARATOR = ';';
 const BOM = '﻿';
 
 function escapeCell(value: string): string {
-  if (/[";\n\r]/.test(value)) {
-    return `"${value.replace(/"/g, '""')}"`;
+  let v = value ?? '';
+  // Protection contre l'injection de formules (CSV/Excel) : une cellule
+  // commençant par =, +, -, @, tab ou CR serait interprétée comme formule.
+  // On la neutralise en la préfixant d'une apostrophe.
+  if (/^[=+\-@\t\r]/.test(v)) v = `'${v}`;
+  if (/[";\n\r]/.test(v)) {
+    return `"${v.replace(/"/g, '""')}"`;
   }
-  return value;
+  return v;
 }
 
 /**

@@ -42,7 +42,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
 
       <div className="flex min-w-0 flex-1 flex-col">
         {/* Barre top (tous écrans) : hamburger + logo en mobile, profil/déconnexion à droite */}
-        <div className="flex h-14 items-center gap-3 border-b border-black/5 bg-white px-4 sm:px-6 lg:px-10">
+        <div className="sticky top-0 z-30 flex h-14 shrink-0 items-center gap-3 border-b border-black/5 bg-white px-4 sm:px-6 lg:px-10">
           <button
             type="button"
             onClick={() => setOpen(true)}

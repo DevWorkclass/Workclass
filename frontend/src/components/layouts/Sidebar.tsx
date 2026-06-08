@@ -101,8 +101,8 @@ export function Sidebar({ open = false, onClose }: SidebarProps) {
       aria-label="Navigation admin"
       className={cn(
         'flex w-64 shrink-0 flex-col bg-brand-navy text-white',
-        // Mobile : drawer off-canvas. Desktop (≥ lg) : colonne fixe, design inchangé.
-        'fixed inset-y-0 left-0 z-50 transition-transform duration-300 lg:static lg:z-auto lg:translate-x-0',
+        // Mobile : drawer off-canvas. Desktop (≥ lg) : sticky pleine hauteur, logout toujours visible.
+        'fixed inset-y-0 left-0 z-50 transition-transform duration-300 lg:sticky lg:top-0 lg:h-screen lg:z-auto lg:translate-x-0',
         open ? 'translate-x-0' : '-translate-x-full',
       )}
     >

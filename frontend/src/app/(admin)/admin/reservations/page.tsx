@@ -2,13 +2,15 @@
 
 /**
  * Admin — Réservations. Branché backend.
- *  - Liste   : GET  /api/admin/bookings (avec participant, événement, billet, quantité)
- *  - Valider : POST /api/admin/bookings/validate  body { id }
- *  - Annuler : POST /api/admin/bookings/cancel     body { id }
+ *  - Liste       : GET  /api/admin/bookings (avec participant, événement, billet, quantité)
+ *  - Valider     : POST /api/admin/bookings/validate  body { id }
+ *  - Annuler     : POST /api/admin/bookings/cancel     body { id }
+ *  - Créer       : POST /api/bookings (endpoint public)
  * Regroupement par événement. Filtres et recherche côté client.
  */
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { Download, Plus, X } from 'lucide-react';
 
 import { Badge, type BadgeTone } from '@/components/admin/Badge';
 import { PageHeader } from '@/components/admin/PageHeader';
@@ -19,7 +21,7 @@ import { ExportButtons } from '@/components/admin/ExportButtons';
 import { EmptyState } from '@/components/shared/EmptyState';
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner';
 import { ROUTES } from '@/constants/routes';
-import { ApiError, apiAuth } from '@/lib/api';
+import { ApiError, apiAuth, apiFetch } from '@/lib/api';
 import { hasPermission } from '@/lib/auth';
 import { useAuthUser } from '@/domains/shared/auth/hooks/useAuthUser';
 import { formatPrice } from '@/lib/formatters';
@@ -33,6 +35,18 @@ interface ParticipantEntry {
   email?: string;
 }
 
+interface TicketTypeOption {
+  id: string;
+  name: string;
+  price: number;
+}
+
+interface AdminEvent {
+  id: string;
+  title: string;
+  ticketTypes: TicketTypeOption[];
+}
+
 interface AdminBooking {
   id: string;
   reference: string;
@@ -43,6 +57,7 @@ interface AdminBooking {
   createdAt: string;
   event: { title: string } | null;
   ticketType: { name: string } | null;
+  ticket: { pdfUrl: string | null } | null;
   participant: {
     firstName: string;
     lastName: string;
@@ -67,6 +82,8 @@ const PAYMENT_BADGE: Record<PaymentStatus, { tone: BadgeTone; label: string }> =
   refunded: { tone: 'neutral', label: 'Remboursé' },
 };
 
+const EMPTY_PARTICIPANT: ParticipantEntry = { firstName: '', lastName: '', email: '' };
+
 export default function AdminBookingsPage() {
   return (
     <PermissionGuard permission="bookings:read">
@@ -81,13 +98,24 @@ function BookingsContent() {
   const canWrite = hasPermission(user, 'bookings:write');
 
   const [bookings, setBookings] = useState<AdminBooking[]>([]);
-  const [events, setEvents] = useState<{ id: string; title: string }[]>([]);
+  const [events, setEvents] = useState<AdminEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [query, setQuery] = useState('');
   const [status, setStatus] = useState<StatusFilter>('all');
   const [eventId, setEventId] = useState<string>('all');
   const [busyId, setBusyId] = useState<string | null>(null);
+
+  // ── Création réservation ──
+  const [showCreate, setShowCreate] = useState(false);
+  const [newEventId, setNewEventId] = useState('');
+  const [newTicketTypeId, setNewTicketTypeId] = useState('');
+  const [newQty, setNewQty] = useState(1);
+  const [newPayerPhone, setNewPayerPhone] = useState('');
+  const [newPayerName, setNewPayerName] = useState('');
+  const [newParticipants, setNewParticipants] = useState<ParticipantEntry[]>([{ ...EMPTY_PARTICIPANT }]);
+  const [creating, setCreating] = useState(false);
+  const [createError, setCreateError] = useState<string | null>(null);
 
   const handleAuthError = useCallback(
     (err: unknown): boolean => {
@@ -119,12 +147,24 @@ function BookingsContent() {
   }, [load]);
 
   useEffect(() => {
-    apiAuth<{ data: { id: string; title: string }[] }>('/events')
-      .then((res) => setEvents(res.data.map((e) => ({ id: e.id, title: e.title }))))
-      .catch(() => {
-        /* liste événements optionnelle pour le filtre */
-      });
+    apiAuth<{ data: AdminEvent[] }>('/events')
+      .then((res) => setEvents(res.data))
+      .catch(() => {});
   }, []);
+
+  // Sync participants array length with quantity
+  useEffect(() => {
+    setNewParticipants((prev) => {
+      const next = [...prev];
+      while (next.length < newQty) next.push({ ...EMPTY_PARTICIPANT });
+      return next.slice(0, newQty);
+    });
+  }, [newQty]);
+
+  // Reset ticket type when event changes
+  useEffect(() => {
+    setNewTicketTypeId('');
+  }, [newEventId]);
 
   const act = async (id: string, action: 'validate' | 'cancel') => {
     try {
@@ -138,6 +178,62 @@ function BookingsContent() {
       if (!handleAuthError(err)) setError("L'action a échoué.");
     } finally {
       setBusyId(null);
+    }
+  };
+
+  const updateParticipant = (i: number, field: keyof ParticipantEntry, value: string) => {
+    setNewParticipants((prev) => {
+      const next = [...prev];
+      next[i] = { ...next[i], [field]: value } as ParticipantEntry;
+      return next;
+    });
+  };
+
+  const resetCreateForm = () => {
+    setNewEventId('');
+    setNewTicketTypeId('');
+    setNewQty(1);
+    setNewPayerPhone('');
+    setNewPayerName('');
+    setNewParticipants([{ ...EMPTY_PARTICIPANT }]);
+    setCreateError(null);
+  };
+
+  const handleCreate = async () => {
+    setCreateError(null);
+    if (!newEventId || !newTicketTypeId || !newPayerPhone.trim()) {
+      setCreateError('Veuillez remplir tous les champs obligatoires (événement, type de billet, téléphone).');
+      return;
+    }
+    const participants = newParticipants.slice(0, newQty);
+    if (participants.some((p) => !p.firstName.trim() || !p.lastName.trim())) {
+      setCreateError('Veuillez saisir le prénom et le nom de chaque participant.');
+      return;
+    }
+    try {
+      setCreating(true);
+      await apiFetch('/bookings', {
+        method: 'POST',
+        body: JSON.stringify({
+          eventId: newEventId,
+          ticketTypeId: newTicketTypeId,
+          quantity: newQty,
+          payerPhone: newPayerPhone.trim(),
+          payerName: newPayerName.trim() || undefined,
+          participants: participants.map((p) => ({
+            firstName: p.firstName.trim(),
+            lastName: p.lastName.trim(),
+            email: p.email?.trim() || undefined,
+          })),
+        }),
+      });
+      setShowCreate(false);
+      resetCreateForm();
+      await load();
+    } catch (err) {
+      setCreateError(err instanceof Error ? err.message : 'Erreur lors de la création de la réservation.');
+    } finally {
+      setCreating(false);
     }
   };
 
@@ -179,8 +275,14 @@ function BookingsContent() {
     [bookings],
   );
 
+  const selectedTicketTypes =
+    events.find((ev) => ev.id === newEventId)?.ticketTypes ?? [];
+
   const selectClass =
     'rounded-full border border-black/10 bg-white px-4 py-2 text-sm text-brand-navy focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-gold';
+
+  const inputClass =
+    'w-full rounded-lg border border-black/10 bg-brand-cream px-3 py-2 text-sm text-brand-navy placeholder:text-brand-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-gold';
 
   return (
     <>
@@ -189,6 +291,12 @@ function BookingsContent() {
         subtitle={`Gestion centralisée — ${bookings.length} réservation${bookings.length > 1 ? 's' : ''}`}
         actions={
           <>
+            {canWrite && (
+              <Button variant="gold" size="sm" onClick={() => setShowCreate(true)}>
+                <Plus className="size-4" />
+                Nouvelle réservation
+              </Button>
+            )}
             <select
               aria-label="Filtrer par événement"
               value={eventId}
@@ -284,7 +392,6 @@ function BookingsContent() {
                       <tr key={b.id} className="border-t border-black/5 align-top">
                         <td className="py-3 pr-2 font-mono text-xs text-brand-navy">{b.reference}</td>
                         <td className="max-w-[220px] py-3 pr-2">
-                          {/* Payeur */}
                           <p className="truncate font-semibold text-brand-navy">
                             {b.participant
                               ? `${b.participant.firstName} ${b.participant.lastName}`
@@ -300,7 +407,6 @@ function BookingsContent() {
                               {b.participant.email}
                             </p>
                           )}
-                          {/* Participants individuels depuis metadata */}
                           {(() => {
                             const ps = b.participant?.metadata?.participants;
                             if (!ps || ps.length === 0) return null;
@@ -333,16 +439,49 @@ function BookingsContent() {
                           </Badge>
                         </td>
                         <td className="py-3 text-right">
-                          {canWrite && b.status === 'pending' ? (
-                            <div className="flex justify-end gap-1.5">
-                              <Button
-                                variant="gold"
-                                size="sm"
-                                disabled={busyId === b.id}
-                                onClick={() => act(b.id, 'validate')}
+                          <div className="flex items-center justify-end gap-1">
+                            {/* Téléchargement du billet */}
+                            {b.ticket?.pdfUrl ? (
+                              <a
+                                href={b.ticket.pdfUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                title="Télécharger le billet"
+                                className="grid size-8 place-items-center rounded-lg text-brand-navy transition-colors hover:bg-brand-navy/5"
                               >
-                                Valider
-                              </Button>
+                                <Download className="size-4" />
+                              </a>
+                            ) : (
+                              <span
+                                title="Billet non encore généré"
+                                className="grid size-8 place-items-center rounded-lg text-brand-muted/40"
+                              >
+                                <Download className="size-4" />
+                              </span>
+                            )}
+
+                            {/* Actions statut */}
+                            {canWrite && b.status === 'pending' ? (
+                              <>
+                                <Button
+                                  variant="gold"
+                                  size="sm"
+                                  disabled={busyId === b.id}
+                                  onClick={() => act(b.id, 'validate')}
+                                >
+                                  Valider
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="text-semantic-error"
+                                  disabled={busyId === b.id}
+                                  onClick={() => act(b.id, 'cancel')}
+                                >
+                                  Annuler
+                                </Button>
+                              </>
+                            ) : canWrite && b.status === 'confirmed' ? (
                               <Button
                                 variant="ghost"
                                 size="sm"
@@ -352,20 +491,8 @@ function BookingsContent() {
                               >
                                 Annuler
                               </Button>
-                            </div>
-                          ) : canWrite && b.status === 'confirmed' ? (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="text-semantic-error"
-                              disabled={busyId === b.id}
-                              onClick={() => act(b.id, 'cancel')}
-                            >
-                              Annuler
-                            </Button>
-                          ) : (
-                            <span className="text-xs text-brand-muted">—</span>
-                          )}
+                            ) : null}
+                          </div>
                         </td>
                       </tr>
                     ))}
@@ -374,6 +501,168 @@ function BookingsContent() {
               </div>
             </section>
           ))}
+        </div>
+      )}
+
+      {/* ── Modal : Nouvelle réservation ── */}
+      {showCreate && (
+        <div
+          className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/50 p-4 pt-12"
+          onClick={(e) => { if (e.target === e.currentTarget) { setShowCreate(false); resetCreateForm(); } }}
+        >
+          <div className="w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl">
+            <div className="mb-5 flex items-center justify-between">
+              <h2 className="text-lg font-bold text-brand-navy">Nouvelle réservation</h2>
+              <button
+                type="button"
+                aria-label="Fermer"
+                onClick={() => { setShowCreate(false); resetCreateForm(); }}
+                className="grid size-8 place-items-center rounded-lg text-brand-muted hover:bg-brand-navy/5"
+              >
+                <X className="size-5" />
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              {/* Événement */}
+              <div>
+                <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-brand-muted">
+                  Événement *
+                </label>
+                <select
+                  value={newEventId}
+                  onChange={(e) => setNewEventId(e.target.value)}
+                  className={inputClass}
+                >
+                  <option value="">Sélectionner un événement</option>
+                  {events.map((ev) => (
+                    <option key={ev.id} value={ev.id}>{ev.title}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Type de billet */}
+              {newEventId && (
+                <div>
+                  <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-brand-muted">
+                    Type de billet *
+                  </label>
+                  <select
+                    value={newTicketTypeId}
+                    onChange={(e) => setNewTicketTypeId(e.target.value)}
+                    className={inputClass}
+                  >
+                    <option value="">Sélectionner un type</option>
+                    {selectedTicketTypes.map((tt) => (
+                      <option key={tt.id} value={tt.id}>
+                        {tt.name} — {formatPrice(Number(tt.price))}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
+              {/* Quantité */}
+              <div>
+                <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-brand-muted">
+                  Nombre de places *
+                </label>
+                <input
+                  type="number"
+                  min={1}
+                  max={10}
+                  value={newQty}
+                  onChange={(e) => setNewQty(Math.max(1, Math.min(10, Number(e.target.value))))}
+                  className={inputClass}
+                />
+              </div>
+
+              {/* Payeur */}
+              <div className="grid grid-cols-2 gap-3">
+                <div className="col-span-2 sm:col-span-1">
+                  <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-brand-muted">
+                    Téléphone payeur *
+                  </label>
+                  <input
+                    type="tel"
+                    placeholder="+241 07 00 00 00"
+                    value={newPayerPhone}
+                    onChange={(e) => setNewPayerPhone(e.target.value)}
+                    className={inputClass}
+                  />
+                </div>
+                <div className="col-span-2 sm:col-span-1">
+                  <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-brand-muted">
+                    Nom payeur
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Prénom Nom"
+                    value={newPayerName}
+                    onChange={(e) => setNewPayerName(e.target.value)}
+                    className={inputClass}
+                  />
+                </div>
+              </div>
+
+              {/* Participants */}
+              <div className="space-y-3">
+                <p className="text-xs font-semibold uppercase tracking-wide text-brand-muted">
+                  Participants ({newQty} place{newQty > 1 ? 's' : ''})
+                </p>
+                {Array.from({ length: newQty }, (_, i) => (
+                  <div key={i} className="rounded-lg border border-black/5 bg-brand-cream/60 p-3">
+                    <p className="mb-2 text-xs font-semibold text-brand-navy">Participant {i + 1}</p>
+                    <div className="grid grid-cols-2 gap-2">
+                      <input
+                        placeholder="Prénom *"
+                        value={newParticipants[i]?.firstName ?? ''}
+                        onChange={(e) => updateParticipant(i, 'firstName', e.target.value)}
+                        className={inputClass}
+                      />
+                      <input
+                        placeholder="Nom *"
+                        value={newParticipants[i]?.lastName ?? ''}
+                        onChange={(e) => updateParticipant(i, 'lastName', e.target.value)}
+                        className={inputClass}
+                      />
+                      <input
+                        placeholder="Email (optionnel)"
+                        type="email"
+                        value={newParticipants[i]?.email ?? ''}
+                        onChange={(e) => updateParticipant(i, 'email', e.target.value)}
+                        className={`${inputClass} col-span-2`}
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {createError && (
+                <p role="alert" className="rounded-lg bg-semantic-error/10 px-4 py-3 text-sm text-semantic-error">
+                  {createError}
+                </p>
+              )}
+
+              <div className="flex justify-end gap-2 pt-2">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => { setShowCreate(false); resetCreateForm(); }}
+                >
+                  Annuler
+                </Button>
+                <Button
+                  variant="gold"
+                  size="sm"
+                  disabled={creating}
+                  onClick={handleCreate}
+                >
+                  {creating ? 'Création…' : 'Créer la réservation'}
+                </Button>
+              </div>
+            </div>
+          </div>
         </div>
       )}
     </>

@@ -1,19 +1,26 @@
 /**
- * Tâches planifiées (node-cron).
- * STUB v1 : à activer en ÉTAPE 4-5 (rappels événement, expiration tokens feedback).
+ * Tâches planifiées.
+ *  - Envoi des liens d'avis ~1h avant la fin des événements (toutes les 15 min).
+ * Planification simple par setInterval (pas de dépendance cron) ; les jobs sont
+ * idempotents donc un éventuel chevauchement au redémarrage est sans effet.
  */
 
 import { logger } from '../utils/logger.js';
+import { sendFeedbackLinksForEndingEvents } from './feedback-links.job.js';
+
+const FIFTEEN_MIN_MS = 15 * 60 * 1000;
 
 export function registerJobs(): void {
-  logger.info('Jobs cron : aucun job actif (stub v1).');
+  const run = () => {
+    sendFeedbackLinksForEndingEvents().catch((err) =>
+      logger.error({ err }, 'Job liens avis : echec'),
+    );
+  };
 
-  // TODO ÉTAPE 4 :
-  //  import cron from 'node-cron';
-  //  // Rappel J-1 avant événement (tous les jours à 9h)
-  //  cron.schedule('0 9 * * *', async () => { ... });
-  //  // Génération liens feedback après événement
-  //  cron.schedule('0 10 * * *', async () => { ... });
-  //  // Purge tokens expirés (toutes les heures)
-  //  cron.schedule('0 * * * *', async () => { ... });
+  // Premier passage peu après le démarrage, puis toutes les 15 minutes.
+  setTimeout(run, 30_000);
+  const timer = setInterval(run, FIFTEEN_MIN_MS);
+  timer.unref();
+
+  logger.info("Jobs cron : envoi des liens d'avis actif (toutes les 15 min).");
 }

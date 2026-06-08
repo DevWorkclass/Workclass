@@ -148,7 +148,8 @@ export class MetricsService {
       tdr: {
         conversionRate: rate(bookingsTotal, visits),
         fillRate: rate(seatsSold, seatsTotal),
-        engagementRate: rate(reviewsCount, participantsPresent),
+        // Engagement : part des réservations ayant donné lieu à un avis/témoignage.
+        engagementRate: rate(reviewsCount, bookingsTotal),
       },
       participantsByEvent,
       budgetByEvent,

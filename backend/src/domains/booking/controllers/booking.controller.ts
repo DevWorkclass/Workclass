@@ -74,7 +74,9 @@ export class BookingController {
         statusParam === 'pending' || statusParam === 'confirmed' || statusParam === 'cancelled'
           ? statusParam
           : undefined;
-      const result = await this.service.listBookings({ page, limit, status });
+      const eventIdParam = req.query.eventId as string | undefined;
+      const eventId = eventIdParam && /^[0-9a-f-]{36}$/i.test(eventIdParam) ? eventIdParam : undefined;
+      const result = await this.service.listBookings({ page, limit, status, eventId });
       res.json({
         success: true,
         data: result.bookings,

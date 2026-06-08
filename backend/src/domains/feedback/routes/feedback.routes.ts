@@ -27,6 +27,12 @@ router.post(
   requirePermission(PERMISSIONS.FEEDBACK_MODERATE),
   controller.generateLink.bind(controller),
 );
+router.post(
+  '/admin/feedback/event-links',
+  authMiddleware,
+  requirePermission(PERMISSIONS.FEEDBACK_MODERATE),
+  controller.generateEventLinks.bind(controller),
+);
 router.get(
   '/admin/feedback',
   authMiddleware,

@@ -18,7 +18,10 @@ export class EventsRepository {
     return prisma.event.findMany({
       orderBy: { createdAt: 'desc' },
       include: {
-        ticketTypes: { select: { quota: true, soldCount: true } },
+        ticketTypes: {
+          orderBy: { price: 'asc' },
+          select: { id: true, name: true, description: true, price: true, quota: true, soldCount: true },
+        },
       },
     });
   }
@@ -39,5 +42,19 @@ export class EventsRepository {
 
   async remove(id: string) {
     return prisma.event.delete({ where: { id } });
+  }
+
+  async createTicketType(
+    eventId: string,
+    data: { name: string; description: string | null; price: number; quota: number },
+  ) {
+    return prisma.ticketType.create({ data: { eventId, ...data } });
+  }
+
+  async updateTicketType(
+    id: string,
+    data: { name: string; description: string | null; price: number; quota: number },
+  ) {
+    return prisma.ticketType.update({ where: { id }, data });
   }
 }

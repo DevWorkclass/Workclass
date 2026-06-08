@@ -13,8 +13,30 @@ export interface HomeTheme {
   imageUrl?: string;
 }
 
-/** Clé de stockage dans `site_settings`. */
+/** Clés de stockage dans `site_settings`. */
 export const HOME_THEMES_KEY = 'home_themes';
+export const PARTNERS_KEY = 'partners';
+export const APP_CONFIG_KEY = 'app_config';
+
+/** Logo partenaire (affiché sur la page d'accueil). */
+export interface Partner {
+  name: string;
+  logoUrl?: string;
+  description?: string;
+}
+
+/** Configuration du dynamisme de l'app (page d'accueil). */
+export interface AppConfig {
+  /** Intervalle de défilement automatique des témoignages (ms). */
+  testimonialIntervalMs: number;
+  /** Active le défilement automatique des avis. */
+  testimonialAutoScroll: boolean;
+}
+
+export const DEFAULT_APP_CONFIG: AppConfig = {
+  testimonialIntervalMs: 4000,
+  testimonialAutoScroll: true,
+};
 
 /**
  * Valeurs par défaut (miroir de `frontend/src/data/homepageContent.ts`).

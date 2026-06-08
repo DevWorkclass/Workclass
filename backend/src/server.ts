@@ -7,6 +7,7 @@ import { app } from './app';
 import { prisma, disconnectPrisma } from './config/database';
 import { redis, disconnectRedis } from './config/redis';
 import { logger } from './utils/logger';
+import { registerJobs } from './jobs';
 
 const PORT = Number(process.env.PORT ?? 3001);
 
@@ -21,6 +22,9 @@ async function bootstrap(): Promise<void> {
     const server = app.listen(PORT, () => {
       logger.info(`Serveur backend demarre sur http://localhost:${PORT}`);
     });
+
+    // Tâches planifiées (liens d'avis avant fin d'événement).
+    registerJobs();
 
     const shutdown = async (signal: string): Promise<void> => {
       logger.info({ signal }, 'Arret du serveur en cours');

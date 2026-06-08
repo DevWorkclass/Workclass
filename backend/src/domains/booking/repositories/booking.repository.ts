@@ -109,10 +109,12 @@ export class BookingRepository {
     });
   }
 
-  async findAll(params: { page?: number; limit?: number; status?: BookingStatus }) {
-    const { page = 1, limit = 20, status } = params;
+  async findAll(params: { page?: number; limit?: number; status?: BookingStatus; eventId?: string }) {
+    const { page = 1, limit = 20, status, eventId } = params;
     const skip = (page - 1) * limit;
-    const where: Prisma.BookingWhereInput = status ? { status } : {};
+    const where: Prisma.BookingWhereInput = {};
+    if (status) where.status = status;
+    if (eventId) where.eventId = eventId;
     const [bookings, total] = await Promise.all([
       prisma.booking.findMany({
         where,

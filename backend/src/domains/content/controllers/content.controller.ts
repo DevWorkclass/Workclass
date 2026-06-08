@@ -7,7 +7,11 @@
 
 import type { Request, Response, NextFunction } from 'express';
 import { ContentService } from '../services/content.service';
-import { setHomeThemesSchema } from '../validators/content.validator';
+import {
+  setHomeThemesSchema,
+  setPartnersSchema,
+  setAppConfigSchema,
+} from '../validators/content.validator';
 import { ValidationError } from '../../shared/errors/types/error.types';
 
 export class ContentController {
@@ -36,11 +40,55 @@ export class ContentController {
     try {
       const file = req.file;
       if (!file) throw new ValidationError('Aucun fichier reçu (champ « image »).');
-      const url = await this.service.uploadThemeImage({
+      const url = await this.service.uploadAnyImage({
         buffer: file.buffer,
         mimetype: file.mimetype,
       });
       res.json({ success: true, data: { url } });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async getPartners(_req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      res.json({ success: true, data: await this.service.getPartners() });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async setPartners(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const { partners } = setPartnersSchema.parse(req.body);
+      const saved = await this.service.setPartners(partners, req.user?.userId);
+      res.json({ success: true, data: saved });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async getAppConfig(_req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      res.json({ success: true, data: await this.service.getAppConfig() });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async setAppConfig(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const config = setAppConfigSchema.parse(req.body);
+      const saved = await this.service.setAppConfig(config, req.user?.userId);
+      res.json({ success: true, data: saved });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async getTestimonials(_req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      res.json({ success: true, data: await this.service.getTestimonials() });
     } catch (error) {
       next(error);
     }

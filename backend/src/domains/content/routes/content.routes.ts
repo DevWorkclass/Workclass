@@ -11,6 +11,7 @@ import { ContentController } from '../controllers/content.controller';
 import {
   authMiddleware,
   requirePermission,
+  requireRole,
 } from '../../shared/auth/middleware/auth.middleware';
 import { PERMISSIONS } from '../../users/types/users.types';
 
@@ -22,11 +23,22 @@ const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 5 *
 
 const guard = [authMiddleware, requirePermission(PERMISSIONS.CONTENT_MANAGE)];
 
+// --- Public (contenu non sensible) ---
 router.get('/content/home-themes', controller.getHomeThemes.bind(controller));
+router.get('/content/partners', controller.getPartners.bind(controller));
+router.get('/content/app-config', controller.getAppConfig.bind(controller));
+router.get('/content/testimonials', controller.getTestimonials.bind(controller));
+
+// --- Admin : gestion du contenu (guard content:manage) ---
 router.post('/admin/content/home-themes', ...guard, controller.setHomeThemes.bind(controller));
+router.post('/admin/content/partners', ...guard, controller.setPartners.bind(controller));
+router.post('/admin/content/app-config', ...guard, controller.setAppConfig.bind(controller));
+
+// Upload d'image : tout admin connecté (sert aussi aux couvertures d'événements).
 router.post(
   '/admin/content/upload-image',
-  ...guard,
+  authMiddleware,
+  requireRole('admin', 'super_admin'),
   upload.single('image'),
   controller.uploadImage.bind(controller),
 );

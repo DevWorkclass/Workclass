@@ -142,6 +142,7 @@ export class BookingService {
     page?: number;
     limit?: number;
     status?: 'pending' | 'confirmed' | 'cancelled';
+    eventId?: string;
   }) {
     return this.repository.findAll(params);
   }

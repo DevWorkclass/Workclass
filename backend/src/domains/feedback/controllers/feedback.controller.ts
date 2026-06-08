@@ -17,6 +17,8 @@ const validateSchema = z.object({ token: z.string().min(16) });
 
 const generateLinkSchema = z.object({ bookingId: z.string().uuid() });
 
+const generateEventLinksSchema = z.object({ eventId: z.string().uuid() });
+
 const moderateSchema = z.object({
   responseId: z.string().uuid(),
   action: z.enum(['approved', 'rejected']),
@@ -58,6 +60,20 @@ export class FeedbackController {
     try {
       const { bookingId } = generateLinkSchema.parse(req.body);
       const result = await this.service.generateLink(bookingId);
+      res.json({ success: true, data: result });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
+   * POST /admin/feedback/event-links — génère les liens d'avis pour tous les
+   * présents (billet scanné) d'un événement.
+   */
+  async generateEventLinks(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const { eventId } = generateEventLinksSchema.parse(req.body);
+      const result = await this.service.generateLinksForEvent(eventId);
       res.json({ success: true, data: result });
     } catch (error) {
       next(error);

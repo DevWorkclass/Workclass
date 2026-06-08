@@ -51,8 +51,17 @@ export class EventsService {
       coverImage: data.coverImage || null,
       recommendations: data.recommendations || null,
       status: data.status,
-      program: data.program || [],
-      speakers: data.speakers || [],
+      program: (data.program ?? []) as object,
+      speakers: (data.speakers ?? []) as object,
+      // Types de billets (tarification + nombre de places) créés avec l'événement.
+      ticketTypes: {
+        create: (data.ticketTypes ?? []).map((t) => ({
+          name: t.name,
+          description: t.description || null,
+          price: t.price,
+          quota: t.quota,
+        })),
+      },
     });
 
     await logAudit({
@@ -88,7 +97,31 @@ export class EventsService {
         ? { recommendations: fields.recommendations || null }
         : {}),
       ...(fields.status !== undefined ? { status: fields.status } : {}),
+      ...(fields.program !== undefined ? { program: fields.program as object } : {}),
+      ...(fields.speakers !== undefined ? { speakers: fields.speakers as object } : {}),
     });
+
+    // Types de billets : mise à jour des existants (par id) + création des nouveaux.
+    // On ne supprime pas (intégrité avec les réservations / soldCount).
+    if (fields.ticketTypes !== undefined) {
+      for (const t of fields.ticketTypes) {
+        if (t.id) {
+          await this.repository.updateTicketType(t.id, {
+            name: t.name,
+            description: t.description || null,
+            price: t.price,
+            quota: t.quota,
+          });
+        } else {
+          await this.repository.createTicketType(id, {
+            name: t.name,
+            description: t.description || null,
+            price: t.price,
+            quota: t.quota,
+          });
+        }
+      }
+    }
 
     await logAudit({
       action: 'EVENT_UPDATE',

@@ -71,6 +71,37 @@ export class FeedbackService {
   }
 
   /**
+   * Génère les liens d'avis pour TOUS les participants présents (billet scanné)
+   * d'un événement, sans doublon. Utilisé par le job « 1h avant la fin » et par
+   * le déclenchement manuel admin. Renvoie le nombre de liens créés.
+   */
+  async generateLinksForEvent(eventId: string): Promise<{ created: number }> {
+    // Réservations confirmées de l'événement, billet scanné, sans lien existant.
+    const bookings = await prisma.booking.findMany({
+      where: {
+        eventId,
+        status: 'confirmed',
+        ticket: { scannedAt: { not: null } },
+        feedbackLinks: { none: {} },
+      },
+      include: { participant: true },
+    });
+
+    let created = 0;
+    for (const booking of bookings) {
+      if (!booking.participant) continue;
+      try {
+        await this.generateLink(booking.id);
+        created += 1;
+      } catch (err) {
+        // On continue même si un envoi échoue (log seulement).
+        console.error('Lien avis non genere pour', booking.id, err);
+      }
+    }
+    return { created };
+  }
+
+  /**
    * Vérifie qu'un token est valide (non utilisé, non expiré).
    * Public — pour pré-affichage du formulaire côté frontend.
    */

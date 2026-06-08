@@ -14,3 +14,18 @@ export const setHomeThemesSchema = z.object({
 });
 
 export type SetHomeThemesInput = z.infer<typeof setHomeThemesSchema>;
+
+export const partnerSchema = z.object({
+  name: z.string().min(1, 'Nom requis').max(120),
+  logoUrl: z.string().url('URL logo invalide').optional().or(z.literal('')),
+  description: z.string().max(300).optional().or(z.literal('')),
+});
+
+export const setPartnersSchema = z.object({
+  partners: z.array(partnerSchema).max(30),
+});
+
+export const setAppConfigSchema = z.object({
+  testimonialIntervalMs: z.number().int().min(1000).max(60000),
+  testimonialAutoScroll: z.boolean(),
+});

@@ -15,3 +15,14 @@ export const createEventSchema = z.object({
 });
 
 export type CreateEventInput = z.infer<typeof createEventSchema>;
+
+// Mise à jour : id obligatoire + champs partiels (on ne modifie que ce qui est fourni).
+export const updateEventSchema = createEventSchema.partial().extend({
+  id: z.string().uuid('ID evenement invalide'),
+});
+
+export type UpdateEventInput = z.infer<typeof updateEventSchema>;
+
+export const deleteEventSchema = z.object({
+  id: z.string().uuid('ID evenement invalide'),
+});

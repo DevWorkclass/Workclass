@@ -8,6 +8,26 @@ import { z } from 'zod';
 import { Button } from '@/components/ui/button';
 import { apiFetch } from '@/lib/api';
 
+/** Convertit une date ISO en valeur d'input `datetime-local` (YYYY-MM-DDTHH:mm). */
+function toLocalInput(iso?: string): string {
+  if (!iso) return '';
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return '';
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+export interface EventFormInitial {
+  title?: string;
+  description?: string;
+  location?: string;
+  startDate?: string;
+  endDate?: string;
+  coverImage?: string;
+  recommendations?: string;
+  status?: 'draft' | 'published' | 'archived';
+}
+
 const eventSchema = z.object({
   title: z.string().min(3, 'Le titre doit faire au moins 3 caractères'),
   description: z.string().min(10, 'La description doit faire au moins 10 caractères'),
@@ -21,9 +41,16 @@ const eventSchema = z.object({
 
 type EventFormValues = z.infer<typeof eventSchema>;
 
-export function EventForm() {
+interface EventFormProps {
+  /** Si fourni : mode édition (POST /admin/events/update), sinon création. */
+  eventId?: string;
+  initial?: EventFormInitial;
+}
+
+export function EventForm({ eventId, initial }: EventFormProps = {}) {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
+  const isEdit = Boolean(eventId);
 
   const {
     register,
@@ -32,14 +59,21 @@ export function EventForm() {
   } = useForm<EventFormValues>({
     resolver: zodResolver(eventSchema),
     defaultValues: {
-      status: 'draft',
+      title: initial?.title ?? '',
+      description: initial?.description ?? '',
+      location: initial?.location ?? '',
+      startDate: toLocalInput(initial?.startDate),
+      endDate: toLocalInput(initial?.endDate),
+      coverImage: initial?.coverImage ?? '',
+      recommendations: initial?.recommendations ?? '',
+      status: initial?.status ?? 'draft',
     },
   });
 
   const onSubmit = async (data: EventFormValues) => {
     try {
       setError(null);
-      
+
       // Conversion des dates locales en ISO 8601 pour le backend
       const payload = {
         ...data,
@@ -47,16 +81,23 @@ export function EventForm() {
         endDate: new Date(data.endDate).toISOString(),
       };
 
-      await apiFetch('/events', {
-        method: 'POST',
-        body: JSON.stringify(payload),
-      });
+      if (isEdit) {
+        await apiFetch('/admin/events/update', {
+          method: 'POST',
+          body: JSON.stringify({ id: eventId, ...payload }),
+        });
+      } else {
+        await apiFetch('/events', {
+          method: 'POST',
+          body: JSON.stringify(payload),
+        });
+      }
 
       router.push('/admin/evenements');
       router.refresh();
     } catch (err) {
       const e = err as Error;
-      setError(e.message || "Une erreur est survenue lors de la création de l'événement.");
+      setError(e.message || "Une erreur est survenue lors de l'enregistrement de l'événement.");
     }
   };
 
@@ -194,7 +235,11 @@ export function EventForm() {
           Annuler
         </Button>
         <Button type="submit" variant="gold" disabled={isSubmitting}>
-          {isSubmitting ? 'Création en cours...' : "Créer l'événement"}
+          {isSubmitting
+            ? 'Enregistrement...'
+            : isEdit
+              ? 'Enregistrer les modifications'
+              : "Créer l'événement"}
         </Button>
       </div>
     </form>

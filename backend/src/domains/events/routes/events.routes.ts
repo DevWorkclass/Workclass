@@ -21,4 +21,18 @@ router.get(
   controller.list.bind(controller)
 );
 
+// Modification / suppression : POST + body (id interne = donnée sensible, cf. AI_RULES)
+router.post(
+  '/admin/events/update',
+  authMiddleware,
+  requireRole('admin', 'super_admin'),
+  controller.update.bind(controller)
+);
+router.post(
+  '/admin/events/delete',
+  authMiddleware,
+  requireRole('admin', 'super_admin'),
+  controller.remove.bind(controller)
+);
+
 export { router as eventsRoutes };

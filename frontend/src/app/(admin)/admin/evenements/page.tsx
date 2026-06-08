@@ -24,6 +24,9 @@ interface AdminEvent {
   startDate: string;
   endDate: string;
   status: 'draft' | 'published' | 'archived';
+  seatsTotal: number;
+  seatsSold: number;
+  seatsAvailable: number;
 }
 
 const STATUS_BADGE: Record<AdminEvent['status'], { tone: BadgeTone; label: string }> = {
@@ -45,6 +48,8 @@ export default function AdminEventsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const [busyId, setBusyId] = useState<string | null>(null);
+
   const handleAuthError = useCallback(
     (err: unknown): boolean => {
       if (err instanceof ApiError && err.status === 401) {
@@ -56,18 +61,44 @@ export default function AdminEventsPage() {
     [router],
   );
 
-  useEffect(() => {
-    let active = true;
-    apiAuth<{ data: AdminEvent[] }>('/events')
-      .then((res) => active && setEvents(res.data))
-      .catch((err) => {
-        if (active && !handleAuthError(err)) setError('Impossible de charger les événements.');
-      })
-      .finally(() => active && setLoading(false));
-    return () => {
-      active = false;
-    };
+  const load = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const res = await apiAuth<{ data: AdminEvent[] }>('/events');
+      setEvents(res.data);
+    } catch (err) {
+      if (!handleAuthError(err)) setError('Impossible de charger les événements.');
+    } finally {
+      setLoading(false);
+    }
   }, [handleAuthError]);
+
+  useEffect(() => {
+    void load();
+  }, [load]);
+
+  const remove = async (ev: AdminEvent) => {
+    if (!window.confirm(`Supprimer définitivement « ${ev.title} » ?`)) return;
+    try {
+      setBusyId(ev.id);
+      await apiAuth('/admin/events/delete', {
+        method: 'POST',
+        body: JSON.stringify({ id: ev.id }),
+      });
+      await load();
+    } catch (err) {
+      if (!handleAuthError(err)) {
+        setError(
+          err instanceof ApiError && err.status === 400
+            ? 'Impossible de supprimer : des réservations existent.'
+            : 'La suppression a échoué.',
+        );
+      }
+    } finally {
+      setBusyId(null);
+    }
+  };
 
   return (
     <>
@@ -109,12 +140,48 @@ export default function AdminEventsPage() {
                 <h2 className="truncate text-lg font-bold text-brand-navy">{ev.title}</h2>
                 <p className="mt-1 text-sm text-brand-muted">{formatRange(ev.startDate, ev.endDate)}</p>
                 <p className="truncate text-sm text-brand-muted">{ev.location}</p>
-                <div className="mt-auto pt-4">
+
+                {/* Places disponibles (mis à jour après chaque réservation) */}
+                <div className="mt-4">
+                  <div className="flex items-baseline justify-between text-sm">
+                    <span className="font-semibold text-brand-navy">
+                      {ev.seatsAvailable} place{ev.seatsAvailable > 1 ? 's' : ''} disponible
+                      {ev.seatsAvailable > 1 ? 's' : ''}
+                    </span>
+                    <span className="text-xs text-brand-muted">
+                      {ev.seatsSold}/{ev.seatsTotal} réservées
+                    </span>
+                  </div>
+                  <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-brand-cream">
+                    <div
+                      className="h-full rounded-full bg-brand-gold"
+                      style={{
+                        width: `${ev.seatsTotal > 0 ? Math.round((ev.seatsSold / ev.seatsTotal) * 100) : 0}%`,
+                      }}
+                    />
+                  </div>
+                </div>
+
+                <div className="mt-auto flex flex-wrap gap-2 pt-4">
+                  <Link href={`${ROUTES.admin.events}/${ev.id}/modifier`}>
+                    <Button variant="outline" size="sm">
+                      Modifier
+                    </Button>
+                  </Link>
                   <Link href={`${ROUTES.public.home}${ev.slug}`} target="_blank">
                     <Button variant="outline" size="sm">
                       Voir la page
                     </Button>
                   </Link>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="text-semantic-error"
+                    disabled={busyId === ev.id}
+                    onClick={() => remove(ev)}
+                  >
+                    Supprimer
+                  </Button>
                 </div>
               </div>
             </article>

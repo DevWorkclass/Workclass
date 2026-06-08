@@ -11,16 +11,22 @@ import {
   DEFAULT_HOME_THEMES,
   DEFAULT_INDUSTRIES,
   DEFAULT_FOOTER,
+  DEFAULT_PAYMENT_CONFIG,
+  DEFAULT_SUPPORT_CONFIG,
   APP_CONFIG_KEY,
   HOME_THEMES_KEY,
   PARTNERS_KEY,
   INDUSTRIES_KEY,
   FOOTER_KEY,
+  PAYMENT_CONFIG_KEY,
+  SUPPORT_CONFIG_KEY,
   type AppConfig,
   type HomeTheme,
   type Partner,
   type Industry,
   type FooterContent,
+  type PaymentConfig,
+  type SupportConfig,
 } from '../types/content.types';
 import type { SetHomeThemesInput } from '../validators/content.validator';
 
@@ -186,6 +192,50 @@ export class ContentService {
       result: 'success',
     });
     return footer;
+  }
+
+  /** Config paiement (numéros mobile money) — défaut si absent. */
+  async getPaymentConfig(): Promise<PaymentConfig> {
+    const row = await prisma.siteSetting.findUnique({ where: { key: PAYMENT_CONFIG_KEY } });
+    return row ? { ...DEFAULT_PAYMENT_CONFIG, ...(row.value as object) } : DEFAULT_PAYMENT_CONFIG;
+  }
+
+  async setPaymentConfig(config: PaymentConfig, userId?: string): Promise<PaymentConfig> {
+    await prisma.siteSetting.upsert({
+      where: { key: PAYMENT_CONFIG_KEY },
+      create: { key: PAYMENT_CONFIG_KEY, value: config as unknown as object },
+      update: { value: config as unknown as object },
+    });
+    await logAudit({
+      action: 'CONTENT_PAYMENT_CONFIG_UPDATE',
+      userId,
+      resource: 'site_setting',
+      resourceId: PAYMENT_CONFIG_KEY,
+      result: 'success',
+    });
+    return config;
+  }
+
+  /** Config support client (WhatsApp + email) — défaut si absent. */
+  async getSupportConfig(): Promise<SupportConfig> {
+    const row = await prisma.siteSetting.findUnique({ where: { key: SUPPORT_CONFIG_KEY } });
+    return row ? { ...DEFAULT_SUPPORT_CONFIG, ...(row.value as object) } : DEFAULT_SUPPORT_CONFIG;
+  }
+
+  async setSupportConfig(config: SupportConfig, userId?: string): Promise<SupportConfig> {
+    await prisma.siteSetting.upsert({
+      where: { key: SUPPORT_CONFIG_KEY },
+      create: { key: SUPPORT_CONFIG_KEY, value: config as unknown as object },
+      update: { value: config as unknown as object },
+    });
+    await logAudit({
+      action: 'CONTENT_SUPPORT_CONFIG_UPDATE',
+      userId,
+      resource: 'site_setting',
+      resourceId: SUPPORT_CONFIG_KEY,
+      result: 'success',
+    });
+    return config;
   }
 
   /**

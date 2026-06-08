@@ -56,6 +56,23 @@ export const footerLinkSchema = z.object({
   href: safeHref,
 });
 
+// Numéro de téléphone permissif (chiffres, +, espaces, tirets, parenthèses), vide autorisé.
+const phoneField = z
+  .string()
+  .max(30)
+  .regex(/^[+0-9 ()\-]*$/, 'Numéro invalide');
+
+export const setPaymentConfigSchema = z.object({
+  airtelMoney: phoneField,
+  mobileCash: phoneField,
+  instructions: z.string().max(500),
+});
+
+export const setSupportConfigSchema = z.object({
+  whatsapp: phoneField,
+  email: z.string().email('Email invalide').or(z.literal('')),
+});
+
 export const setFooterSchema = z.object({
   description: z.string().max(400),
   contactEmail: z.string().email('Email invalide').or(z.literal('')),

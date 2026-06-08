@@ -21,6 +21,8 @@ export const PARTNERS_KEY = 'partners';
 export const APP_CONFIG_KEY = 'app_config';
 export const INDUSTRIES_KEY = 'industries';
 export const FOOTER_KEY = 'footer';
+export const PAYMENT_CONFIG_KEY = 'payment_config';
+export const SUPPORT_CONFIG_KEY = 'support_config';
 
 /** Logo partenaire (affiché sur la page d'accueil). */
 export interface Partner {
@@ -47,6 +49,19 @@ export interface FooterContent {
   contactEmail: string;
   location: string;
   columns: { title: string; links: FooterLink[] }[];
+}
+
+/** Numéros mobile money de réception (affichés au paiement). */
+export interface PaymentConfig {
+  airtelMoney: string;
+  mobileCash: string;
+  instructions: string;
+}
+
+/** Contact support client (WhatsApp + email uniquement, pas d'appel). */
+export interface SupportConfig {
+  whatsapp: string;
+  email: string;
 }
 
 /** Configuration du dynamisme de l'app (page d'accueil). */
@@ -133,4 +148,16 @@ export const DEFAULT_FOOTER: FooterContent = {
       ],
     },
   ],
+};
+
+export const DEFAULT_PAYMENT_CONFIG: PaymentConfig = {
+  airtelMoney: '',
+  mobileCash: '',
+  instructions:
+    'Effectuez le paiement vers le numéro indiqué, puis conservez votre référence de réservation.',
+};
+
+export const DEFAULT_SUPPORT_CONFIG: SupportConfig = {
+  whatsapp: '',
+  email: 'support@workclass.com',
 };

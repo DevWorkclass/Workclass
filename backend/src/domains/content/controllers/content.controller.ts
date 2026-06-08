@@ -13,6 +13,8 @@ import {
   setAppConfigSchema,
   setIndustriesSchema,
   setFooterSchema,
+  setPaymentConfigSchema,
+  setSupportConfigSchema,
 } from '../validators/content.validator';
 import { ValidationError } from '../../shared/errors/types/error.types';
 
@@ -117,6 +119,42 @@ export class ContentController {
   async getFooter(_req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       res.json({ success: true, data: await this.service.getFooter() });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async getPaymentConfig(_req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      res.json({ success: true, data: await this.service.getPaymentConfig() });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async setPaymentConfig(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const config = setPaymentConfigSchema.parse(req.body);
+      const saved = await this.service.setPaymentConfig(config, req.user?.userId);
+      res.json({ success: true, data: saved });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async getSupportConfig(_req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      res.json({ success: true, data: await this.service.getSupportConfig() });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async setSupportConfig(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const config = setSupportConfigSchema.parse(req.body);
+      const saved = await this.service.setSupportConfig(config, req.user?.userId);
+      res.json({ success: true, data: saved });
     } catch (error) {
       next(error);
     }

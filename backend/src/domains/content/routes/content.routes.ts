@@ -22,6 +22,7 @@ const controller = new ContentController();
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 5 * 1024 * 1024 } });
 
 const guard = [authMiddleware, requirePermission(PERMISSIONS.CONTENT_MANAGE)];
+const guardPayments = [authMiddleware, requirePermission(PERMISSIONS.PAYMENTS_MANAGE)];
 
 // --- Public (contenu non sensible) ---
 router.get('/content/home-themes', controller.getHomeThemes.bind(controller));
@@ -30,6 +31,8 @@ router.get('/content/app-config', controller.getAppConfig.bind(controller));
 router.get('/content/testimonials', controller.getTestimonials.bind(controller));
 router.get('/content/industries', controller.getIndustries.bind(controller));
 router.get('/content/footer', controller.getFooter.bind(controller));
+router.get('/content/payment-config', controller.getPaymentConfig.bind(controller));
+router.get('/content/support', controller.getSupportConfig.bind(controller));
 
 // --- Admin : gestion du contenu (guard content:manage) ---
 router.post('/admin/content/home-themes', ...guard, controller.setHomeThemes.bind(controller));
@@ -37,6 +40,9 @@ router.post('/admin/content/partners', ...guard, controller.setPartners.bind(con
 router.post('/admin/content/app-config', ...guard, controller.setAppConfig.bind(controller));
 router.post('/admin/content/industries', ...guard, controller.setIndustries.bind(controller));
 router.post('/admin/content/footer', ...guard, controller.setFooter.bind(controller));
+router.post('/admin/content/support', ...guard, controller.setSupportConfig.bind(controller));
+// Paiement : permission dédiée payments:manage.
+router.post('/admin/content/payment-config', ...guardPayments, controller.setPaymentConfig.bind(controller));
 
 // Upload d'image : tout admin connecté (sert aussi aux couvertures d'événements).
 router.post(

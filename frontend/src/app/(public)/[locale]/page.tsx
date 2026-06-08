@@ -14,21 +14,19 @@ import { PartnersSection } from '@/components/sections/PartnersSection';
 import { SpeakersSection } from '@/components/sections/SpeakersSection';
 import { TestimonialsSection } from '@/components/sections/TestimonialsSection';
 import { ThemesSection } from '@/components/sections/ThemesSection';
-import { HeroSection } from '@/domains/public/event/components/HeroSection';
+import { HeroDynamic } from '@/components/sections/HeroDynamic';
 import { MOCK_EVENT } from '@/data/mockData';
 
 export default function HomePage() {
-  const event = MOCK_EVENT;
-
   return (
     <>
-      <HeroSection event={event} />
+      <HeroDynamic />
       <FeatureStrip />
       <EventsPreviewSection />
       <PartnerBanner />
       <ThemesSection />
       <IndustriesSection />
-      <EventDetailSection event={event} />
+      <EventDetailSection event={MOCK_EVENT} />
       <ChronogrammeSection />
       <SpeakersSection />
       <TestimonialsSection />

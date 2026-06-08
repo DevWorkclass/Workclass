@@ -35,19 +35,23 @@ export function Header() {
           <Logo />
         </Link>
 
-        <nav aria-label="Navigation principale" className="hidden items-center gap-7 lg:flex">
+        <nav
+          aria-label="Navigation principale"
+          className="hidden items-center gap-5 md:flex lg:gap-7"
+        >
           {NAV_LINKS.map(({ href, label }) => (
             <Link
               key={href}
               href={href}
-              className="text-sm font-medium text-brand-navy/80 transition-colors hover:text-brand-navy"
+              className="group relative text-sm font-medium text-brand-navy/80 transition-colors hover:text-brand-navy"
             >
               {label}
+              <span className="absolute -bottom-1 left-0 h-0.5 w-0 rounded-full bg-brand-gold transition-all duration-300 group-hover:w-full" />
             </Link>
           ))}
         </nav>
 
-        <div className="hidden lg:block">
+        <div className="hidden md:block">
           <Button asChild variant="gold" size="sm">
             <Link href={ROUTES.public.reservation.base}>Réserver</Link>
           </Button>
@@ -55,7 +59,7 @@ export function Header() {
 
         <button
           type="button"
-          className="lg:hidden"
+          className="md:hidden"
           aria-label={open ? 'Fermer le menu' : 'Ouvrir le menu'}
           aria-expanded={open}
           onClick={() => setOpen((v) => !v)}
@@ -67,7 +71,7 @@ export function Header() {
       {/* Panneau mobile */}
       <div
         className={cn(
-          'overflow-hidden border-t border-brand-navy/10 lg:hidden',
+          'overflow-hidden border-t border-brand-navy/10 md:hidden',
           open ? 'max-h-96' : 'max-h-0',
           'transition-[max-height] duration-300',
         )}

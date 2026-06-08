@@ -24,6 +24,7 @@ interface AdminEvent {
   startDate: string;
   endDate: string;
   status: 'draft' | 'published' | 'archived';
+  coverImage: string | null;
   seatsTotal: number;
   seatsSold: number;
   seatsAvailable: number;
@@ -129,7 +130,10 @@ export default function AdminEventsPage() {
               key={ev.id}
               className="flex flex-col overflow-hidden rounded-2xl border border-black/5 bg-white shadow-sm"
             >
-              <div className="relative aspect-[16/7] bg-brand-navy-deep">
+              <div
+                className="relative aspect-[16/7] bg-brand-navy-deep bg-cover bg-center"
+                style={ev.coverImage ? { backgroundImage: `url(${ev.coverImage})` } : undefined}
+              >
                 <span className="absolute right-4 top-4">
                   <Badge tone={STATUS_BADGE[ev.status].tone} dot>
                     {STATUS_BADGE[ev.status].label}

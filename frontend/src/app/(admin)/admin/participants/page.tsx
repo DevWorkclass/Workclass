@@ -43,9 +43,11 @@ export default function AdminParticipantsPage() {
 function ParticipantsContent() {
   const router = useRouter();
   const [bookings, setBookings] = useState<AdminBooking[]>([]);
+  const [events, setEvents] = useState<{ id: string; title: string }[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [query, setQuery] = useState('');
+  const [eventId, setEventId] = useState<string>('all');
 
   const handleAuthError = useCallback(
     (err: unknown): boolean => {
@@ -60,7 +62,9 @@ function ParticipantsContent() {
 
   useEffect(() => {
     let active = true;
-    apiAuth<{ data: AdminBooking[] }>('/admin/bookings?limit=200')
+    setLoading(true);
+    const q = eventId !== 'all' ? `&eventId=${eventId}` : '';
+    apiAuth<{ data: AdminBooking[] }>(`/admin/bookings?limit=200${q}`)
       .then((res) => active && setBookings(res.data))
       .catch((err) => {
         if (active && !handleAuthError(err)) setError('Impossible de charger les participants.');
@@ -69,7 +73,15 @@ function ParticipantsContent() {
     return () => {
       active = false;
     };
-  }, [handleAuthError]);
+  }, [handleAuthError, eventId]);
+
+  useEffect(() => {
+    apiAuth<{ data: { id: string; title: string }[] }>('/events')
+      .then((res) => setEvents(res.data.map((e) => ({ id: e.id, title: e.title }))))
+      .catch(() => {
+        /* filtre optionnel */
+      });
+  }, []);
 
   // Un participant par réservation (le titulaire), réservations non annulées.
   const participants = useMemo(
@@ -108,7 +120,28 @@ function ParticipantsContent() {
       <PageHeader
         title="Participants"
         subtitle={`${stats.seats} place${stats.seats > 1 ? 's' : ''} réservée${stats.seats > 1 ? 's' : ''}`}
-        actions={<ExportButtons path="/admin/participants/export" fallbackName="participants" />}
+        actions={
+          <>
+            <select
+              aria-label="Filtrer par événement"
+              value={eventId}
+              onChange={(e) => setEventId(e.target.value)}
+              className="rounded-full border border-black/10 bg-white px-4 py-2 text-sm text-brand-navy focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-gold"
+            >
+              <option value="all">Tous événements</option>
+              {events.map((ev) => (
+                <option key={ev.id} value={ev.id}>
+                  {ev.title}
+                </option>
+              ))}
+            </select>
+            <ExportButtons
+              path="/admin/participants/export"
+              filters={eventId === 'all' ? {} : { eventId }}
+              fallbackName="participants"
+            />
+          </>
+        }
       />
 
       <section className="grid gap-4 sm:grid-cols-3">

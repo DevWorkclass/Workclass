@@ -5,10 +5,10 @@
  * Met en évidence la route active via `usePathname`.
  */
 import {
+  Award,
   BarChart3,
   CalendarDays,
   Home,
-  LayoutGrid,
   LogOut,
   Megaphone,
   MessageSquare,
@@ -22,6 +22,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import type { LucideIcon } from 'lucide-react';
 
+import { Logo } from '@/components/shared/Logo';
 import { ROUTES } from '@/constants/routes';
 import { ROUTE_PERMISSIONS } from '@/constants/permissions';
 import { clearSession, hasPermission } from '@/lib/auth';
@@ -53,6 +54,7 @@ const SECTIONS: NavSection[] = [
       { label: 'Réservations', href: ROUTES.admin.bookings, icon: Ticket },
       { label: 'Participants', href: ROUTES.admin.participants, icon: Users },
       { label: 'Scan & Billetterie', href: ROUTES.admin.scan, icon: ScanLine },
+      { label: 'Certificats', href: ROUTES.admin.certificates, icon: Award },
       { label: 'Avis', href: ROUTES.admin.feedback, icon: MessageSquare },
       { label: 'Publicités', href: ROUTES.admin.ads, icon: Megaphone },
     ],
@@ -106,8 +108,8 @@ export function Sidebar({ open = false, onClose }: SidebarProps) {
     >
       {/* Logo */}
       <div className="flex h-16 items-center px-6">
-        <Link href={ROUTES.admin.dashboard} aria-label="Accueil admin">
-          <LayoutGrid className="size-7 text-brand-gold" />
+        <Link href={ROUTES.admin.dashboard} aria-label="Accueil admin" className="rounded-lg bg-white/95 px-2 py-1">
+          <Logo size={32} />
         </Link>
       </div>
 

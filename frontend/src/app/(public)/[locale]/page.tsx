@@ -9,6 +9,7 @@ import { FeatureStrip } from '@/components/sections/FeatureStrip';
 import { FinalCta } from '@/components/sections/FinalCta';
 import { IndustriesSection } from '@/components/sections/IndustriesSection';
 import { PartnerBanner } from '@/components/sections/PartnerBanner';
+import { PartnersSection } from '@/components/sections/PartnersSection';
 import { SpeakersSection } from '@/components/sections/SpeakersSection';
 import { TestimonialsSection } from '@/components/sections/TestimonialsSection';
 import { ThemesSection } from '@/components/sections/ThemesSection';
@@ -29,6 +30,7 @@ export default function HomePage() {
       <ChronogrammeSection />
       <SpeakersSection />
       <TestimonialsSection />
+      <PartnersSection />
       <FaqSection />
       <FinalCta />
     </>

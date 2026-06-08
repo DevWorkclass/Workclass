@@ -69,10 +69,12 @@ function BookingsContent() {
   const canWrite = hasPermission(user, 'bookings:write');
 
   const [bookings, setBookings] = useState<AdminBooking[]>([]);
+  const [events, setEvents] = useState<{ id: string; title: string }[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [query, setQuery] = useState('');
   const [status, setStatus] = useState<StatusFilter>('all');
+  const [eventId, setEventId] = useState<string>('all');
   const [busyId, setBusyId] = useState<string | null>(null);
 
   const handleAuthError = useCallback(
@@ -90,18 +92,27 @@ function BookingsContent() {
     try {
       setLoading(true);
       setError(null);
-      const res = await apiAuth<{ data: AdminBooking[] }>('/admin/bookings?limit=200');
+      const q = eventId !== 'all' ? `&eventId=${eventId}` : '';
+      const res = await apiAuth<{ data: AdminBooking[] }>(`/admin/bookings?limit=200${q}`);
       setBookings(res.data);
     } catch (err) {
       if (!handleAuthError(err)) setError('Impossible de charger les réservations.');
     } finally {
       setLoading(false);
     }
-  }, [handleAuthError]);
+  }, [handleAuthError, eventId]);
 
   useEffect(() => {
     void load();
   }, [load]);
+
+  useEffect(() => {
+    apiAuth<{ data: { id: string; title: string }[] }>('/events')
+      .then((res) => setEvents(res.data.map((e) => ({ id: e.id, title: e.title }))))
+      .catch(() => {
+        /* liste événements optionnelle pour le filtre */
+      });
+  }, []);
 
   const act = async (id: string, action: 'validate' | 'cancel') => {
     try {
@@ -161,6 +172,19 @@ function BookingsContent() {
         actions={
           <>
             <select
+              aria-label="Filtrer par événement"
+              value={eventId}
+              onChange={(e) => setEventId(e.target.value)}
+              className={selectClass}
+            >
+              <option value="all">Tous événements</option>
+              {events.map((ev) => (
+                <option key={ev.id} value={ev.id}>
+                  {ev.title}
+                </option>
+              ))}
+            </select>
+            <select
               aria-label="Filtrer par statut"
               value={status}
               onChange={(e) => setStatus(e.target.value as StatusFilter)}
@@ -173,7 +197,10 @@ function BookingsContent() {
             </select>
             <ExportButtons
               path="/admin/bookings/export"
-              filters={status === 'all' ? {} : { status }}
+              filters={{
+                ...(status === 'all' ? {} : { status }),
+                ...(eventId === 'all' ? {} : { eventId }),
+              }}
               fallbackName="reservations"
             />
           </>

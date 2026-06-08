@@ -95,3 +95,9 @@
     scroll-behavior: auto !important;
   }
 }
+
+/* Défilement continu (marquee) — logos partenaires */
+@keyframes wcg-marquee {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}

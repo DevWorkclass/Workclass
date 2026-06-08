@@ -101,6 +101,11 @@ export default function AdminSettingsPage() {
                 Statistiques détaillées
               </Button>
             </Link>
+            <Link href="/admin/parametres/config">
+              <Button variant="outline" size="sm">
+                Config
+              </Button>
+            </Link>
             <Button variant="outline" size="sm" onClick={() => setForm(ADMIN_SETTINGS)}>
               Réinitialiser
             </Button>
@@ -130,58 +135,6 @@ export default function AdminSettingsPage() {
             value={form.smtpPort}
             onChange={(v) => set('smtpPort', Number(v))}
           />
-        </Card>
-
-        <Card title="Tarification">
-          <Field
-            label="Prix billet Standard (FCFA)"
-            type="number"
-            value={form.priceStandard}
-            onChange={(v) => set('priceStandard', Number(v))}
-          />
-          <Field
-            label="Prix billet VIP Premium (FCFA)"
-            type="number"
-            value={form.priceVip}
-            onChange={(v) => set('priceVip', Number(v))}
-          />
-          <Field
-            label="Capacité maximale"
-            type="number"
-            value={form.capacityMax}
-            onChange={(v) => set('capacityMax', Number(v))}
-          />
-          <Field
-            label="Places Early Bird"
-            type="number"
-            value={form.earlyBirdSeats}
-            onChange={(v) => set('earlyBirdSeats', Number(v))}
-          />
-        </Card>
-
-        <Card title="Billetterie">
-          <Field
-            label="Préfixe des références billets"
-            value={form.ticketPrefix}
-            onChange={(v) => set('ticketPrefix', v)}
-          />
-          <Field
-            label="Texte bas de page billet"
-            value={form.ticketFooter}
-            onChange={(v) => set('ticketFooter', v)}
-          />
-          <div className="border-t border-black/5 pt-2">
-            <Toggle
-              label="Générer QR Code automatiquement"
-              checked={form.autoQr}
-              onChange={(v) => set('autoQr', v)}
-            />
-            <Toggle
-              label="Envoyer certificat automatiquement"
-              checked={form.autoCertificate}
-              onChange={(v) => set('autoCertificate', v)}
-            />
-          </div>
         </Card>
 
         <Card title="Sécurité">

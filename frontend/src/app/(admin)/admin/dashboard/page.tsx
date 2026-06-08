@@ -160,7 +160,7 @@ export default function AdminDashboardPage() {
               <TdrCard
                 label="Taux d'engagement"
                 value={kpi.tdr.engagementRate}
-                hint="Avis reçus / présents"
+                hint="Avis reçus / réservations"
               />
             </div>
           </section>

@@ -10,6 +10,8 @@ import { useEffect, useState } from 'react';
 import { PageHeader } from '@/components/admin/PageHeader';
 import { Button } from '@/components/ui/button';
 import { PartnersSettings } from '@/components/admin/PartnersSettings';
+import { IndustriesSettings } from '@/components/admin/IndustriesSettings';
+import { FooterSettings } from '@/components/admin/FooterSettings';
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner';
 import { apiAuth, apiFetch, ApiError } from '@/lib/api';
 
@@ -123,6 +125,8 @@ export default function AdminConfigPage() {
         </section>
 
         <PartnersSettings />
+        <IndustriesSettings />
+        <FooterSettings />
       </div>
     </>
   );

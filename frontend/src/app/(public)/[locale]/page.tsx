@@ -2,7 +2,6 @@
  * Page d'accueil publique — mise en avant de l'événement unique.
  * Données: mockData (statique) en attendant le branchement API.
  */
-import { ChronogrammeSection } from '@/components/sections/ChronogrammeSection';
 import { EventDetailSection } from '@/components/sections/EventDetailSection';
 import { EventsPreviewSection } from '@/components/sections/EventsPreviewSection';
 import { FaqSection } from '@/components/sections/FaqSection';
@@ -27,7 +26,6 @@ export default function HomePage() {
       <ThemesSection />
       <IndustriesSection />
       <EventDetailSection event={MOCK_EVENT} />
-      <ChronogrammeSection />
       <SpeakersSection />
       <TestimonialsSection />
       <PartnersSection />

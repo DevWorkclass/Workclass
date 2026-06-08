@@ -17,6 +17,7 @@ interface HomeTheme {
   title: string;
   description: string;
   imageUrl?: string;
+  content?: string;
 }
 
 const ICON_OPTIONS: ThemeIcon[] = ['briefcase', 'trending-up', 'lightbulb', 'rocket', 'globe'];
@@ -102,6 +103,18 @@ function ThemeRow({
             value={theme.description}
             onChange={(e) => onChange({ description: e.target.value })}
             rows={2}
+            className="mt-1 w-full rounded-lg border border-black/10 bg-white px-3 py-2 text-sm text-brand-navy focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-gold"
+          />
+        </label>
+        <label className="block">
+          <span className="text-xs font-semibold uppercase tracking-wider text-brand-muted">
+            Contenu du module (« Voir plus »)
+          </span>
+          <textarea
+            value={theme.content ?? ''}
+            onChange={(e) => onChange({ content: e.target.value })}
+            rows={3}
+            placeholder="Détail du module affiché au clic sur « Voir plus »"
             className="mt-1 w-full rounded-lg border border-black/10 bg-white px-3 py-2 text-sm text-brand-navy focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-gold"
           />
         </label>

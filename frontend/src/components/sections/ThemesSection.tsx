@@ -1,7 +1,6 @@
 'use client';
 
 import { ArrowRight, Briefcase, Globe, Lightbulb, Rocket, TrendingUp } from 'lucide-react';
-import Link from 'next/link';
 import { useEffect, useState } from 'react';
 
 import { MobileScrollCarousel } from '@/components/shared/MobileScrollCarousel';
@@ -26,6 +25,7 @@ const CARD_GRADIENTS = [
 function ThemeCard({ t, index }: { t: Theme; index: number }) {
   const Icon = ICONS[t.icon];
   const gradient = CARD_GRADIENTS[index % CARD_GRADIENTS.length];
+  const [open, setOpen] = useState(false);
   return (
     <article className="group relative overflow-hidden rounded-2xl shadow-sm">
       {t.imageUrl ? (
@@ -50,13 +50,26 @@ function ThemeCard({ t, index }: { t: Theme; index: number }) {
           {t.title.split(' · ').slice(-1)[0]}
         </h3>
         <p className="mt-1.5 text-xs leading-relaxed text-white/60">{t.description}</p>
-        <Link
-          href="#"
-          className="mt-3 inline-flex items-center gap-1 text-xs font-bold uppercase tracking-widest text-white/60 transition-colors group-hover:text-brand-gold"
-        >
-          Voir plus
-          <ArrowRight className="size-3 transition-transform group-hover:translate-x-0.5" />
-        </Link>
+
+        {open && t.content && (
+          <p className="mt-2 max-h-28 overflow-y-auto text-xs leading-relaxed text-white/80">
+            {t.content}
+          </p>
+        )}
+
+        {t.content ? (
+          <button
+            type="button"
+            onClick={() => setOpen((v) => !v)}
+            {...{ 'aria-expanded': open }}
+            className="mt-3 inline-flex items-center gap-1 self-start text-xs font-bold uppercase tracking-widest text-white/60 transition-colors hover:text-brand-gold"
+          >
+            {open ? 'Réduire' : 'Voir plus'}
+            <ArrowRight
+              className={`size-3 transition-transform ${open ? 'rotate-90' : 'group-hover:translate-x-0.5'}`}
+            />
+          </button>
+        ) : null}
       </div>
     </article>
   );
@@ -89,13 +102,6 @@ export function ThemesSection() {
               <span className="text-brand-gold">africain</span>
             </h2>
           </div>
-          <Link
-            href="#chronogramme"
-            className="flex items-center gap-1 text-sm font-semibold text-brand-navy/60 hover:text-brand-navy"
-          >
-            Voir le programme complet
-            <ArrowRight className="size-4" />
-          </Link>
         </div>
 
         {/* ── Grille desktop (sm+) ── */}

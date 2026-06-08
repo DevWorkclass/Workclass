@@ -16,7 +16,6 @@ import { ROUTES } from '@/constants/routes';
 const NAV_LINKS = [
   { href: ROUTES.public.home, label: 'Accueil' },
   { href: ROUTES.public.events, label: 'Événements' },
-  { href: '/#chronogramme', label: 'Chronogramme' },
   { href: '/#faq', label: 'FAQ' },
   { href: ROUTES.admin.login, label: 'Admin' },
 ] as const;

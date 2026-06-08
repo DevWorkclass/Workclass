@@ -16,6 +16,8 @@ export interface Theme {
   description: string;
   /** Image d'illustration éditable depuis l'admin (sinon dégradé + icône). */
   imageUrl?: string;
+  /** Contenu détaillé du module (révélé via « Voir plus »). */
+  content?: string;
 }
 
 export interface Testimonial {

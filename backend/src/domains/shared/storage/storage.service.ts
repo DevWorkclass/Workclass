@@ -25,6 +25,27 @@ function supabaseConfigured(): boolean {
   return Boolean(env.SUPABASE_URL && env.SUPABASE_SERVICE_ROLE_KEY);
 }
 
+// Buckets déjà vérifiés (évite un appel réseau à chaque upload).
+const ensuredBuckets = new Set<string>();
+
+/**
+ * Garantit l'existence d'un bucket Supabase (le crée si absent). Idempotent.
+ * @param isPublic true pour un bucket public (images affichées sur le site).
+ */
+async function ensureBucket(bucket: string, isPublic: boolean): Promise<void> {
+  if (ensuredBuckets.has(bucket)) return;
+  const supabase = getSupabaseServiceClient();
+  const { data } = await supabase.storage.getBucket(bucket);
+  if (!data) {
+    const { error } = await supabase.storage.createBucket(bucket, { public: isPublic });
+    // "already exists" possible en cas de course : on l'ignore.
+    if (error && !/already exists/i.test(error.message)) {
+      throw new Error(`Creation bucket ${bucket} echouee: ${error.message}`);
+    }
+  }
+  ensuredBuckets.add(bucket);
+}
+
 /**
  * Téléverse un PDF et renvoie une URL exploitable.
  * @param category sous-dossier logique (ex. `tickets`, `certificates`)
@@ -80,6 +101,9 @@ export async function uploadImage(
   if (supabaseConfigured()) {
     const supabase = getSupabaseServiceClient();
     const bucket = env.SUPABASE_PUBLIC_BUCKET;
+
+    // Crée le bucket public au besoin (sinon "Bucket not found" → 500).
+    await ensureBucket(bucket, true);
 
     const { error: uploadError } = await supabase.storage
       .from(bucket)

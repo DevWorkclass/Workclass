@@ -172,7 +172,7 @@ export default function AdminEventsPage() {
                       Modifier
                     </Button>
                   </Link>
-                  <Link href={`${ROUTES.public.home}${ev.slug}`} target="_blank">
+                  <Link href={ROUTES.public.eventDetail(ev.slug)} target="_blank">
                     <Button variant="outline" size="sm">
                       Voir la page
                     </Button>

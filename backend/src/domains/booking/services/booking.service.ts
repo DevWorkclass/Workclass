@@ -94,8 +94,8 @@ export class BookingService {
       // Génération du billet
       const { ticketNumber, pdfUrl } = await this.ticketGenerator.generateTicket(id);
 
-      // Envoi de l'email
-      if (updated.participant) {
+      // Envoi de l'email (uniquement si une adresse de contact est disponible).
+      if (updated.participant?.email) {
         await this.emailService.sendTicketConfirmation(
           updated.participant.email,
           ticketNumber,

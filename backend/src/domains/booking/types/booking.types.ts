@@ -5,13 +5,11 @@
 export type BookingStatus = 'pending' | 'confirmed' | 'cancelled';
 export type PaymentStatus = 'pending' | 'paid' | 'failed' | 'refunded';
 
-export interface ParticipantData {
+/** Un participant individuel (une place = une personne). */
+export interface ParticipantInfo {
   firstName: string;
   lastName: string;
-  email: string;
-  phone: string;
-  company?: string;
-  position?: string;
+  email?: string;
 }
 
 export interface BookingOption {
@@ -23,7 +21,12 @@ export interface BookingInput {
   eventId: string;
   ticketTypeId: string;
   quantity: number;
-  participant: ParticipantData;
+  /** Numéro mobile money du payeur (obligatoire). */
+  payerPhone: string;
+  /** Nom complet du payeur (optionnel). */
+  payerName?: string;
+  /** Un participant par place réservée. */
+  participants: ParticipantInfo[];
   options?: BookingOption[];
 }
 

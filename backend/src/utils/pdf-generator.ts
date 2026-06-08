@@ -4,6 +4,8 @@
  */
 
 import PDFDocument from 'pdfkit';
+import path from 'path';
+import fs from 'fs';
 
 interface TicketPDFData {
   ticketNumber: string;
@@ -24,86 +26,208 @@ interface CertificatePDFData {
 }
 
 /**
- * Génère le PDF d'un billet d'entrée avec QR code.
+ * Résout le chemin vers le logo officiel pour inclusion dans les PDF.
+ */
+const getLogoPath = (): string | null => {
+  const possiblePaths = [
+    path.join(__dirname, '../../../../frontend/public/assets/images/logo/logo-icone.png'),
+    path.join(__dirname, '../../../frontend/public/assets/images/logo/logo-icone.png'),
+    path.join(process.cwd(), '../frontend/public/assets/images/logo/logo-icone.png'),
+    path.join(process.cwd(), 'frontend/public/assets/images/logo/logo-icone.png'),
+  ];
+
+  for (const p of possiblePaths) {
+    if (fs.existsSync(p)) {
+      return p;
+    }
+  }
+  return null;
+};
+
+/**
+ * Génère le PDF d'un billet d'entrée avec QR code (Premium & Moderne).
  */
 export async function generateTicketPDF(data: TicketPDFData): Promise<Buffer> {
   return new Promise<Buffer>((resolve, reject) => {
-    const doc = new PDFDocument({ size: 'A4', margin: 50 });
+    const doc = new PDFDocument({ size: 'A4', margin: 0 });
     const chunks: Buffer[] = [];
     doc.on('data', (chunk: Buffer) => chunks.push(chunk));
     doc.on('end', () => resolve(Buffer.concat(chunks)));
     doc.on('error', reject);
 
-    // En-tête
-    doc.fontSize(24).fillColor('#0066CC').text('WORK CLASS GABON', 50, 50);
-    doc.fontSize(14).fillColor('#333').text("Billet d'entree", 50, 80);
-    doc.moveTo(50, 110).lineTo(550, 110).stroke('#0066CC');
+    // Couleur de fond de la page A4
+    doc.rect(0, 0, 595, 842).fill('#F8FAFC');
 
-    // Infos événement
-    doc.fontSize(12).fillColor('#333');
-    doc.text(`Evenement : ${data.eventTitle}`, 50, 130);
-    doc.text(`Date : ${data.eventDate}`, 50, 150);
-    doc.text(`Lieu : ${data.eventLocation}`, 50, 170);
+    const cardX = 50;
+    const cardY = 100;
+    const cardW = 495;
+    const cardH = 500;
 
-    // Infos participant
-    doc.text(`Participant : ${data.participantName}`, 50, 210);
-    doc.text(`Email : ${data.participantEmail}`, 50, 230);
-    doc.text(`Type : ${data.ticketType}`, 50, 250);
-    doc.text(`Numero : ${data.ticketNumber}`, 50, 270);
+    // Ombre subtile et fond de carte blanche
+    doc.roundedRect(cardX + 2, cardY + 2, cardW, cardH, 16).fill('#E2E8F0');
+    doc.roundedRect(cardX, cardY, cardW, cardH, 16).fill('#FFFFFF');
 
-    // QR code (depuis la data-URL)
+    // Bandeau d'en-tête bleu de marque (#0066CC)
+    doc.save();
+    doc.roundedRect(cardX, cardY, cardW, 80, 16).fill('#0066CC');
+    doc.rect(cardX, cardY + 60, cardW, 20).fill('#0066CC'); // Évite les arrondis en bas du bandeau
+
+    // Nom de marque et texte d'accompagnement
+    doc.fillColor('#FFFFFF').font('Helvetica-Bold').fontSize(20).text('WORK CLASS', cardX + 90, cardY + 20);
+    doc.fillColor('#FF6B00').font('Helvetica-Bold').fontSize(20).text('GABON', cardX + 235, cardY + 20);
+    doc.fillColor('#93C5FD').font('Helvetica').fontSize(10).text("ACCÈS ÉVÉNEMENT • BILLET OFFICIEL", cardX + 90, cardY + 45);
+
+    // Dessine le logo si présent
+    const logoPath = getLogoPath();
+    if (logoPath) {
+      try {
+        doc.image(logoPath, cardX + 25, cardY + 15, { width: 50 });
+      } catch (e) {
+        // Fallback en cas d'erreur de rendu de l'image
+      }
+    }
+    doc.restore();
+
+    // Titre de l'événement
+    doc.fillColor('#0F172A').font('Helvetica-Bold').fontSize(14).text(data.eventTitle.toUpperCase(), cardX + 30, cardY + 110, { width: 280 });
+
+    // Disposition des colonnes
+    const colLeft = cardX + 30;
+    const colRight = cardX + 330;
+
+    // Date
+    doc.fillColor('#64748B').font('Helvetica-Bold').fontSize(8).text('DATE & HEURE', colLeft, cardY + 175);
+    doc.fillColor('#334155').font('Helvetica-Bold').fontSize(11).text(data.eventDate, colLeft, cardY + 188);
+
+    // Lieu
+    doc.fillColor('#64748B').font('Helvetica-Bold').fontSize(8).text('LIEU', colLeft, cardY + 225);
+    doc.fillColor('#334155').font('Helvetica-Bold').fontSize(11).text(data.eventLocation, colLeft, cardY + 238, { width: 260 });
+
+    // Participant
+    doc.fillColor('#64748B').font('Helvetica-Bold').fontSize(8).text('PARTICIPANT', colLeft, cardY + 290);
+    doc.fillColor('#0F172A').font('Helvetica-Bold').fontSize(13).text(data.participantName, colLeft, cardY + 303);
+    doc.fillColor('#475569').font('Helvetica').fontSize(10).text(data.participantEmail, colLeft, cardY + 320);
+
+    // Code QR (depuis la data-URL)
     const base64 = data.qrCodeDataUrl.replace(/^data:image\/\w+;base64,/, '');
     const qrBuffer = Buffer.from(base64, 'base64');
-    doc.image(qrBuffer, 400, 130, { width: 150 });
+    doc.image(qrBuffer, colRight - 15, cardY + 110, { width: 140 });
 
-    // Pied de page
-    doc.fontSize(10).fillColor('#666');
-    doc.text('Ce billet est strictement personnel et non transferable.', 50, 700);
-    doc.text("Presentez ce QR code a l'entree.", 50, 715);
+    // Badge Type de Billet
+    const isVIP = data.ticketType.toLowerCase().includes('vip');
+    const badgeBg = isVIP ? '#FFF7ED' : '#EFF6FF';
+    const badgeText = isVIP ? '#FF6B00' : '#0066CC';
+
+    doc.roundedRect(colRight - 10, cardY + 265, 130, 24, 12).fill(badgeBg);
+    doc.fillColor(badgeText).font('Helvetica-Bold').fontSize(9).text(data.ticketType.toUpperCase(), colRight - 10, cardY + 273, { width: 130, align: 'center' });
+
+    // Numéro de billet
+    doc.fillColor('#94A3B8').font('Helvetica-Bold').fontSize(8).text('NUMÉRO DE BILLET', colRight - 10, cardY + 310, { width: 130, align: 'center' });
+    doc.fillColor('#334155').font('Helvetica-Bold').fontSize(11).text(data.ticketNumber, colRight - 10, cardY + 322, { width: 130, align: 'center' });
+
+    // Ligne pointillée de découpe
+    doc.save();
+    doc.moveTo(cardX + 25, cardY + 375).lineTo(cardX + cardW - 25, cardY + 375).dash(4, { space: 6 }).stroke('#E2E8F0');
+    doc.restore();
+
+    // Consignes
+    doc.fillColor('#64748B').font('Helvetica-Bold').fontSize(8).text('CONSIGNES D\'ACCÈS', cardX + 30, cardY + 395);
+    doc.fillColor('#64748B').font('Helvetica').fontSize(9)
+       .text("• Présentez ce code QR sur votre smartphone ou imprimé à l'accueil pour validation.\n" +
+             "• Ce billet est nominatif et non transférable. Une pièce d'identité peut être demandée.\n" +
+             "• Tout accès dupliqué sera refusé lors du scan d'entrée.", cardX + 30, cardY + 412, { width: cardW - 60, lineGap: 3 });
+
+    // Footer de la carte
+    doc.fillColor('#94A3B8').font('Helvetica-Bold').fontSize(9).text('WORK CLASS GABON', cardX, cardY + cardH - 25, { width: cardW, align: 'center' });
 
     doc.end();
   });
 }
 
 /**
- * Génère le PDF d'un certificat de participation.
+ * Génère le PDF d'un certificat de participation (Moderne & Paysage).
  */
 export async function generateCertificatePDF(
   data: CertificatePDFData,
 ): Promise<Buffer> {
   return new Promise<Buffer>((resolve, reject) => {
-    const doc = new PDFDocument({ size: 'A4', margin: 50 });
+    const doc = new PDFDocument({ size: 'A4', layout: 'landscape', margin: 0 });
     const chunks: Buffer[] = [];
     doc.on('data', (chunk: Buffer) => chunks.push(chunk));
     doc.on('end', () => resolve(Buffer.concat(chunks)));
     doc.on('error', reject);
 
-    doc.rect(0, 0, 612, 792).fill('#F8FAFC');
+    const width = 841.89;
+    const height = 595.28;
 
-    doc
-      .fontSize(32)
-      .fillColor('#0066CC')
-      .text('CERTIFICAT DE PARTICIPATION', 50, 100, { align: 'center' });
-    doc.moveTo(100, 150).lineTo(512, 150).stroke('#FF6B00');
+    // Fond de page
+    doc.rect(0, 0, width, height).fill('#F8FAFC');
 
-    doc.fontSize(16).fillColor('#333');
-    doc.text('Nous certifions que', 50, 200, { align: 'center' });
+    // Cadre double
+    doc.rect(25, 25, width - 50, height - 50).lineWidth(3).stroke('#0066CC');
+    doc.rect(32, 32, width - 64, height - 64).lineWidth(1).stroke('#FF6B00');
 
-    doc.fontSize(28).fillColor('#0066CC');
-    doc.text(data.participantName, 50, 240, { align: 'center' });
+    // Coins décoratifs
+    const drawCorner = (x: number, y: number, angle: number) => {
+      doc.save();
+      doc.translate(x, y);
+      doc.rotate(angle);
+      doc.moveTo(0, 0).lineTo(40, 0).lineTo(0, 40).closePath().fill('#0066CC');
+      doc.restore();
+    };
 
-    doc.fontSize(16).fillColor('#333');
-    doc.text("a participe a l'evenement", 50, 300, { align: 'center' });
+    drawCorner(25, 25, 0);
+    drawCorner(width - 25, 25, 90);
+    drawCorner(width - 25, height - 25, 180);
+    drawCorner(25, height - 25, 270);
 
-    doc.fontSize(24).fillColor('#0066CC');
-    doc.text(data.eventTitle, 50, 340, { align: 'center' });
+    // Logo centré en haut
+    const logoPath = getLogoPath();
+    if (logoPath) {
+      try {
+        doc.image(logoPath, width / 2 - 30, 50, { width: 60 });
+      } catch (e) {
+        // Fallback silencieux
+      }
+    }
 
-    doc.fontSize(14).fillColor('#666');
-    doc.text(`Date : ${data.eventDate}`, 50, 400, { align: 'center' });
-    doc.text(`Numero : ${data.certificateNumber}`, 50, 420, { align: 'center' });
+    // Titre
+    doc.fillColor('#0066CC').font('Helvetica-Bold').fontSize(26).text('CERTIFICAT DE PARTICIPATION', 0, 130, { align: 'center' });
 
-    doc.fontSize(12).fillColor('#999');
-    doc.text('Work Class Gabon', 50, 700, { align: 'center' });
+    // Texte d'attribution
+    doc.fillColor('#64748B').font('Helvetica-Oblique').fontSize(14).text('Ce document est officiellement décerné à', 0, 185, { align: 'center' });
+
+    // Nom du participant
+    doc.fillColor('#0F172A').font('Helvetica-Bold').fontSize(32).text(data.participantName, 0, 220, { align: 'center' });
+
+    // Ligne décorative orange
+    doc.moveTo(width / 2 - 120, 275).lineTo(width / 2 + 120, 275).lineWidth(1.5).stroke('#FF6B00');
+
+    // Description
+    doc.fillColor('#64748B').font('Helvetica').fontSize(14).text("pour sa présence et sa participation active à l'événement de formation :", 0, 300, { align: 'center' });
+
+    // Titre de l'événement
+    doc.fillColor('#0066CC').font('Helvetica-Bold').fontSize(20).text(data.eventTitle.toUpperCase(), 0, 335, { align: 'center' });
+
+    // Date & Identifiant unique
+    doc.fillColor('#475569').font('Helvetica-Bold').fontSize(12).text(`Délivré le ${data.eventDate}`, 0, 385, { align: 'center' });
+    doc.fillColor('#94A3B8').font('Helvetica-Bold').fontSize(9).text(`N° CERTIFICAT : ${data.certificateNumber}`, 0, 410, { align: 'center' });
+
+    // Lignes de signatures
+    const sigY = 460;
+    const sigLineW = 160;
+
+    // Signature gauche
+    const sigLeftX = 120;
+    doc.moveTo(sigLeftX, sigY).lineTo(sigLeftX + sigLineW, sigY).lineWidth(1).stroke('#94A3B8');
+    doc.fillColor('#475569').font('Helvetica-Bold').fontSize(9).text("Le Comité d'Organisation", sigLeftX, sigY + 8, { width: sigLineW, align: 'center' });
+    doc.fillColor('#94A3B8').font('Helvetica').fontSize(8).text("Work Class Gabon", sigLeftX, sigY + 22, { width: sigLineW, align: 'center' });
+
+    // Signature droite
+    const sigRightX = width - 120 - sigLineW;
+    doc.moveTo(sigRightX, sigY).lineTo(sigRightX + sigLineW, sigY).lineWidth(1).stroke('#94A3B8');
+    doc.fillColor('#475569').font('Helvetica-Bold').fontSize(9).text("La Direction Générale", sigRightX, sigY + 8, { width: sigLineW, align: 'center' });
+    doc.fillColor('#94A3B8').font('Helvetica').fontSize(8).text("Work Class Gabon", sigRightX, sigY + 22, { width: sigLineW, align: 'center' });
 
     doc.end();
   });

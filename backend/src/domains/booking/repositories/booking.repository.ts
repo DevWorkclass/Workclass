@@ -8,11 +8,21 @@ import type { BookingInput } from '../types/booking.types';
 
 export class BookingRepository {
   /**
-   * Crée une réservation + son participant en transaction implicite (nested write).
+   * Crée une réservation + son participant (payeur) en transaction implicite.
+   * Les participants individuels sont stockés dans participant.metadata.participants.
    */
   async create(
     data: BookingInput & { reference: string; totalAmount: number },
   ) {
+    // Décompose le nom du payeur en prénom/nom (fallback si absent).
+    const nameParts = (data.payerName ?? '').trim().split(/\s+/);
+    const payerFirstName = nameParts[0] || 'Payeur';
+    const payerLastName = nameParts.slice(1).join(' ') || 'Anonyme';
+
+    // Email de contact = premier participant ayant un email, sinon chaîne vide.
+    const contactEmail =
+      data.participants.find((p) => p.email && p.email.trim() !== '')?.email ?? '';
+
     return prisma.booking.create({
       data: {
         eventId: data.eventId,
@@ -25,14 +35,14 @@ export class BookingRepository {
         options: (data.options ?? []) as unknown as Prisma.InputJsonValue,
         participant: {
           create: {
-            firstName: data.participant.firstName,
-            lastName: data.participant.lastName,
-            email: data.participant.email,
-            phone: data.participant.phone,
-            company: data.participant.company,
-            position: data.participant.position,
+            firstName: payerFirstName,
+            lastName: payerLastName,
+            email: contactEmail,
+            phone: data.payerPhone,
             consentGiven: true,
             consentAt: new Date(),
+            // Liste complète des participants (un par place) pour envoi des billets.
+            metadata: { participants: data.participants } as unknown as Prisma.InputJsonValue,
           },
         },
       },

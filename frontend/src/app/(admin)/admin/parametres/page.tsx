@@ -5,6 +5,7 @@
  * La persistance se fera via POST backend (validation + audit côté serveur).
  */
 import { useState } from 'react';
+import Link from 'next/link';
 
 import { PageHeader } from '@/components/admin/PageHeader';
 import { Button } from '@/components/ui/button';
@@ -95,6 +96,11 @@ export default function AdminSettingsPage() {
         subtitle="Configuration globale de la plateforme"
         actions={
           <>
+            <Link href="/admin/parametres/statistiques">
+              <Button variant="outline" size="sm">
+                Statistiques détaillées
+              </Button>
+            </Link>
             <Button variant="outline" size="sm" onClick={() => setForm(ADMIN_SETTINGS)}>
               Réinitialiser
             </Button>

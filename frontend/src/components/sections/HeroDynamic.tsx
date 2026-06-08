@@ -26,11 +26,14 @@ export function HeroDynamic() {
         if (!latest) return;
         setEvent({
           ...MOCK_EVENT,
+          id: latest.id,
           title: latest.title,
+          slug: latest.slug,
           description: latest.description,
           location: latest.location,
           startDate: new Date(latest.startDate),
           endDate: new Date(latest.endDate),
+          coverImage: latest.coverImage ?? undefined,
         });
       })
       .catch(() => {

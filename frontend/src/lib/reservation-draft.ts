@@ -3,13 +3,11 @@
  * Évite de faire transiter les données participant dans l'URL.
  */
 
-export interface ReservationParticipant {
+/** Un participant individuel (une place = une personne). */
+export interface ParticipantEntry {
   firstName: string;
   lastName: string;
-  email: string;
-  phone: string;
-  company?: string;
-  position?: string;
+  email?: string;
 }
 
 export interface ReservationDraft {
@@ -24,7 +22,12 @@ export interface ReservationDraft {
   unitPrice: number;
   currency: string;
   quantity: number;
-  participant?: ReservationParticipant;
+  /** Numéro mobile money du payeur (défini à l'étape 2). */
+  payerPhone?: string;
+  /** Nom complet du payeur (optionnel, défini à l'étape 2). */
+  payerName?: string;
+  /** Un participant par place (défini à l'étape 2). */
+  participants?: ParticipantEntry[];
 }
 
 const KEY = 'wcg-reservation-draft';

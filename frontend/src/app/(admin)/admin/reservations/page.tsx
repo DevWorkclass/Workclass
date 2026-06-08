@@ -27,6 +27,12 @@ import { formatPrice } from '@/lib/formatters';
 type BookingStatus = 'pending' | 'confirmed' | 'cancelled';
 type PaymentStatus = 'pending' | 'paid' | 'failed' | 'refunded';
 
+interface ParticipantEntry {
+  firstName: string;
+  lastName: string;
+  email?: string;
+}
+
 interface AdminBooking {
   id: string;
   reference: string;
@@ -37,7 +43,13 @@ interface AdminBooking {
   createdAt: string;
   event: { title: string } | null;
   ticketType: { name: string } | null;
-  participant: { firstName: string; lastName: string; email: string } | null;
+  participant: {
+    firstName: string;
+    lastName: string;
+    email: string;
+    phone: string;
+    metadata?: { participants?: ParticipantEntry[] };
+  } | null;
 }
 
 type StatusFilter = 'all' | BookingStatus;
@@ -133,9 +145,15 @@ function BookingsContent() {
     const q = query.trim().toLowerCase();
     return bookings.filter((b) => {
       const name = b.participant ? `${b.participant.firstName} ${b.participant.lastName}` : '';
+      const participantNames =
+        b.participant?.metadata?.participants
+          ?.map((p) => `${p.firstName} ${p.lastName}`)
+          .join(' ') ?? '';
       const matchQuery =
         !q ||
-        [b.reference, name, b.participant?.email ?? ''].some((v) => v.toLowerCase().includes(q));
+        [b.reference, name, b.participant?.email ?? '', b.participant?.phone ?? '', participantNames].some(
+          (v) => v.toLowerCase().includes(q),
+        );
       const matchStatus = status === 'all' || b.status === status;
       return matchQuery && matchStatus;
     });
@@ -265,15 +283,38 @@ function BookingsContent() {
                     {list.map((b) => (
                       <tr key={b.id} className="border-t border-black/5 align-top">
                         <td className="py-3 pr-2 font-mono text-xs text-brand-navy">{b.reference}</td>
-                        <td className="max-w-[180px] py-3 pr-2">
+                        <td className="max-w-[220px] py-3 pr-2">
+                          {/* Payeur */}
                           <p className="truncate font-semibold text-brand-navy">
                             {b.participant
                               ? `${b.participant.firstName} ${b.participant.lastName}`
                               : '—'}
                           </p>
-                          <p className="truncate text-xs text-brand-muted">
-                            {b.participant?.email ?? ''}
-                          </p>
+                          {b.participant?.phone && (
+                            <p className="truncate text-xs font-medium text-brand-gold">
+                              {b.participant.phone}
+                            </p>
+                          )}
+                          {b.participant?.email && (
+                            <p className="truncate text-xs text-brand-muted">
+                              {b.participant.email}
+                            </p>
+                          )}
+                          {/* Participants individuels depuis metadata */}
+                          {(() => {
+                            const ps = b.participant?.metadata?.participants;
+                            if (!ps || ps.length === 0) return null;
+                            return (
+                              <ul className="mt-1 space-y-0.5">
+                                {ps.map((p, i) => (
+                                  <li key={i} className="text-xs text-brand-navy/70">
+                                    · {p.firstName} {p.lastName}
+                                    {p.email ? ` (${p.email})` : ''}
+                                  </li>
+                                ))}
+                              </ul>
+                            );
+                          })()}
                         </td>
                         <td className="py-3 pr-2 text-brand-navy">
                           <span className="block truncate">{b.ticketType?.name ?? '—'}</span>

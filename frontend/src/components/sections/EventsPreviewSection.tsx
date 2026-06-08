@@ -34,7 +34,7 @@ export function EventsPreviewSection() {
   if (loaded && events.length === 0) return null;
 
   return (
-    <section className="bg-white py-16">
+    <section id="evenements" className="bg-white py-16">
       <div className="container">
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div>

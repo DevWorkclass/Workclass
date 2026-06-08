@@ -22,7 +22,7 @@ interface ReservationStep1Props {
   maxQuantity?: number;
 }
 
-const STEPS = ['Type de billet', 'Vos informations', 'Paiement'] as const;
+const STEPS = ['Sélection', 'Informations', 'Paiement'] as const;
 
 export function ReservationStep1({ event, ticketTypes, maxQuantity = 10 }: ReservationStep1Props) {
   const router = useRouter();

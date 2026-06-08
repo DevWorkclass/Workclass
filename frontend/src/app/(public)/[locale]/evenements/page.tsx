@@ -5,6 +5,9 @@
  *  - GET /api/public/events (non sensible)
  */
 import { useEffect, useState } from 'react';
+import Link from 'next/link';
+import { ArrowLeft } from 'lucide-react';
+import { useParams } from 'next/navigation';
 
 import { PublicEventCard } from '@/components/sections/PublicEventCard';
 import { apiFetch } from '@/lib/api';
@@ -13,6 +16,8 @@ import type { PublicEvent } from '@/lib/public-event';
 export default function EventsListPage() {
   const [events, setEvents] = useState<PublicEvent[]>([]);
   const [loading, setLoading] = useState(true);
+  const params = useParams<{ locale: string }>();
+  const locale = params?.locale ?? 'fr';
 
   useEffect(() => {
     apiFetch<{ data: PublicEvent[] }>('/public/events')
@@ -24,6 +29,14 @@ export default function EventsListPage() {
   return (
     <section className="bg-brand-cream py-16">
       <div className="container">
+        <Link
+          href={`/${locale}`}
+          className="mb-6 inline-flex items-center gap-1.5 text-sm font-medium text-brand-navy/60 transition-colors hover:text-brand-navy"
+        >
+          <ArrowLeft className="size-4" />
+          Retour à l&apos;accueil
+        </Link>
+
         <p className="mb-2 text-xs font-bold uppercase tracking-[0.25em] text-brand-gold">
           Nos événements
         </p>

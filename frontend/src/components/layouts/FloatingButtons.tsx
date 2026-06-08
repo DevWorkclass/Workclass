@@ -1,23 +1,35 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { ArrowUp, Mail, MessageCircle, Phone, X } from 'lucide-react';
+import { ArrowUp, Mail, MessageCircle, X } from 'lucide-react';
 import Link from 'next/link';
 
 import { cn } from '@/lib/utils';
+import { apiFetch } from '@/lib/api';
 
-const PHONE = '+241 77 00 00 00';
-const EMAIL = 'wilagabon@gmail.com';
-const WHATSAPP_URL = 'https://wa.me/24177000000';
+/** Construit l'URL wa.me à partir d'un numéro (digits uniquement). */
+function whatsappUrl(num: string): string {
+  return `https://wa.me/${num.replace(/\D/g, '')}`;
+}
 
 export function FloatingButtons() {
   const [showTop, setShowTop] = useState(false);
   const [chatOpen, setChatOpen] = useState(false);
+  const [support, setSupport] = useState<{ whatsapp: string; email: string }>({
+    whatsapp: '',
+    email: 'support@workclass.com',
+  });
 
   useEffect(() => {
     const onScroll = () => setShowTop(window.scrollY > 400);
     window.addEventListener('scroll', onScroll, { passive: true });
     return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+
+  useEffect(() => {
+    apiFetch<{ data: { whatsapp: string; email: string } }>('/content/support')
+      .then((res) => setSupport(res.data))
+      .catch(() => {});
   }, []);
 
   return (
@@ -44,48 +56,39 @@ export function FloatingButtons() {
           </button>
         </div>
 
-        {/* Options de contact */}
+        {/* Options de contact (WhatsApp + email uniquement, pas d'appel) */}
         <div className="flex flex-col gap-2.5 p-4">
-          <a
-            href={`tel:${PHONE}`}
-            className="flex items-center gap-3 rounded-xl border border-brand-navy/10 px-4 py-3 text-brand-navy transition-colors hover:bg-brand-navy/5"
-          >
-            <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-brand-navy/10">
-              <Phone className="size-4" />
-            </span>
-            <div>
-              <p className="text-sm font-semibold">Appeler</p>
-              <p className="text-xs text-brand-muted">{PHONE}</p>
-            </div>
-          </a>
+          {support.whatsapp && (
+            <a
+              href={whatsappUrl(support.whatsapp)}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-3 rounded-xl border border-[#25D366]/30 bg-[#25D366]/5 px-4 py-3 text-[#128C7E] transition-colors hover:bg-[#25D366]/10"
+            >
+              <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-[#25D366]/20">
+                <MessageCircle className="size-4" />
+              </span>
+              <div>
+                <p className="text-sm font-semibold">WhatsApp</p>
+                <p className="text-xs opacity-70">{support.whatsapp}</p>
+              </div>
+            </a>
+          )}
 
-          <a
-            href={WHATSAPP_URL}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center gap-3 rounded-xl border border-[#25D366]/30 bg-[#25D366]/5 px-4 py-3 text-[#128C7E] transition-colors hover:bg-[#25D366]/10"
-          >
-            <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-[#25D366]/20">
-              <MessageCircle className="size-4" />
-            </span>
-            <div>
-              <p className="text-sm font-semibold">WhatsApp</p>
-              <p className="text-xs opacity-70">Réponse rapide</p>
-            </div>
-          </a>
-
-          <a
-            href={`mailto:${EMAIL}`}
-            className="flex items-center gap-3 rounded-xl border border-brand-navy/10 px-4 py-3 text-brand-navy transition-colors hover:bg-brand-navy/5"
-          >
-            <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-brand-navy/10">
-              <Mail className="size-4" />
-            </span>
-            <div>
-              <p className="text-sm font-semibold">Email</p>
-              <p className="text-xs text-brand-muted">{EMAIL}</p>
-            </div>
-          </a>
+          {support.email && (
+            <a
+              href={`mailto:${support.email}`}
+              className="flex items-center gap-3 rounded-xl border border-brand-navy/10 px-4 py-3 text-brand-navy transition-colors hover:bg-brand-navy/5"
+            >
+              <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-brand-navy/10">
+                <Mail className="size-4" />
+              </span>
+              <div>
+                <p className="text-sm font-semibold">Email</p>
+                <p className="text-xs text-brand-muted">{support.email}</p>
+              </div>
+            </a>
+          )}
 
           <Link
             href="/reservation"

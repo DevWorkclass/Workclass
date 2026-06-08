@@ -104,6 +104,11 @@ export default function AdminSettingsPage() {
                 Config
               </Button>
             </Link>
+            <Link href="/admin/parametres/paie">
+              <Button variant="outline" size="sm">
+                Paie
+              </Button>
+            </Link>
             <Button variant="outline" size="sm" onClick={() => setForm(ADMIN_SETTINGS)}>
               Réinitialiser
             </Button>

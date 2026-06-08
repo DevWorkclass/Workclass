@@ -12,6 +12,7 @@ import { useMemo, useState } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { formatAmount, formatDateRange, formatPrice } from '@/lib/formatters';
+import { setDraft } from '@/lib/reservation-draft';
 import type { Event } from '@/domains/public/event/types/event.types';
 import type { TicketType } from '@/domains/public/booking/types/booking.types';
 
@@ -42,8 +43,21 @@ export function ReservationStep1({ event, ticketTypes, maxQuantity = 10 }: Reser
   const increment = () => setQuantity((q) => Math.min(maxQuantity, q + 1));
 
   function handleContinue() {
-    const query = new URLSearchParams({ type: selectedId, qty: String(quantity) });
-    router.push(`/${locale}/reservation/etape-2?${query.toString()}`);
+    if (!selected) return;
+    setDraft({
+      eventId: event.id,
+      eventTitle: event.title,
+      coverImage: event.coverImage ?? null,
+      startDate: new Date(event.startDate).toISOString(),
+      endDate: new Date(event.endDate).toISOString(),
+      location: event.location,
+      ticketTypeId: selected.id,
+      ticketName: selected.name,
+      unitPrice: selected.price,
+      currency: selected.currency,
+      quantity,
+    });
+    router.push(`/${locale}/reservation/etape-2`);
   }
 
   return (

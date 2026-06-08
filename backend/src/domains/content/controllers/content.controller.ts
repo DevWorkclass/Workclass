@@ -11,6 +11,8 @@ import {
   setHomeThemesSchema,
   setPartnersSchema,
   setAppConfigSchema,
+  setIndustriesSchema,
+  setFooterSchema,
 } from '../validators/content.validator';
 import { ValidationError } from '../../shared/errors/types/error.types';
 
@@ -89,6 +91,42 @@ export class ContentController {
   async getTestimonials(_req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       res.json({ success: true, data: await this.service.getTestimonials() });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async getIndustries(_req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      res.json({ success: true, data: await this.service.getIndustries() });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async setIndustries(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const { industries } = setIndustriesSchema.parse(req.body);
+      const saved = await this.service.setIndustries(industries, req.user?.userId);
+      res.json({ success: true, data: saved });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async getFooter(_req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      res.json({ success: true, data: await this.service.getFooter() });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async setFooter(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const footer = setFooterSchema.parse(req.body);
+      const saved = await this.service.setFooter(footer, req.user?.userId);
+      res.json({ success: true, data: saved });
     } catch (error) {
       next(error);
     }

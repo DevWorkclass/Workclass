@@ -28,11 +28,15 @@ router.get('/content/home-themes', controller.getHomeThemes.bind(controller));
 router.get('/content/partners', controller.getPartners.bind(controller));
 router.get('/content/app-config', controller.getAppConfig.bind(controller));
 router.get('/content/testimonials', controller.getTestimonials.bind(controller));
+router.get('/content/industries', controller.getIndustries.bind(controller));
+router.get('/content/footer', controller.getFooter.bind(controller));
 
 // --- Admin : gestion du contenu (guard content:manage) ---
 router.post('/admin/content/home-themes', ...guard, controller.setHomeThemes.bind(controller));
 router.post('/admin/content/partners', ...guard, controller.setPartners.bind(controller));
 router.post('/admin/content/app-config', ...guard, controller.setAppConfig.bind(controller));
+router.post('/admin/content/industries', ...guard, controller.setIndustries.bind(controller));
+router.post('/admin/content/footer', ...guard, controller.setFooter.bind(controller));
 
 // Upload d'image : tout admin connecté (sert aussi aux couvertures d'événements).
 router.post(

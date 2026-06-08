@@ -9,12 +9,18 @@ import { ValidationError } from '../../shared/errors/types/error.types';
 import {
   DEFAULT_APP_CONFIG,
   DEFAULT_HOME_THEMES,
+  DEFAULT_INDUSTRIES,
+  DEFAULT_FOOTER,
   APP_CONFIG_KEY,
   HOME_THEMES_KEY,
   PARTNERS_KEY,
+  INDUSTRIES_KEY,
+  FOOTER_KEY,
   type AppConfig,
   type HomeTheme,
   type Partner,
+  type Industry,
+  type FooterContent,
 } from '../types/content.types';
 import type { SetHomeThemesInput } from '../validators/content.validator';
 
@@ -40,6 +46,7 @@ export class ContentService {
       title: t.title,
       description: t.description,
       imageUrl: t.imageUrl || undefined,
+      content: t.content || undefined,
     }));
 
     await prisma.siteSetting.upsert({
@@ -131,6 +138,54 @@ export class ContentService {
       result: 'success',
     });
     return config;
+  }
+
+  /** Industries (tuiles de l'accueil) — défaut si absent. */
+  async getIndustries(): Promise<Industry[]> {
+    const row = await prisma.siteSetting.findUnique({ where: { key: INDUSTRIES_KEY } });
+    if (!row) return DEFAULT_INDUSTRIES;
+    return row.value as unknown as Industry[];
+  }
+
+  async setIndustries(industries: Industry[], userId?: string): Promise<Industry[]> {
+    const clean = industries.map((i) => ({ name: i.name, imageUrl: i.imageUrl || undefined }));
+    await prisma.siteSetting.upsert({
+      where: { key: INDUSTRIES_KEY },
+      create: { key: INDUSTRIES_KEY, value: clean as unknown as object },
+      update: { value: clean as unknown as object },
+    });
+    await logAudit({
+      action: 'CONTENT_INDUSTRIES_UPDATE',
+      userId,
+      resource: 'site_setting',
+      resourceId: INDUSTRIES_KEY,
+      details: { count: clean.length },
+      result: 'success',
+    });
+    return clean;
+  }
+
+  /** Contenu du footer — défaut si absent. */
+  async getFooter(): Promise<FooterContent> {
+    const row = await prisma.siteSetting.findUnique({ where: { key: FOOTER_KEY } });
+    if (!row) return DEFAULT_FOOTER;
+    return row.value as unknown as FooterContent;
+  }
+
+  async setFooter(footer: FooterContent, userId?: string): Promise<FooterContent> {
+    await prisma.siteSetting.upsert({
+      where: { key: FOOTER_KEY },
+      create: { key: FOOTER_KEY, value: footer as unknown as object },
+      update: { value: footer as unknown as object },
+    });
+    await logAudit({
+      action: 'CONTENT_FOOTER_UPDATE',
+      userId,
+      resource: 'site_setting',
+      resourceId: FOOTER_KEY,
+      result: 'success',
+    });
+    return footer;
   }
 
   /**

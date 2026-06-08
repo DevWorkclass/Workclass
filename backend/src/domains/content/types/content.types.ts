@@ -11,18 +11,42 @@ export interface HomeTheme {
   description: string;
   /** URL publique de l'image d'illustration (optionnelle → fallback dégradé). */
   imageUrl?: string;
+  /** Contenu détaillé du module (révélé via « Voir plus »). */
+  content?: string;
 }
 
 /** Clés de stockage dans `site_settings`. */
 export const HOME_THEMES_KEY = 'home_themes';
 export const PARTNERS_KEY = 'partners';
 export const APP_CONFIG_KEY = 'app_config';
+export const INDUSTRIES_KEY = 'industries';
+export const FOOTER_KEY = 'footer';
 
 /** Logo partenaire (affiché sur la page d'accueil). */
 export interface Partner {
   name: string;
   logoUrl?: string;
   description?: string;
+}
+
+/** Industrie/domaine couvert (tuile illustrée de l'accueil). */
+export interface Industry {
+  name: string;
+  imageUrl?: string;
+}
+
+/** Lien de footer. */
+export interface FooterLink {
+  label: string;
+  href: string;
+}
+
+/** Contenu éditable du footer. */
+export interface FooterContent {
+  description: string;
+  contactEmail: string;
+  location: string;
+  columns: { title: string; links: FooterLink[] }[];
 }
 
 /** Configuration du dynamisme de l'app (page d'accueil). */
@@ -66,3 +90,47 @@ export const DEFAULT_HOME_THEMES: HomeTheme[] = [
       'ZLECAf, accords CEMAC-UE et stratégies de positionnement sur les marchés africains et internationaux.',
   },
 ];
+
+/** Industries par défaut (miroir de `frontend/src/data/homepageContent.ts`). */
+export const DEFAULT_INDUSTRIES: Industry[] = [
+  { name: 'Agripreneurs' },
+  { name: 'Coopératives' },
+  { name: 'Exportateurs' },
+  { name: 'Opérateurs agricoles' },
+  { name: 'Transformation locale' },
+  { name: 'Logistique & transit' },
+  { name: 'Douane & conformité' },
+  { name: 'PMI agro' },
+];
+
+/** Footer par défaut (miroir de `Footer.tsx`, sans le chronogramme). */
+export const DEFAULT_FOOTER: FooterContent = {
+  description:
+    "Plateforme de réservation et de gestion d'événements professionnels au Gabon.",
+  contactEmail: 'support@workclass.com',
+  location: 'Libreville, Gabon',
+  columns: [
+    {
+      title: 'Événement',
+      links: [
+        { label: "L'Événement", href: '/#evenement' },
+        { label: 'Événements', href: '/evenements' },
+      ],
+    },
+    {
+      title: 'Réservation',
+      links: [
+        { label: 'Réserver', href: '/reservation' },
+        { label: 'Mon billet', href: '/participant' },
+        { label: 'FAQ', href: '/#faq' },
+      ],
+    },
+    {
+      title: 'Contact',
+      links: [
+        { label: 'support@workclass.com', href: 'mailto:support@workclass.com' },
+        { label: 'Devenir partenaire', href: '#' },
+      ],
+    },
+  ],
+};

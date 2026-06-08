@@ -16,9 +16,11 @@ export class ApiError extends Error {
   }
 }
 
+const FETCH_TIMEOUT_MS = 10_000;
+
 export async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
   const url = `${appConfig.apiUrl}${path.startsWith('/') ? path : `/${path}`}`;
-  
+
   const session = getSession();
   const headers = new Headers(init?.headers);
   headers.set('Content-Type', 'application/json');
@@ -26,10 +28,19 @@ export async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> 
     headers.set('Authorization', `Bearer ${session.accessToken}`);
   }
 
-  const res = await fetch(url, {
-    ...init,
-    headers,
-  });
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+
+  let res: Response;
+  try {
+    res = await fetch(url, {
+      ...init,
+      headers,
+      signal: init?.signal ?? controller.signal,
+    });
+  } finally {
+    clearTimeout(timeoutId);
+  }
 
   if (!res.ok) {
     let body: unknown;

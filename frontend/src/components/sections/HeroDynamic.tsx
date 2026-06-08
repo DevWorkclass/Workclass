@@ -9,18 +9,17 @@ import { useEffect, useState } from 'react';
 
 import { HeroSection } from '@/domains/public/event/components/HeroSection';
 import type { Event } from '@/domains/public/event/types/event.types';
-import { apiFetch } from '@/lib/api';
-import type { PublicEvent } from '@/lib/public-event';
+import { getPublicEvents } from '@/lib/events-cache';
 import { MOCK_EVENT } from '@/data/mockData';
 
 export function HeroDynamic() {
   const [event, setEvent] = useState<Event>(MOCK_EVENT);
 
   useEffect(() => {
-    apiFetch<{ data: PublicEvent[] }>('/public/events')
-      .then((res) => {
-        if (!Array.isArray(res.data) || res.data.length === 0) return;
-        const latest = [...res.data].sort(
+    getPublicEvents()
+      .then((data) => {
+        if (!Array.isArray(data) || data.length === 0) return;
+        const latest = [...data].sort(
           (a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime(),
         )[0];
         if (!latest) return;

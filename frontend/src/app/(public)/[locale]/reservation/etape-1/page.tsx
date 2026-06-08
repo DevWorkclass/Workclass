@@ -11,17 +11,16 @@ import { MOCK_EVENT, MOCK_TICKET_TYPES } from '@/data/mockData';
 import { ReservationStep1 } from '@/domains/public/booking/components/ReservationStep1';
 import type { Event } from '@/domains/public/event/types/event.types';
 import type { TicketType } from '@/domains/public/booking/types/booking.types';
-import { apiFetch } from '@/lib/api';
-import type { PublicEvent } from '@/lib/public-event';
+import { getPublicEvents } from '@/lib/events-cache';
 
 export default function ReservationEtape1Page() {
   const [event, setEvent] = useState<Event>(MOCK_EVENT);
   const [ticketTypes, setTicketTypes] = useState<TicketType[]>(MOCK_TICKET_TYPES);
 
   useEffect(() => {
-    apiFetch<{ data: PublicEvent[] }>('/public/events')
-      .then((res) => {
-        const latest = [...res.data].sort(
+    getPublicEvents()
+      .then((data) => {
+        const latest = [...data].sort(
           (a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime(),
         )[0];
         if (!latest || latest.ticketTypes.length === 0) return;

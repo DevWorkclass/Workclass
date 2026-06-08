@@ -238,7 +238,7 @@ export default function ReservationEtape2Page() {
                       <label className="block sm:col-span-2">
                         <span className="text-xs font-semibold uppercase tracking-wide text-brand-muted">
                           Email{' '}
-                          <span className="normal-case font-normal">(fortement recommandé)</span>
+                          <span className="font-normal normal-case">(fortement recommandé)</span>
                         </span>
                         <input
                           {...register(`participants.${index}.email`)}

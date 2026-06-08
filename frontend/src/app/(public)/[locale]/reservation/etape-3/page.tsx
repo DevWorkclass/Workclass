@@ -37,6 +37,7 @@ export default function ReservationEtape3Page() {
   const [draft, setDraft] = useState<ReservationDraft | null>(null);
   const [payment, setPayment] = useState<PaymentConfig | null>(null);
   const [support, setSupport] = useState<SupportConfig | null>(null);
+  const [configLoading, setConfigLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -51,17 +52,19 @@ export default function ReservationEtape3Page() {
     Promise.all([
       apiFetch<{ data: PaymentConfig }>('/content/payment-config').catch(() => null),
       apiFetch<{ data: SupportConfig }>('/content/support').catch(() => null),
-    ]).then(([payRes, supRes]) => {
-      if (payRes) setPayment(payRes.data);
-      if (supRes) setSupport(supRes.data);
-    });
+    ])
+      .then(([payRes, supRes]) => {
+        if (payRes) setPayment(payRes.data);
+        if (supRes) setSupport(supRes.data);
+      })
+      .finally(() => setConfigLoading(false));
   }, [locale, router]);
 
   const buildWhatsAppMessage = (ref: string, d: ReservationDraft): string => {
     const total = d.unitPrice * d.quantity;
     const participantsList =
       d.participants
-        ?.map((p, i) => `• ${p.firstName} ${p.lastName}`)
+        ?.map((p) => `• ${p.firstName} ${p.lastName}`)
         .join('\n') ?? '';
 
     return (
@@ -233,57 +236,70 @@ export default function ReservationEtape3Page() {
                 <h2 className="text-xl font-bold text-brand-navy">Instructions de paiement</h2>
               </div>
 
-              <p className="text-sm text-brand-navy">
-                Veuillez effectuer le paiement du montant total via{' '}
-                <strong>Airtel Money</strong> ou <strong>Moov Money</strong> :
-              </p>
-
-              <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                {payment?.airtelMoney ? (
-                  <div className="flex items-center gap-3 rounded-xl border border-black/10 p-4">
-                    <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-red-100">
-                      <Smartphone className="size-4 text-red-600" />
-                    </div>
-                    <div>
-                      <p className="text-xs font-semibold uppercase tracking-wide text-brand-muted">
-                        Airtel Money
-                      </p>
-                      <p className="text-lg font-bold text-brand-navy">{payment.airtelMoney}</p>
-                    </div>
+              {configLoading ? (
+                <div className="animate-pulse space-y-3">
+                  <div className="h-4 w-3/4 rounded-lg bg-black/6" />
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <div className="h-16 rounded-xl bg-black/6" />
+                    <div className="h-16 rounded-xl bg-black/6" />
                   </div>
-                ) : null}
-                {payment?.mobileCash ? (
-                  <div className="flex items-center gap-3 rounded-xl border border-black/10 p-4">
-                    <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-blue-100">
-                      <Smartphone className="size-4 text-blue-600" />
-                    </div>
-                    <div>
-                      <p className="text-xs font-semibold uppercase tracking-wide text-brand-muted">
-                        Moov Money
-                      </p>
-                      <p className="text-lg font-bold text-brand-navy">{payment.mobileCash}</p>
-                    </div>
-                  </div>
-                ) : null}
-                {!payment?.airtelMoney && !payment?.mobileCash && (
-                  <p className="col-span-2 text-sm text-brand-muted italic">
-                    Numéros de paiement non encore configurés — l&apos;équipe vous contactera pour
-                    finaliser le règlement.
+                  <div className="h-10 rounded-lg bg-black/6" />
+                </div>
+              ) : (
+                <>
+                  <p className="text-sm text-brand-navy">
+                    Veuillez effectuer le paiement du montant total via{' '}
+                    <strong>Airtel Money</strong> ou <strong>Moov Money</strong> :
                   </p>
-                )}
-              </div>
 
-              {payment?.instructions && (
-                <p className="mt-4 rounded-lg bg-brand-cream p-3 text-sm text-brand-muted">
-                  {payment.instructions}
-                </p>
+                  <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                    {payment?.airtelMoney ? (
+                      <div className="flex items-center gap-3 rounded-xl border border-black/10 p-4">
+                        <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-red-100">
+                          <Smartphone className="size-4 text-red-600" />
+                        </div>
+                        <div>
+                          <p className="text-xs font-semibold uppercase tracking-wide text-brand-muted">
+                            Airtel Money
+                          </p>
+                          <p className="text-lg font-bold text-brand-navy">{payment.airtelMoney}</p>
+                        </div>
+                      </div>
+                    ) : null}
+                    {payment?.mobileCash ? (
+                      <div className="flex items-center gap-3 rounded-xl border border-black/10 p-4">
+                        <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-blue-100">
+                          <Smartphone className="size-4 text-blue-600" />
+                        </div>
+                        <div>
+                          <p className="text-xs font-semibold uppercase tracking-wide text-brand-muted">
+                            Moov Money
+                          </p>
+                          <p className="text-lg font-bold text-brand-navy">{payment.mobileCash}</p>
+                        </div>
+                      </div>
+                    ) : null}
+                    {!payment?.airtelMoney && !payment?.mobileCash && (
+                      <p className="col-span-2 text-sm text-brand-muted italic">
+                        Numéros de paiement non encore configurés — l&apos;équipe vous contactera pour
+                        finaliser le règlement.
+                      </p>
+                    )}
+                  </div>
+
+                  {payment?.instructions && (
+                    <p className="mt-4 rounded-lg bg-brand-cream p-3 text-sm text-brand-muted">
+                      {payment.instructions}
+                    </p>
+                  )}
+
+                  <div className="mt-4 rounded-lg bg-amber-50 p-3 text-sm text-amber-800">
+                    Envoyez exactement{' '}
+                    <strong>{formatPrice(total, draft.currency)}</strong> depuis le numéro{' '}
+                    <strong>{draft.payerPhone}</strong>.
+                  </div>
+                </>
               )}
-
-              <div className="mt-4 rounded-lg bg-amber-50 p-3 text-sm text-amber-800">
-                Envoyez exactement{' '}
-                <strong>{formatPrice(total, draft.currency)}</strong> depuis le numéro{' '}
-                <strong>{draft.payerPhone}</strong>.
-              </div>
             </section>
 
             {/* Erreur */}

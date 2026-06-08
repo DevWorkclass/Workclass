@@ -11,7 +11,7 @@ import { ArrowRight } from 'lucide-react';
 
 import { PublicEventCard } from '@/components/sections/PublicEventCard';
 import { ROUTES } from '@/constants/routes';
-import { apiFetch } from '@/lib/api';
+import { getPublicEvents } from '@/lib/events-cache';
 import type { PublicEvent } from '@/lib/public-event';
 
 export function EventsPreviewSection() {
@@ -19,10 +19,9 @@ export function EventsPreviewSection() {
   const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
-    apiFetch<{ data: PublicEvent[] }>('/public/events')
-      .then((res) => {
-        // 3 plus récents (par date de début décroissante).
-        const sorted = [...res.data].sort(
+    getPublicEvents()
+      .then((data) => {
+        const sorted = [...data].sort(
           (a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime(),
         );
         setEvents(sorted.slice(0, 3));

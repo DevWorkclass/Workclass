@@ -81,6 +81,12 @@ export class EventsService {
     return events.map(withAvailability);
   }
 
+  /** Liste publique des événements publiés (avec places disponibles). */
+  async getPublicEvents() {
+    const events = await this.repository.findPublished();
+    return events.map(withAvailability);
+  }
+
   async updateEvent(data: UpdateEventInput, userId: string) {
     const { id, ...fields } = data;
     const existing = await this.repository.findById(id);

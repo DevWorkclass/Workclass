@@ -41,6 +41,16 @@ export class EventsController {
     }
   }
 
+  /** Liste publique (événements publiés) — non sensible, GET autorisé. */
+  async publicList(_req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const events = await this.service.getPublicEvents();
+      res.json({ success: true, data: events });
+    } catch (err) {
+      next(err);
+    }
+  }
+
   async update(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const parsed = updateEventSchema.safeParse(req.body);

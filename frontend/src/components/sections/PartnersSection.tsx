@@ -17,15 +17,16 @@ interface Partner {
 
 const FALLBACK: Partner[] = PARTNERS.map((p) => ({ name: p.name, description: p.description }));
 
-function PartnerLogo({ p }: { p: Partner }) {
+function PartnerLogo({ p }: Readonly<{ p: Partner }>) {
   return (
-    <div className="flex h-20 w-44 shrink-0 items-center justify-center rounded-xl border border-black/5 bg-white px-4 shadow-sm">
+    <div className="flex h-24 w-48 shrink-0 items-center justify-center rounded-xl border border-black/5 bg-white p-4 shadow-sm">
       {p.logoUrl ? (
-        <div
-          className="h-12 w-full bg-contain bg-center bg-no-repeat"
-          style={{ backgroundImage: `url(${p.logoUrl})` }}
-          role="img"
-          aria-label={p.name}
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={p.logoUrl}
+          alt={p.name}
+          loading="lazy"
+          className="max-h-16 max-w-full object-contain"
         />
       ) : (
         <span className="text-center text-sm font-bold text-brand-navy">{p.name}</span>

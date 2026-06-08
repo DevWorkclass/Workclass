@@ -5,6 +5,9 @@ import { authMiddleware, requireRole } from '../../shared/auth/middleware/auth.m
 const router = Router();
 const controller = new EventsController();
 
+// Liste publique des événements publiés (non sensible) — AVANT le guard /events.
+router.get('/public/events', controller.publicList.bind(controller));
+
 // Protection de toutes les routes événements par authMiddleware
 router.use('/events', authMiddleware);
 

@@ -15,9 +15,8 @@ import { ROUTES } from '@/constants/routes';
 
 const NAV_LINKS = [
   { href: ROUTES.public.home, label: 'Accueil' },
-  { href: '/#evenement', label: "L'Événement" },
+  { href: ROUTES.public.events, label: 'Événements' },
   { href: '/#chronogramme', label: 'Chronogramme' },
-  { href: '/#intervenants', label: 'Intervenants' },
   { href: '/#faq', label: 'FAQ' },
   { href: ROUTES.admin.login, label: 'Admin' },
 ] as const;
@@ -28,7 +27,7 @@ export function Header() {
   return (
     <header
       role="banner"
-      className="sticky top-0 z-50 border-b border-brand-navy/10 bg-brand-cream/95 backdrop-blur supports-[backdrop-filter]:bg-brand-cream/80"
+      className="fixed inset-x-0 top-0 z-50 border-b border-brand-navy/10 bg-brand-cream/95 backdrop-blur supports-[backdrop-filter]:bg-brand-cream/80"
     >
       <div className="container flex h-16 items-center justify-between">
         <Link href={ROUTES.public.home} aria-label="Accueil Work Class Gabon">

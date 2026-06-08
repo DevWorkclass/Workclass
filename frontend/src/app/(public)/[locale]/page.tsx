@@ -4,6 +4,7 @@
  */
 import { ChronogrammeSection } from '@/components/sections/ChronogrammeSection';
 import { EventDetailSection } from '@/components/sections/EventDetailSection';
+import { EventsPreviewSection } from '@/components/sections/EventsPreviewSection';
 import { FaqSection } from '@/components/sections/FaqSection';
 import { FeatureStrip } from '@/components/sections/FeatureStrip';
 import { FinalCta } from '@/components/sections/FinalCta';
@@ -23,6 +24,7 @@ export default function HomePage() {
     <>
       <HeroSection event={event} />
       <FeatureStrip />
+      <EventsPreviewSection />
       <PartnerBanner />
       <ThemesSection />
       <IndustriesSection />

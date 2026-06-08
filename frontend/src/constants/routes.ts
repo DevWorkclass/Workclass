@@ -6,6 +6,8 @@
 export const ROUTES = {
   public: {
     home: '/',
+    events: '/evenements',
+    eventDetail: (slug: string) => `/evenements/${slug}`,
     reservation: {
       base: '/reservation',
       etape1: '/reservation/etape-1',

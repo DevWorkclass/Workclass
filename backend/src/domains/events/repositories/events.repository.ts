@@ -26,6 +26,21 @@ export class EventsRepository {
     });
   }
 
+  /** Événements publiés (vue publique : programme, intervenants, billets). */
+  async findPublished() {
+    return prisma.event.findMany({
+      where: { status: 'published' },
+      orderBy: { startDate: 'asc' },
+      include: {
+        ticketTypes: {
+          where: { isActive: true },
+          orderBy: { price: 'asc' },
+          select: { id: true, name: true, description: true, price: true, quota: true, soldCount: true },
+        },
+      },
+    });
+  }
+
   async findById(id: string) {
     return prisma.event.findUnique({
       where: { id },

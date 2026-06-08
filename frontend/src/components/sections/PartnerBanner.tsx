@@ -35,7 +35,7 @@ export function PartnerBanner() {
             return (
               <div
                 key={slide.id}
-                aria-hidden={!isActive}
+                {...(isActive ? {} : { 'aria-hidden': true })}
                 className={cn(
                   'absolute inset-0 flex transition-opacity duration-500',
                   isActive ? 'opacity-100' : 'pointer-events-none opacity-0',

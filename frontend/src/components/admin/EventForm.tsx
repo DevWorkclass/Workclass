@@ -163,6 +163,10 @@ export function EventForm({ eventId, initial }: EventFormProps = {}) {
     }
   };
 
+  let submitLabel = "Créer l'événement";
+  if (isSubmitting) submitLabel = 'Enregistrement...';
+  else if (isEdit) submitLabel = 'Enregistrer les modifications';
+
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
       {error && (
@@ -331,7 +335,7 @@ export function EventForm({ eventId, initial }: EventFormProps = {}) {
           Annuler
         </Button>
         <Button type="submit" variant="gold" disabled={isSubmitting || uploading}>
-          {isSubmitting ? 'Enregistrement...' : isEdit ? 'Enregistrer les modifications' : "Créer l'événement"}
+          {submitLabel}
         </Button>
       </div>
     </form>

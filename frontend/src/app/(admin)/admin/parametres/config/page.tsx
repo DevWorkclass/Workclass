@@ -102,27 +102,22 @@ export default function AdminConfigPage() {
                 />
               </label>
 
-              <button
-                type="button"
-                role="switch"
-                aria-checked={config.testimonialAutoScroll}
-                onClick={() =>
-                  setConfig((c) => (c ? { ...c, testimonialAutoScroll: !c.testimonialAutoScroll } : c))
-                }
-                className="flex w-full max-w-xs items-center justify-between py-2 text-left"
-              >
+              <label className="flex w-full max-w-xs cursor-pointer items-center justify-between py-2">
                 <span className="text-sm text-brand-navy">Défilement automatique</span>
-                <span
-                  className={`grid size-6 place-items-center rounded-md border transition-colors ${
-                    config.testimonialAutoScroll
-                      ? 'border-brand-gold bg-brand-gold text-white'
-                      : 'border-black/15 bg-white'
-                  }`}
-                  aria-hidden
-                >
-                  {config.testimonialAutoScroll ? '✓' : ''}
+                <span className="relative inline-flex">
+                  <input
+                    type="checkbox"
+                    checked={config.testimonialAutoScroll}
+                    onChange={(e) =>
+                      setConfig((c) => (c ? { ...c, testimonialAutoScroll: e.target.checked } : c))
+                    }
+                    className="peer sr-only"
+                  />
+                  <span className="grid size-6 place-items-center rounded-md border border-black/15 bg-white text-white transition-colors peer-checked:border-brand-gold peer-checked:bg-brand-gold">
+                    {config.testimonialAutoScroll ? '✓' : ''}
+                  </span>
                 </span>
-              </button>
+              </label>
             </div>
           )}
         </section>

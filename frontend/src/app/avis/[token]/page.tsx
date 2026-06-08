@@ -23,36 +23,42 @@ function StarInput({
   value,
   onChange,
   label,
-}: {
+}: Readonly<{
   value: number;
   onChange: (v: number) => void;
   label: string;
-}) {
+}>) {
+  // Boutons radio natifs (sr-only) : état et accessibilité gérés par le navigateur.
   return (
     <div className="flex items-center justify-between gap-3">
       <span className="text-sm font-medium text-brand-navy">{label}</span>
-      <div className="flex gap-1" role="radiogroup" aria-label={label}>
+      <fieldset className="flex gap-1">
+        <legend className="sr-only">{label}</legend>
         {[1, 2, 3, 4, 5].map((n) => (
-          <button
-            key={n}
-            type="button"
-            role="radio"
-            aria-checked={value === n}
-            aria-label={`${n} étoile${n > 1 ? 's' : ''}`}
-            onClick={() => onChange(n)}
-            className={`text-2xl leading-none transition-colors ${
-              n <= value ? 'text-brand-gold' : 'text-brand-muted/30'
-            }`}
-          >
-            ★
-          </button>
+          <label key={n} className="cursor-pointer">
+            <input
+              type="radio"
+              name={label}
+              checked={value === n}
+              onChange={() => onChange(n)}
+              className="sr-only"
+              aria-label={`${n} étoile${n > 1 ? 's' : ''}`}
+            />
+            <span
+              className={`text-2xl leading-none transition-colors ${
+                n <= value ? 'text-brand-gold' : 'text-brand-muted/30'
+              }`}
+            >
+              ★
+            </span>
+          </label>
         ))}
-      </div>
+      </fieldset>
     </div>
   );
 }
 
-export default function FeedbackPage({ params }: { params: Promise<{ token: string }> }) {
+export default function FeedbackPage({ params }: Readonly<{ params: Promise<{ token: string }> }>) {
   const { token } = use(params);
   const [eventTitle, setEventTitle] = useState<string | null>(null);
   const [status, setStatus] = useState<'loading' | 'ready' | 'invalid' | 'done'>('loading');

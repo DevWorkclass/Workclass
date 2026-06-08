@@ -46,29 +46,27 @@ function Toggle({
   label,
   checked,
   onChange,
-}: {
+}: Readonly<{
   label: string;
   checked: boolean;
   onChange: (v: boolean) => void;
-}) {
+}>) {
+  // Case à cocher native (état porté par l'input) — accessibilité fiable.
   return (
-    <button
-      type="button"
-      role="switch"
-      aria-checked={checked}
-      onClick={() => onChange(!checked)}
-      className="flex w-full items-center justify-between py-2 text-left"
-    >
+    <label className="flex w-full cursor-pointer items-center justify-between py-2">
       <span className="text-sm text-brand-navy">{label}</span>
-      <span
-        className={`grid size-6 place-items-center rounded-md border transition-colors ${
-          checked ? 'border-brand-gold bg-brand-gold text-white' : 'border-black/15 bg-white'
-        }`}
-        aria-hidden
-      >
-        {checked ? '✓' : ''}
+      <span className="relative inline-flex">
+        <input
+          type="checkbox"
+          checked={checked}
+          onChange={(e) => onChange(e.target.checked)}
+          className="peer sr-only"
+        />
+        <span className="grid size-6 place-items-center rounded-md border border-black/15 bg-white text-white transition-colors peer-checked:border-brand-gold peer-checked:bg-brand-gold">
+          {checked ? '✓' : ''}
+        </span>
       </span>
-    </button>
+    </label>
   );
 }
 

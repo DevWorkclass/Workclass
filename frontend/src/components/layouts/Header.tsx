@@ -60,8 +60,7 @@ export function Header() {
         <button
           type="button"
           className="md:hidden"
-          aria-label={open ? 'Fermer le menu' : 'Ouvrir le menu'}
-          aria-expanded={open}
+          {...{ 'aria-label': open ? 'Fermer le menu' : 'Ouvrir le menu', 'aria-expanded': open }}
           onClick={() => setOpen((v) => !v)}
         >
           {open ? <X className="size-6" /> : <Menu className="size-6" />}

@@ -47,7 +47,7 @@ export function PublicEventCard({ event }: Readonly<{ event: PublicEvent }>) {
 
         <div className="mt-auto flex flex-wrap gap-2 pt-4">
           <Button asChild variant="gold" size="sm">
-            <Link href={ROUTES.public.reservation.base}>Réserver</Link>
+            <Link href={`${ROUTES.public.reservation.base}?event=${event.slug}`}>Réserver</Link>
           </Button>
           <Button asChild variant="outline" size="sm">
             <Link href={detail}>

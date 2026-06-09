@@ -79,6 +79,8 @@ function UsersContent() {
   const [error, setError] = useState<string | null>(null);
   const [query, setQuery] = useState('');
   const [editing, setEditing] = useState<AdminUser | null>(null);
+  const [creating, setCreating] = useState(false);
+  const [busyId, setBusyId] = useState<string | null>(null);
 
   const handleAuthError = useCallback(
     (err: unknown): boolean => {
@@ -131,11 +133,56 @@ function UsersContent() {
     setEditing(null);
   }
 
+  async function toggleActive(u: AdminUser) {
+    try {
+      setBusyId(u.id);
+      const action = u.isActive ? 'deactivate' : 'activate';
+      const res = await apiAuth<{ data: AdminUser }>(`/admin/users/${action}`, {
+        method: 'POST',
+        body: JSON.stringify({ id: u.id }),
+      });
+      handleSaved(res.data);
+    } catch (err) {
+      if (!handleAuthError(err)) setError("L'action a échoué.");
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  async function resetPassword(u: AdminUser) {
+    const password = window.prompt(
+      `Nouveau mot de passe pour ${fullName(u)} (10 caractères min) :`,
+    );
+    if (!password) return;
+    if (password.length < 10) {
+      setError('Mot de passe trop court (10 caractères minimum).');
+      return;
+    }
+    try {
+      setBusyId(u.id);
+      setError(null);
+      await apiAuth('/admin/users/password', {
+        method: 'POST',
+        body: JSON.stringify({ id: u.id, password }),
+      });
+      window.alert('Mot de passe réinitialisé.');
+    } catch (err) {
+      if (!handleAuthError(err)) setError('Réinitialisation impossible.');
+    } finally {
+      setBusyId(null);
+    }
+  }
+
   return (
     <>
       <PageHeader
         title="Utilisateurs"
         subtitle="Gestion des accès administrateurs"
+        actions={
+          <Button variant="gold" size="sm" onClick={() => setCreating(true)}>
+            + Ajouter un utilisateur
+          </Button>
+        }
       />
 
       <section className="grid gap-4 sm:grid-cols-2">
@@ -222,14 +269,32 @@ function UsersContent() {
                         )}
                       </td>
                       <td className="py-3">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          disabled={u.role === 'super_admin'}
-                          onClick={() => setEditing(u)}
-                        >
-                          Permissions
-                        </Button>
+                        <div className="flex flex-wrap justify-end gap-1.5">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            disabled={u.role === 'super_admin'}
+                            onClick={() => setEditing(u)}
+                          >
+                            Permissions
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            disabled={busyId === u.id}
+                            onClick={() => void toggleActive(u)}
+                          >
+                            {u.isActive ? 'Désactiver' : 'Activer'}
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            disabled={busyId === u.id}
+                            onClick={() => void resetPassword(u)}
+                          >
+                            Mot de passe
+                          </Button>
+                        </div>
                       </td>
                     </tr>
                   );
@@ -249,7 +314,150 @@ function UsersContent() {
           onAuthError={handleAuthError}
         />
       ) : null}
+
+      {creating ? (
+        <CreateUserModal
+          catalog={catalog}
+          onClose={() => setCreating(false)}
+          onCreated={(u) => {
+            setUsers((prev) => [u, ...prev]);
+            setCreating(false);
+          }}
+          onAuthError={handleAuthError}
+        />
+      ) : null}
     </>
+  );
+}
+
+interface CreateUserModalProps {
+  catalog: PermissionCatalogItem[];
+  onClose: () => void;
+  onCreated: (u: AdminUser) => void;
+  onAuthError: (err: unknown) => boolean;
+}
+
+function CreateUserModal({ catalog, onClose, onCreated, onAuthError }: CreateUserModalProps) {
+  const [email, setEmail] = useState('');
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
+  const [password, setPassword] = useState('');
+  const [role, setRole] = useState<'admin' | 'super_admin'>('admin');
+  const [selected, setSelected] = useState<Set<Permission>>(new Set());
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  function toggle(key: Permission) {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  }
+
+  async function handleCreate() {
+    if (!email.trim() || password.length < 10) {
+      setError('Email valide et mot de passe (10 caractères min) requis.');
+      return;
+    }
+    setSaving(true);
+    setError(null);
+    try {
+      const res = await apiAuth<{ data: AdminUser }>('/admin/users', {
+        method: 'POST',
+        body: JSON.stringify({
+          email: email.trim(),
+          password,
+          firstName: firstName.trim() || undefined,
+          lastName: lastName.trim() || undefined,
+          role,
+          permissions: role === 'super_admin' ? [] : [...selected],
+        }),
+      });
+      onCreated(res.data);
+    } catch (err) {
+      if (onAuthError(err)) return;
+      setError(
+        err instanceof ApiError && err.status === 409
+          ? 'Un compte existe déjà avec cet email.'
+          : "Création impossible (vérifiez les champs).",
+      );
+      setSaving(false);
+    }
+  }
+
+  const inputClass =
+    'mt-1 w-full rounded-lg border border-black/10 bg-brand-cream px-3 py-2 text-sm text-brand-navy focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-gold';
+
+  return (
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-label="Nouvel utilisateur"
+      className="fixed inset-0 z-50 grid place-items-center bg-black/40 p-4"
+      onMouseDown={onClose}
+    >
+      <div
+        className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-2xl bg-white p-6 shadow-xl"
+        onMouseDown={(e) => e.stopPropagation()}
+      >
+        <h2 className="text-lg font-bold text-brand-navy">Nouvel utilisateur</h2>
+
+        <fieldset className="mt-4 space-y-3" disabled={saving}>
+          <label className="block text-sm">
+            <span className="font-semibold text-brand-navy">Email *</span>
+            <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} className={inputClass} />
+          </label>
+          <div className="grid grid-cols-2 gap-3">
+            <label className="block text-sm">
+              <span className="font-semibold text-brand-navy">Prénom</span>
+              <input value={firstName} onChange={(e) => setFirstName(e.target.value)} className={inputClass} />
+            </label>
+            <label className="block text-sm">
+              <span className="font-semibold text-brand-navy">Nom</span>
+              <input value={lastName} onChange={(e) => setLastName(e.target.value)} className={inputClass} />
+            </label>
+          </div>
+          <label className="block text-sm">
+            <span className="font-semibold text-brand-navy">Mot de passe * (10 car. min)</span>
+            <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} className={inputClass} />
+          </label>
+          <label className="block text-sm">
+            <span className="font-semibold text-brand-navy">Rôle</span>
+            <select value={role} onChange={(e) => setRole(e.target.value as 'admin' | 'super_admin')} className={inputClass}>
+              <option value="admin">Admin</option>
+              <option value="super_admin">Super Admin</option>
+            </select>
+          </label>
+
+          {role === 'admin' && (
+            <div>
+              <span className="text-sm font-semibold text-brand-navy">Permissions</span>
+              <div className="mt-2 space-y-1.5">
+                {catalog.map((perm) => (
+                  <label key={perm.key} className="flex cursor-pointer items-center gap-3 rounded-lg border border-black/5 px-3 py-1.5 hover:bg-brand-cream">
+                    <input type="checkbox" checked={selected.has(perm.key)} onChange={() => toggle(perm.key)} className="size-4 accent-brand-gold" />
+                    <span className="text-sm text-brand-navy">{perm.label}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+          )}
+        </fieldset>
+
+        {error ? <p role="alert" className="mt-3 text-sm text-semantic-error">{error}</p> : null}
+
+        <div className="mt-5 flex justify-end gap-2">
+          <Button variant="outline" size="sm" disabled={saving} onClick={onClose}>
+            Annuler
+          </Button>
+          <Button variant="gold" size="sm" disabled={saving} onClick={() => void handleCreate()}>
+            {saving ? 'Création…' : 'Créer'}
+          </Button>
+        </div>
+      </div>
+    </div>
   );
 }
 

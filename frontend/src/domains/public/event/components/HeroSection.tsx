@@ -1,4 +1,8 @@
+'use client';
+
 import Link from 'next/link';
+import { useState } from 'react';
+import { CalendarDays, MapPin, X } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import type { Event } from '@/domains/public/event/types/event.types';
@@ -11,8 +15,74 @@ interface HeroSectionProps {
   event: Event;
 }
 
+/** Fenêtre contextuelle « À propos de l'événement ». */
+function AboutModal({ event, onClose }: { event: Event; onClose: () => void }) {
+  return (
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-label={`À propos de ${event.title}`}
+      className="fixed inset-0 z-[80] grid place-items-center bg-black/60 p-4"
+      onMouseDown={onClose}
+    >
+      <div
+        className="max-h-[85vh] w-full max-w-lg overflow-y-auto rounded-2xl bg-white p-6 shadow-2xl sm:p-8"
+        onMouseDown={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <p className="text-xs font-bold uppercase tracking-[0.2em] text-brand-gold">
+              À propos de l&apos;événement
+            </p>
+            <h2 className="mt-1 text-2xl font-extrabold text-brand-navy">{event.title}</h2>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Fermer"
+            className="rounded-full p-1.5 text-brand-muted transition-colors hover:bg-brand-cream hover:text-brand-navy"
+          >
+            <X className="size-5" />
+          </button>
+        </div>
+
+        <div className="mt-4 flex flex-wrap gap-x-6 gap-y-1 text-sm text-brand-muted">
+          <span className="flex items-center gap-1.5">
+            <CalendarDays className="size-4" /> {formatDateRange(event.startDate, event.endDate)}
+          </span>
+          <span className="flex items-center gap-1.5">
+            <MapPin className="size-4" /> {event.location}
+          </span>
+        </div>
+
+        <p className="mt-4 whitespace-pre-line text-sm leading-relaxed text-brand-navy/80">
+          {event.description}
+        </p>
+
+        <div className="mt-6 flex justify-end">
+          <Button asChild variant="gold">
+            <Link
+              href={
+                event.slug
+                  ? `${ROUTES.public.reservation.base}?event=${event.slug}`
+                  : ROUTES.public.reservation.base
+              }
+            >
+              Réserver ma place
+            </Link>
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function HeroSection({ event }: HeroSectionProps) {
   const detailHref = event.slug ? ROUTES.public.eventDetail(event.slug) : '#evenements';
+  const reserveHref = event.slug
+    ? `${ROUTES.public.reservation.base}?event=${event.slug}`
+    : ROUTES.public.reservation.base;
+  const [aboutOpen, setAboutOpen] = useState(false);
 
   return (
     <section id="accueil" className="relative overflow-hidden bg-brand-navy text-white">
@@ -51,14 +121,14 @@ export function HeroSection({ event }: HeroSectionProps) {
 
           <div className="mt-7 flex flex-wrap justify-center gap-3 lg:justify-start">
             <Button asChild variant="gold" size="lg">
-              <Link href="/reservation">Réserver maintenant</Link>
+              <Link href={reserveHref}>Réserver maintenant</Link>
             </Button>
             <Button
-              asChild
               size="lg"
               className="border border-white/20 bg-transparent text-white hover:bg-white/10"
+              onClick={() => setAboutOpen(true)}
             >
-              <Link href="#evenement">En découvrir plus</Link>
+              En découvrir plus
             </Button>
           </div>
         </div>
@@ -103,6 +173,8 @@ export function HeroSection({ event }: HeroSectionProps) {
           </div>
         </div>
       </div>
+
+      {aboutOpen && <AboutModal event={event} onClose={() => setAboutOpen(false)} />}
     </section>
   );
 }

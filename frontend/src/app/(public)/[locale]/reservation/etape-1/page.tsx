@@ -5,7 +5,8 @@
  * Charge le dernier événement publié + ses types de billets (GET /public/events).
  * Repli sur les données mock si aucun événement publié (démo).
  */
-import { useEffect, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 
 import { MOCK_EVENT, MOCK_TICKET_TYPES } from '@/data/mockData';
 import { ReservationStep1 } from '@/domains/public/booking/components/ReservationStep1';
@@ -14,15 +15,28 @@ import type { TicketType } from '@/domains/public/booking/types/booking.types';
 import { getPublicEvents } from '@/lib/events-cache';
 
 export default function ReservationEtape1Page() {
+  return (
+    <Suspense fallback={null}>
+      <ReservationStep1Loader />
+    </Suspense>
+  );
+}
+
+function ReservationStep1Loader() {
+  const searchParams = useSearchParams();
+  const eventSlug = searchParams?.get('event') ?? null;
   const [event, setEvent] = useState<Event>(MOCK_EVENT);
   const [ticketTypes, setTicketTypes] = useState<TicketType[]>(MOCK_TICKET_TYPES);
 
   useEffect(() => {
     getPublicEvents()
       .then((data) => {
-        const latest = [...data].sort(
+        // Événement ciblé par `?event=slug` (chaque événement a ses propres
+        // billets/prix) ; à défaut, le dernier événement publié.
+        const byDate = [...data].sort(
           (a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime(),
-        )[0];
+        );
+        const latest = (eventSlug && byDate.find((e) => e.slug === eventSlug)) || byDate[0];
         if (!latest || latest.ticketTypes.length === 0) return;
         setEvent({
           ...MOCK_EVENT,
@@ -48,7 +62,7 @@ export default function ReservationEtape1Page() {
       .catch(() => {
         /* repli mock conservé */
       });
-  }, []);
+  }, [eventSlug]);
 
   return <ReservationStep1 event={event} ticketTypes={ticketTypes} />;
 }

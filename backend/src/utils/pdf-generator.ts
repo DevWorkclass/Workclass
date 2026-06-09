@@ -29,16 +29,19 @@ interface CertificatePDFData {
  * Résout le chemin vers le logo officiel pour inclusion dans les PDF.
  */
 const getLogoPath = (): string | null => {
-  const possiblePaths = [
-    path.join(__dirname, '../../../../frontend/public/assets/images/logo/logo-icone.png'),
-    path.join(__dirname, '../../../frontend/public/assets/images/logo/logo-icone.png'),
-    path.join(process.cwd(), '../frontend/public/assets/images/logo/logo-icone.png'),
-    path.join(process.cwd(), 'frontend/public/assets/images/logo/logo-icone.png'),
+  // Préfère le logo officiel haute définition (logo.png) puis l'icône en repli.
+  const bases = [
+    path.join(__dirname, '../../../../frontend/public/assets/images/logo'),
+    path.join(__dirname, '../../../frontend/public/assets/images/logo'),
+    path.join(process.cwd(), '../frontend/public/assets/images/logo'),
+    path.join(process.cwd(), 'frontend/public/assets/images/logo'),
   ];
+  const names = ['logo.png', 'logo-icone.png'];
 
-  for (const p of possiblePaths) {
-    if (fs.existsSync(p)) {
-      return p;
+  for (const base of bases) {
+    for (const name of names) {
+      const p = path.join(base, name);
+      if (fs.existsSync(p)) return p;
     }
   }
   return null;

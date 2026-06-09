@@ -21,6 +21,7 @@ import {
   PAYMENT_CONFIG_KEY,
   SUPPORT_CONFIG_KEY,
   ADS_KEY,
+  PROMOTERS_KEY,
   type AppConfig,
   type HomeTheme,
   type Partner,
@@ -29,6 +30,7 @@ import {
   type PaymentConfig,
   type SupportConfig,
   type AdSlide,
+  type Promoter,
 } from '../types/content.types';
 import type { SetHomeThemesInput } from '../validators/content.validator';
 
@@ -244,6 +246,34 @@ export class ContentService {
       userId,
       resource: 'site_setting',
       resourceId: ADS_KEY,
+      details: { count: clean.length },
+      result: 'success',
+    });
+    return clean;
+  }
+
+  /** Porteurs du projet (cartes accueil) — vide si absent. */
+  async getPromoters(): Promise<Promoter[]> {
+    const row = await prisma.siteSetting.findUnique({ where: { key: PROMOTERS_KEY } });
+    return row ? (row.value as unknown as Promoter[]) : [];
+  }
+
+  async setPromoters(promoters: Promoter[], userId?: string): Promise<Promoter[]> {
+    const clean = promoters.map((p) => ({
+      name: p.name,
+      role: p.role || undefined,
+      photoUrl: p.photoUrl || undefined,
+    }));
+    await prisma.siteSetting.upsert({
+      where: { key: PROMOTERS_KEY },
+      create: { key: PROMOTERS_KEY, value: clean as unknown as object },
+      update: { value: clean as unknown as object },
+    });
+    await logAudit({
+      action: 'CONTENT_PROMOTERS_UPDATE',
+      userId,
+      resource: 'site_setting',
+      resourceId: PROMOTERS_KEY,
       details: { count: clean.length },
       result: 'success',
     });

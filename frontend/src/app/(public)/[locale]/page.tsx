@@ -2,7 +2,7 @@
  * Page d'accueil publique — mise en avant de l'événement unique.
  * Données: mockData (statique) en attendant le branchement API.
  */
-import { FeaturedSections } from '@/components/sections/FeaturedSections';
+import { PromotersSection } from '@/components/sections/PromotersSection';
 import { EventsPreviewSection } from '@/components/sections/EventsPreviewSection';
 import { FaqSection } from '@/components/sections/FaqSection';
 import { FeatureStrip } from '@/components/sections/FeatureStrip';
@@ -25,7 +25,7 @@ export default function HomePage() {
       <PartnerBanner />
       <ThemesSection />
       <IndustriesSection />
-      <FeaturedSections />
+      <PromotersSection />
       <TestimonialsSection />
       <PartnersSection />
       <FaqSection />

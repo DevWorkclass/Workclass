@@ -101,3 +101,14 @@ export const adSlideSchema = z.object({
 export const setAdsSchema = z.object({
   ads: z.array(adSlideSchema).max(20),
 });
+
+// --- Porteurs du projet ---
+export const promoterSchema = z.object({
+  name: z.string().min(1, 'Nom requis').max(120),
+  role: z.string().max(120).optional().or(z.literal('')),
+  photoUrl: z.string().url('URL photo invalide').optional().or(z.literal('')),
+});
+
+export const setPromotersSchema = z.object({
+  promoters: z.array(promoterSchema).max(30),
+});

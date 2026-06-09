@@ -24,6 +24,14 @@ export const FOOTER_KEY = 'footer';
 export const PAYMENT_CONFIG_KEY = 'payment_config';
 export const SUPPORT_CONFIG_KEY = 'support_config';
 export const ADS_KEY = 'ads';
+export const PROMOTERS_KEY = 'promoters';
+
+/** Porteur du projet (carte affichée sur l'accueil). */
+export interface Promoter {
+  name: string;
+  role?: string;
+  photoUrl?: string;
+}
 
 /** Annonce / publicité du carrousel d'accueil. */
 export interface AdSlide {

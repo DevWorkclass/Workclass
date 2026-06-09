@@ -16,6 +16,7 @@ import {
   setPaymentConfigSchema,
   setSupportConfigSchema,
   setAdsSchema,
+  setPromotersSchema,
 } from '../validators/content.validator';
 import { ValidationError } from '../../shared/errors/types/error.types';
 
@@ -129,6 +130,24 @@ export class ContentController {
     try {
       const { ads } = setAdsSchema.parse(req.body);
       const saved = await this.service.setAds(ads, req.user?.userId);
+      res.json({ success: true, data: saved });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async getPromoters(_req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      res.json({ success: true, data: await this.service.getPromoters() });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async setPromoters(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const { promoters } = setPromotersSchema.parse(req.body);
+      const saved = await this.service.setPromoters(promoters, req.user?.userId);
       res.json({ success: true, data: saved });
     } catch (error) {
       next(error);

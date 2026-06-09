@@ -139,14 +139,26 @@ export function PartnerBanner() {
                     <p className="line-clamp-2 text-sm font-bold leading-snug text-white sm:text-base">{slide.title}</p>
                     <p className="mt-1 line-clamp-2 text-xs text-white/55 sm:text-sm">{slide.body}</p>
                   </div>
-                  {slide.cta && (
-                    <Link
-                      href={slide.href ?? '#'}
-                      className="w-fit rounded-full bg-brand-gold px-5 py-2 text-xs font-bold text-brand-navy transition-colors hover:bg-brand-gold-hover"
-                    >
-                      {slide.cta}
-                    </Link>
-                  )}
+                  {slide.cta && slide.href ? (
+                    /^https?:\/\//i.test(slide.href) ? (
+                      // Lien externe : nouvel onglet (l'utilisateur reste sur le site).
+                      <a
+                        href={slide.href}
+                        target="_blank"
+                        rel="noopener noreferrer nofollow"
+                        className="w-fit rounded-full bg-brand-gold px-5 py-2 text-xs font-bold text-brand-navy transition-colors hover:bg-brand-gold-hover"
+                      >
+                        {slide.cta}
+                      </a>
+                    ) : (
+                      <Link
+                        href={slide.href}
+                        className="w-fit rounded-full bg-brand-gold px-5 py-2 text-xs font-bold text-brand-navy transition-colors hover:bg-brand-gold-hover"
+                      >
+                        {slide.cta}
+                      </Link>
+                    )
+                  ) : null}
                 </div>
               </div>
             );

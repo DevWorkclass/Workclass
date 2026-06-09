@@ -7,11 +7,14 @@
  *  - POST /admin/content/upload-image (image)
  */
 import { useEffect, useRef, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Plus, Trash2 } from 'lucide-react';
 
 import { Badge } from '@/components/admin/Badge';
 import { PageHeader } from '@/components/admin/PageHeader';
 import { Button } from '@/components/ui/button';
+import { ROUTES } from '@/constants/routes';
+import { clearSession } from '@/lib/auth';
 import { apiAuth, apiFetch, apiUpload, ApiError } from '@/lib/api';
 
 interface AdSlide {
@@ -101,6 +104,7 @@ function AdCard({
 }
 
 export default function AdminAdsPage() {
+  const router = useRouter();
   const [ads, setAds] = useState<AdSlide[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -125,6 +129,11 @@ export default function AdminAdsPage() {
       await apiAuth('/admin/content/ads', { method: 'POST', body: JSON.stringify({ ads }) });
       setMessage('Annonces enregistrées.');
     } catch (err) {
+      if (err instanceof ApiError && err.status === 401) {
+        clearSession();
+        router.replace(ROUTES.admin.login);
+        return;
+      }
       if (err instanceof ApiError && err.status === 403) setError('Permission « Gérer le contenu du site » requise.');
       else if (err instanceof ApiError && err.status === 422) setError('Une annonce est invalide (titre manquant ou lien non autorisé).');
       else setError("L'enregistrement a échoué.");

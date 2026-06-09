@@ -15,6 +15,7 @@ import {
   setFooterSchema,
   setPaymentConfigSchema,
   setSupportConfigSchema,
+  setAdsSchema,
 } from '../validators/content.validator';
 import { ValidationError } from '../../shared/errors/types/error.types';
 
@@ -110,6 +111,24 @@ export class ContentController {
     try {
       const { industries } = setIndustriesSchema.parse(req.body);
       const saved = await this.service.setIndustries(industries, req.user?.userId);
+      res.json({ success: true, data: saved });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async getAds(_req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      res.json({ success: true, data: await this.service.getAds() });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async setAds(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const { ads } = setAdsSchema.parse(req.body);
+      const saved = await this.service.setAds(ads, req.user?.userId);
       res.json({ success: true, data: saved });
     } catch (error) {
       next(error);

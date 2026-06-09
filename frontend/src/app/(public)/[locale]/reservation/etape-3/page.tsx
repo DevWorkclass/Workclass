@@ -238,12 +238,12 @@ export default function ReservationEtape3Page() {
 
               {configLoading ? (
                 <div className="animate-pulse space-y-3">
-                  <div className="h-4 w-3/4 rounded-lg bg-black/6" />
+                  <div className="bg-black/6 h-4 w-3/4 rounded-lg" />
                   <div className="grid gap-3 sm:grid-cols-2">
-                    <div className="h-16 rounded-xl bg-black/6" />
-                    <div className="h-16 rounded-xl bg-black/6" />
+                    <div className="bg-black/6 h-16 rounded-xl" />
+                    <div className="bg-black/6 h-16 rounded-xl" />
                   </div>
-                  <div className="h-10 rounded-lg bg-black/6" />
+                  <div className="bg-black/6 h-10 rounded-lg" />
                 </div>
               ) : (
                 <>
@@ -280,7 +280,7 @@ export default function ReservationEtape3Page() {
                       </div>
                     ) : null}
                     {!payment?.airtelMoney && !payment?.mobileCash && (
-                      <p className="col-span-2 text-sm text-brand-muted italic">
+                      <p className="col-span-2 text-sm italic text-brand-muted">
                         Numéros de paiement non encore configurés — l&apos;équipe vous contactera pour
                         finaliser le règlement.
                       </p>

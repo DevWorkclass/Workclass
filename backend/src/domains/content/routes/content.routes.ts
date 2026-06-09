@@ -33,6 +33,7 @@ router.get('/content/industries', controller.getIndustries.bind(controller));
 router.get('/content/footer', controller.getFooter.bind(controller));
 router.get('/content/payment-config', controller.getPaymentConfig.bind(controller));
 router.get('/content/support', controller.getSupportConfig.bind(controller));
+router.get('/content/ads', controller.getAds.bind(controller));
 
 // --- Admin : gestion du contenu (guard content:manage) ---
 router.post('/admin/content/home-themes', ...guard, controller.setHomeThemes.bind(controller));
@@ -41,6 +42,7 @@ router.post('/admin/content/app-config', ...guard, controller.setAppConfig.bind(
 router.post('/admin/content/industries', ...guard, controller.setIndustries.bind(controller));
 router.post('/admin/content/footer', ...guard, controller.setFooter.bind(controller));
 router.post('/admin/content/support', ...guard, controller.setSupportConfig.bind(controller));
+router.post('/admin/content/ads', ...guard, controller.setAds.bind(controller));
 // Paiement : permission dédiée payments:manage.
 router.post('/admin/content/payment-config', ...guardPayments, controller.setPaymentConfig.bind(controller));
 

@@ -86,3 +86,18 @@ export const setFooterSchema = z.object({
     )
     .max(4),
 });
+
+// --- Publicités / annonces (carrousel d'accueil) ---
+export const adSlideSchema = z.object({
+  tag: z.string().max(60).optional().or(z.literal('')),
+  title: z.string().min(1, 'Titre requis').max(160),
+  body: z.string().max(300).optional().or(z.literal('')),
+  cta: z.string().max(40).optional().or(z.literal('')),
+  href: safeHref.optional().or(z.literal('')),
+  imageUrl: z.string().url('URL image invalide').optional().or(z.literal('')),
+  active: z.boolean(),
+});
+
+export const setAdsSchema = z.object({
+  ads: z.array(adSlideSchema).max(20),
+});

@@ -4,13 +4,66 @@ import { useCallback, useEffect, useState } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import Link from 'next/link';
 
-import { AD_SLIDES } from '@/data/homepageContent';
+import { AD_SLIDES, type AdSlide } from '@/data/homepageContent';
+import { apiFetch } from '@/lib/api';
 import { cn } from '@/lib/utils';
+
+/** Palette de secours pour les annonces gérées sans visuel personnalisé. */
+const PALETTES = [
+  { fromColor: '#0D2145', toColor: '#1d4ed8', textColor: '#C8A84B' },
+  { fromColor: '#7c2d12', toColor: '#c2410c', textColor: '#FED7AA' },
+  { fromColor: '#064e3b', toColor: '#059669', textColor: '#6ee7b7' },
+  { fromColor: '#78350f', toColor: '#d97706', textColor: '#fef3c7' },
+];
+
+interface BackendAd {
+  tag?: string;
+  title: string;
+  body?: string;
+  cta?: string;
+  href?: string;
+  imageUrl?: string;
+  active: boolean;
+}
+
+/** Convertit une annonce backend en slide (génère un visuel par défaut). */
+function toSlide(ad: BackendAd, i: number): AdSlide {
+  const p = PALETTES[i % PALETTES.length]!;
+  return {
+    id: `ad-${i}`,
+    tag: ad.tag ?? '',
+    title: ad.title,
+    body: ad.body ?? '',
+    cta: ad.cta || undefined,
+    href: ad.href || undefined,
+    imageUrl: ad.imageUrl || undefined,
+    visual: {
+      fromColor: p.fromColor,
+      toColor: p.toColor,
+      textColor: p.textColor,
+      initial: ad.title.trim().charAt(0).toUpperCase() || '★',
+    },
+  };
+}
 
 export function PartnerBanner() {
   const [current, setCurrent] = useState(0);
   const [paused, setPaused] = useState(false);
-  const total = AD_SLIDES.length;
+  const [slides, setSlides] = useState<AdSlide[]>(AD_SLIDES);
+
+  useEffect(() => {
+    apiFetch<{ data: BackendAd[] }>('/content/ads')
+      .then((res) => {
+        const active = (res.data ?? []).filter((a) => a.active);
+        if (active.length > 0) {
+          setSlides(active.map(toSlide));
+          setCurrent(0);
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  const total = slides.length;
 
   const next = useCallback(() => setCurrent((c) => (c + 1) % total), [total]);
   const prev = useCallback(() => setCurrent((c) => (c - 1 + total) % total), [total]);
@@ -30,7 +83,7 @@ export function PartnerBanner() {
       <div className="container py-5">
         {/* Bannière */}
         <div className="relative h-[200px] overflow-hidden rounded-xl">
-          {AD_SLIDES.map((slide, i) => {
+          {slides.map((slide, i) => {
             const isActive = i === current;
             return (
               <div
@@ -104,7 +157,7 @@ export function PartnerBanner() {
         <div className="mt-2.5 flex items-center justify-between px-1">
           {/* Dots */}
           <div className="flex items-center gap-1.5">
-            {AD_SLIDES.map((_, i) => (
+            {slides.map((_, i) => (
               <button
                 key={i}
                 onClick={() => setCurrent(i)}

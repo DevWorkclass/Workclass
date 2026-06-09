@@ -14,11 +14,13 @@ import { SpeakersSection } from '@/components/sections/SpeakersSection';
 import { TestimonialsSection } from '@/components/sections/TestimonialsSection';
 import { ThemesSection } from '@/components/sections/ThemesSection';
 import { HeroDynamic } from '@/components/sections/HeroDynamic';
+import { HomeSplash } from '@/components/sections/HomeSplash';
 import { MOCK_EVENT } from '@/data/mockData';
 
 export default function HomePage() {
   return (
     <>
+      <HomeSplash />
       <HeroDynamic />
       <FeatureStrip />
       <EventsPreviewSection />

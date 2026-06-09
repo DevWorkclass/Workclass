@@ -23,6 +23,18 @@ export const INDUSTRIES_KEY = 'industries';
 export const FOOTER_KEY = 'footer';
 export const PAYMENT_CONFIG_KEY = 'payment_config';
 export const SUPPORT_CONFIG_KEY = 'support_config';
+export const ADS_KEY = 'ads';
+
+/** Annonce / publicité du carrousel d'accueil. */
+export interface AdSlide {
+  tag?: string;
+  title: string;
+  body?: string;
+  cta?: string;
+  href?: string;
+  imageUrl?: string;
+  active: boolean;
+}
 
 /** Logo partenaire (affiché sur la page d'accueil). */
 export interface Partner {

@@ -20,6 +20,7 @@ import {
   FOOTER_KEY,
   PAYMENT_CONFIG_KEY,
   SUPPORT_CONFIG_KEY,
+  ADS_KEY,
   type AppConfig,
   type HomeTheme,
   type Partner,
@@ -27,6 +28,7 @@ import {
   type FooterContent,
   type PaymentConfig,
   type SupportConfig,
+  type AdSlide,
 } from '../types/content.types';
 import type { SetHomeThemesInput } from '../validators/content.validator';
 
@@ -214,6 +216,38 @@ export class ContentService {
       result: 'success',
     });
     return config;
+  }
+
+  /** Publicités / annonces du carrousel d'accueil (vide si absent). */
+  async getAds(): Promise<AdSlide[]> {
+    const row = await prisma.siteSetting.findUnique({ where: { key: ADS_KEY } });
+    return row ? (row.value as unknown as AdSlide[]) : [];
+  }
+
+  async setAds(ads: AdSlide[], userId?: string): Promise<AdSlide[]> {
+    const clean = ads.map((a) => ({
+      tag: a.tag || '',
+      title: a.title,
+      body: a.body || '',
+      cta: a.cta || undefined,
+      href: a.href || undefined,
+      imageUrl: a.imageUrl || undefined,
+      active: Boolean(a.active),
+    }));
+    await prisma.siteSetting.upsert({
+      where: { key: ADS_KEY },
+      create: { key: ADS_KEY, value: clean as unknown as object },
+      update: { value: clean as unknown as object },
+    });
+    await logAudit({
+      action: 'CONTENT_ADS_UPDATE',
+      userId,
+      resource: 'site_setting',
+      resourceId: ADS_KEY,
+      details: { count: clean.length },
+      result: 'success',
+    });
+    return clean;
   }
 
   /** Config support client (WhatsApp + email) — défaut si absent. */

@@ -16,6 +16,7 @@ import { Button } from '@/components/ui/button';
 import { PermissionGuard } from '@/components/admin/PermissionGuard';
 import { EmptyState } from '@/components/shared/EmptyState';
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner';
+import { Pagination, paginate } from '@/components/admin/Pagination';
 import { ROUTES } from '@/constants/routes';
 import { ApiError, apiAuth } from '@/lib/api';
 
@@ -78,6 +79,11 @@ function CertificatesContent() {
     [tickets],
   );
 
+  const PAGE_SIZE = 15;
+  const [page, setPage] = useState(1);
+  const pageCount = Math.ceil(tickets.length / PAGE_SIZE);
+  const pagedTickets = paginate(tickets, page, PAGE_SIZE);
+
   return (
     <>
       <PageHeader title="Certificats" subtitle="Suivi post-événement (génération automatique au scan)" />
@@ -117,7 +123,7 @@ function CertificatesContent() {
                 </tr>
               </thead>
               <tbody>
-                {tickets.map((t) => {
+                {pagedTickets.map((t) => {
                   const name = t.booking?.participant
                     ? `${t.booking.participant.firstName} ${t.booking.participant.lastName}`
                     : '—';
@@ -158,6 +164,7 @@ function CertificatesContent() {
                 })}
               </tbody>
             </table>
+            <Pagination page={page} pageCount={pageCount} onChange={setPage} />
           </div>
         )}
       </section>

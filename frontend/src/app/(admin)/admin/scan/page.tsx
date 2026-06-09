@@ -8,7 +8,7 @@
  * La vérification HMAC + l'anti-rejeu sont 100 % côté backend. Faute de librairie
  * caméra installée, l'opérateur colle le contenu du QR (JSON { ticketId, signature }).
  */
-import { Camera } from 'lucide-react';
+import { Camera, CameraOff } from 'lucide-react';
 import { useCallback, useState } from 'react';
 import { useRouter } from 'next/navigation';
 
@@ -17,6 +17,7 @@ import { PageHeader } from '@/components/admin/PageHeader';
 import { StatCard } from '@/components/admin/StatCard';
 import { Button } from '@/components/ui/button';
 import { PermissionGuard } from '@/components/admin/PermissionGuard';
+import { CameraScanner } from '@/components/admin/CameraScanner';
 import { ROUTES } from '@/constants/routes';
 import { ApiError, apiAuth } from '@/lib/api';
 
@@ -63,6 +64,7 @@ export default function AdminScanPage() {
 function ScanContent() {
   const router = useRouter();
   const [payload, setPayload] = useState('');
+  const [camera, setCamera] = useState(false);
   const [pending, setPending] = useState<VerifiedTicket | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -84,41 +86,55 @@ function ScanContent() {
   const pushLog = (entry: Omit<ScanLog, 'time'>) =>
     setRecent((list) => [{ ...entry, time: nowLabel() }, ...list].slice(0, 8));
 
-  const verify = async () => {
-    setMessage(null);
-    setPending(null);
-    let parsed: { ticketId: string; signature: string };
-    try {
-      const obj = JSON.parse(payload) as { ticketId?: unknown; signature?: unknown };
-      if (typeof obj.ticketId !== 'string' || typeof obj.signature !== 'string') {
-        throw new Error('format');
+  /** Vérifie un contenu de QR (caméra ou saisie manuelle). */
+  const verifyPayload = useCallback(
+    async (text: string) => {
+      setMessage(null);
+      setPending(null);
+      let parsed: { ticketId: string; signature: string };
+      try {
+        const obj = JSON.parse(text) as { ticketId?: unknown; signature?: unknown };
+        if (typeof obj.ticketId !== 'string' || typeof obj.signature !== 'string') {
+          throw new Error('format');
+        }
+        parsed = { ticketId: obj.ticketId, signature: obj.signature };
+      } catch {
+        setMessage('Contenu du QR invalide (JSON { ticketId, signature } attendu).');
+        return;
       }
-      parsed = { ticketId: obj.ticketId, signature: obj.signature };
-    } catch {
-      setMessage('Contenu du QR invalide (JSON { ticketId, signature } attendu).');
-      return;
-    }
 
-    try {
-      setBusy(true);
-      const res = await apiAuth<{ data: VerifyResult }>('/scan/verify', {
-        method: 'POST',
-        body: JSON.stringify(parsed),
-      });
-      if (res.data.valid && res.data.ticket) {
-        setPending(res.data.ticket);
-      } else {
-        const reason = ERROR_LABEL[res.data.error ?? ''] ?? 'Billet refusé';
-        setRefused((n) => n + 1);
-        pushLog({ label: 'Refusé', detail: reason, ok: false });
-        setMessage(reason);
+      try {
+        setBusy(true);
+        const res = await apiAuth<{ data: VerifyResult }>('/scan/verify', {
+          method: 'POST',
+          body: JSON.stringify(parsed),
+        });
+        if (res.data.valid && res.data.ticket) {
+          setPending(res.data.ticket);
+        } else {
+          const reason = ERROR_LABEL[res.data.error ?? ''] ?? 'Billet refusé';
+          setRefused((n) => n + 1);
+          pushLog({ label: 'Refusé', detail: reason, ok: false });
+          setMessage(reason);
+        }
+      } catch (err) {
+        if (!handleAuthError(err)) setMessage('La vérification a échoué.');
+      } finally {
+        setBusy(false);
       }
-    } catch (err) {
-      if (!handleAuthError(err)) setMessage('La vérification a échoué.');
-    } finally {
-      setBusy(false);
-    }
-  };
+    },
+    [handleAuthError],
+  );
+
+  /** QR lu par la caméra → ferme la caméra et vérifie. */
+  const onCameraDecode = useCallback(
+    (text: string) => {
+      setCamera(false);
+      setPayload(text);
+      void verifyPayload(text);
+    },
+    [verifyPayload],
+  );
 
   const confirm = async () => {
     if (!pending) return;
@@ -164,13 +180,36 @@ function ScanContent() {
       <section className="mt-6 grid gap-6 lg:grid-cols-2">
         {/* Interface de scan */}
         <div className="rounded-2xl border border-black/5 bg-white p-6 shadow-sm">
-          <h2 className="font-bold text-brand-navy">Interface de scan</h2>
-          <div className="mt-4 grid aspect-video place-items-center rounded-xl border-2 border-dashed border-brand-gold/40 bg-brand-cream/50 text-center">
-            <div>
-              <Camera className="mx-auto size-8 text-brand-gold" />
-              <p className="mt-3 text-sm text-brand-muted">Collez le contenu du QR ci-dessous</p>
-            </div>
+          <div className="flex items-center justify-between">
+            <h2 className="font-bold text-brand-navy">Interface de scan</h2>
+            <Button variant={camera ? 'outline' : 'gold'} size="sm" onClick={() => setCamera((v) => !v)}>
+              {camera ? (
+                <>
+                  <CameraOff className="mr-1 size-4" /> Arrêter
+                </>
+              ) : (
+                <>
+                  <Camera className="mr-1 size-4" /> Scanner caméra
+                </>
+              )}
+            </Button>
           </div>
+
+          {camera ? (
+            <div className="mt-4">
+              <CameraScanner onDecode={onCameraDecode} onError={(m) => { setCamera(false); setMessage(m); }} />
+              <p className="mt-2 text-center text-xs text-brand-muted">Centrez le QR du billet dans le cadre.</p>
+            </div>
+          ) : (
+            <div className="mt-4 grid aspect-video place-items-center rounded-xl border-2 border-dashed border-brand-gold/40 bg-brand-cream/50 text-center">
+              <div>
+                <Camera className="mx-auto size-8 text-brand-gold" />
+                <p className="mt-3 text-sm text-brand-muted">
+                  Scannez avec la caméra ou collez le contenu du QR ci-dessous
+                </p>
+              </div>
+            </div>
+          )}
 
           <label htmlFor="qr-payload" className="mt-4 block text-sm font-semibold text-brand-navy">
             Contenu du QR (JSON)
@@ -206,7 +245,7 @@ function ScanContent() {
               </div>
             </div>
           ) : (
-            <Button variant="gold" className="mt-4 w-full" disabled={busy || !payload.trim()} onClick={verify}>
+            <Button variant="gold" className="mt-4 w-full" disabled={busy || !payload.trim()} onClick={() => verifyPayload(payload)}>
               Vérifier le billet
             </Button>
           )}

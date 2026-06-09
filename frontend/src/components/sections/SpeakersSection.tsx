@@ -8,7 +8,24 @@ const GRADIENTS = [
   'from-[#4a2c1a] to-brand-gold',
 ];
 
-function SpeakerCard({ s, index }: { s: (typeof SPEAKERS)[number]; index: number }) {
+interface SpeakerView {
+  initials: string;
+  name: string;
+  role: string;
+  company?: string;
+}
+
+function initialsOf(name: string): string {
+  return name
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((w) => w[0])
+    .join('')
+    .toUpperCase();
+}
+
+function SpeakerCard({ s, index }: { s: SpeakerView; index: number }) {
   return (
     <article className="overflow-hidden rounded-2xl border border-brand-navy/10 bg-white shadow-sm">
       <div
@@ -19,14 +36,28 @@ function SpeakerCard({ s, index }: { s: (typeof SPEAKERS)[number]; index: number
       <div className="p-4">
         <h3 className="font-semibold text-brand-navy">{s.name}</h3>
         <p className="text-sm text-brand-muted">
-          {s.role} · {s.company}
+          {s.role}
+          {s.company ? ` · ${s.company}` : ''}
         </p>
       </div>
     </article>
   );
 }
 
-export function SpeakersSection() {
+const DEFAULT_SPEAKERS: SpeakerView[] = SPEAKERS.map((s) => ({
+  initials: s.initials,
+  name: s.name,
+  role: s.role,
+  company: s.company,
+}));
+
+/** Intervenants ; `speakers` (depuis l'événement vedette) sinon liste par défaut. */
+export function SpeakersSection({ speakers }: { speakers?: { name: string; role?: string }[] }) {
+  const items: SpeakerView[] =
+    speakers && speakers.length > 0
+      ? speakers.map((s) => ({ initials: initialsOf(s.name), name: s.name, role: s.role ?? '' }))
+      : DEFAULT_SPEAKERS;
+
   return (
     <section id="intervenants" className="py-16">
       <div className="container">
@@ -41,16 +72,16 @@ export function SpeakersSection() {
 
         {/* ── Grille desktop (sm+) ── */}
         <div className="mt-10 hidden gap-6 sm:grid sm:grid-cols-2 lg:grid-cols-4">
-          {SPEAKERS.map((s, i) => (
-            <SpeakerCard key={s.initials} s={s} index={i} />
+          {items.map((s, i) => (
+            <SpeakerCard key={`${s.name}-${i}`} s={s} index={i} />
           ))}
         </div>
       </div>
 
       {/* ── Scroll manuel mobile (< sm) ── */}
-      <MobileScrollCarousel count={SPEAKERS.length} className="mt-8 sm:hidden">
-        {SPEAKERS.map((s, i) => (
-          <div key={s.initials} className="w-52 shrink-0 snap-start">
+      <MobileScrollCarousel count={items.length} className="mt-8 sm:hidden">
+        {items.map((s, i) => (
+          <div key={`${s.name}-${i}`} className="w-52 shrink-0 snap-start">
             <SpeakerCard s={s} index={i} />
           </div>
         ))}

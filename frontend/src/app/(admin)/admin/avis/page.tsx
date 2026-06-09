@@ -15,6 +15,7 @@ import { Button } from '@/components/ui/button';
 import { PermissionGuard } from '@/components/admin/PermissionGuard';
 import { EmptyState } from '@/components/shared/EmptyState';
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner';
+import { Pagination, paginate } from '@/components/admin/Pagination';
 import { ROUTES } from '@/constants/routes';
 import { ApiError, apiAuth } from '@/lib/api';
 import { hasPermission } from '@/lib/auth';
@@ -130,6 +131,12 @@ function FeedbackContent() {
     });
   }, [items, query, status]);
 
+  const PAGE_SIZE = 12;
+  const [page, setPage] = useState(1);
+  useEffect(() => setPage(1), [query, status]);
+  const pageCount = Math.ceil(rows.length / PAGE_SIZE);
+  const pagedRows = paginate(rows, page, PAGE_SIZE);
+
   const stats = useMemo(() => {
     const approved = items.filter((r) => r.moderationStatus === 'approved');
     const global =
@@ -212,7 +219,7 @@ function FeedbackContent() {
                 </tr>
               </thead>
               <tbody>
-                {rows.map((r) => {
+                {pagedRows.map((r) => {
                   const name = r.feedbackLink?.booking?.participant
                     ? `${r.feedbackLink.booking.participant.firstName} ${r.feedbackLink.booking.participant.lastName}`
                     : 'Anonyme';
@@ -264,6 +271,7 @@ function FeedbackContent() {
                 })}
               </tbody>
             </table>
+            <Pagination page={page} pageCount={pageCount} onChange={setPage} />
           </div>
         )}
       </section>

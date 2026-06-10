@@ -5,7 +5,7 @@
  */
 
 import { prisma } from '../../../config/database';
-import { verifyQRCode } from '../../../utils/qr-generator';
+import { verifyQRCode, generatePlainQRCode } from '../../../utils/qr-generator';
 import { generateCertificatePDF } from '../../../utils/pdf-generator';
 import { uploadPdf } from '../../shared/storage/storage.service';
 import { NotFoundError, ValidationError } from '../../shared/errors/types/error.types';
@@ -66,11 +66,22 @@ export class ScanService {
     const ticketSeq = ticket.ticketNumber.split('-')[2] ?? '000000';
     const certificateNumber = `WCG-CERT-${ticketYear}-${ticketSeq}`;
 
+    // QR d'authentification : URL publique de vérification (ouvrable par tout scanner).
+    const appUrl = process.env.FRONTEND_URL ?? process.env.APP_URL ?? 'http://localhost:3000';
+    const verifyUrl = `${appUrl.replace(/\/$/, '')}/certificat/${certificateNumber}`;
+    let qrCodeDataUrl: string | undefined;
+    try {
+      qrCodeDataUrl = await generatePlainQRCode(verifyUrl);
+    } catch {
+      qrCodeDataUrl = undefined;
+    }
+
     const pdfBuffer = await generateCertificatePDF({
       participantName: `${ticket.booking.participant.firstName} ${ticket.booking.participant.lastName}`,
       eventTitle: ticket.booking.event.title,
       eventDate: ticket.booking.event.startDate.toLocaleDateString('fr-FR'),
       certificateNumber,
+      qrCodeDataUrl,
     });
 
     // Stockage (Supabase Storage en prod, disque local en dev)
@@ -82,7 +93,7 @@ export class ScanService {
 
     const updatedTicket = await prisma.ticket.update({
       where: { id: ticketId },
-      data: { certificateSent: true, certificateUrl },
+      data: { certificateSent: true, certificateUrl, certificateNumber },
     });
 
     // Envoi de l'email avec le certificat

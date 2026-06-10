@@ -23,6 +23,17 @@ export class TicketsController {
     }
   }
 
+  /** GET /public/certificate/:number — vérification publique (QR). */
+  async verifyCertificate(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const number = String(req.params.number ?? '').slice(0, 60);
+      const result = await this.service.verifyCertificate(number);
+      res.json({ success: true, data: result });
+    } catch (error) {
+      next(error);
+    }
+  }
+
   async list(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const page = parseInt(String(req.query.page ?? '1'), 10) || 1;

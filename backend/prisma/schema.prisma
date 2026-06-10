@@ -189,6 +189,8 @@ model Ticket {
   scannedBy       String?   @map("scanned_by")
   certificateSent Boolean   @default(false) @map("certificate_sent")
   certificateUrl  String?   @map("certificate_url")
+  // Numéro de certificat (WCG-CERT-YYYY-NNNNNN) — sert à l'authentification via QR public.
+  certificateNumber String? @unique @map("certificate_number")
   createdAt       DateTime  @default(now()) @map("created_at")
   updatedAt       DateTime  @updatedAt       @map("updated_at")
 

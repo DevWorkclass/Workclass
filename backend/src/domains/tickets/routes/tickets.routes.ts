@@ -14,6 +14,9 @@ import { PERMISSIONS } from '../../users/types/users.types';
 const router = Router();
 const controller = new TicketsController();
 
+// Vérification publique d'un certificat (scannée depuis le QR du document).
+router.get('/public/certificate/:number', controller.verifyCertificate.bind(controller));
+
 router.post(
   '/tickets/generate',
   authMiddleware,

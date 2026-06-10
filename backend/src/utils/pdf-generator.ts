@@ -23,6 +23,8 @@ interface CertificatePDFData {
   eventTitle: string;
   eventDate: string;
   certificateNumber: string;
+  /** QR (data-URL) encodant l'URL d'authentification publique du certificat. */
+  qrCodeDataUrl?: string;
 }
 
 /**
@@ -215,6 +217,20 @@ export async function generateCertificatePDF(
     // Date & Identifiant unique
     doc.fillColor('#475569').font('Helvetica-Bold').fontSize(12).text(`Délivré le ${data.eventDate}`, 0, 385, { align: 'center' });
     doc.fillColor('#94A3B8').font('Helvetica-Bold').fontSize(9).text(`N° CERTIFICAT : ${data.certificateNumber}`, 0, 410, { align: 'center' });
+
+    // QR d'authentification (scannable par n'importe quel scanner → page de vérification)
+    if (data.qrCodeDataUrl) {
+      try {
+        const qrBase64 = data.qrCodeDataUrl.replace(/^data:image\/\w+;base64,/, '');
+        const qrBuffer = Buffer.from(qrBase64, 'base64');
+        const qrSize = 66;
+        doc.image(qrBuffer, width / 2 - qrSize / 2, 435, { width: qrSize });
+        doc.fillColor('#94A3B8').font('Helvetica').fontSize(7.5)
+          .text('Scannez pour authentifier ce certificat', 0, 505, { align: 'center' });
+      } catch (e) {
+        // Fallback silencieux si le QR ne peut être rendu
+      }
+    }
 
     // Lignes de signatures
     const sigY = 460;

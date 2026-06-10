@@ -44,6 +44,37 @@ export class TicketGeneratorService {
     return { tickets, total };
   }
 
+  /**
+   * Authentifie un certificat par son numéro (vérification publique via QR).
+   * Renvoie un objet minimal (pas de PII sensible : pas d'email/téléphone).
+   */
+  async verifyCertificate(certificateNumber: string) {
+    const ticket = await prisma.ticket.findUnique({
+      where: { certificateNumber },
+      include: {
+        booking: {
+          include: {
+            participant: { select: { firstName: true, lastName: true } },
+            event: { select: { title: true, startDate: true } },
+          },
+        },
+      },
+    });
+
+    if (!ticket || !ticket.certificateSent || !ticket.booking.participant) {
+      return { valid: false as const };
+    }
+
+    return {
+      valid: true as const,
+      certificateNumber,
+      participantName: `${ticket.booking.participant.firstName} ${ticket.booking.participant.lastName}`,
+      eventTitle: ticket.booking.event.title,
+      eventDate: ticket.booking.event.startDate.toLocaleDateString('fr-FR'),
+      issuedAt: ticket.scannedAt?.toISOString() ?? null,
+    };
+  }
+
   async generateTicket(bookingId: string): Promise<TicketGenerationResult> {
     const booking = await prisma.booking.findUnique({
       where: { id: bookingId },

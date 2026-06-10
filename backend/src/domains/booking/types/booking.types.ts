@@ -25,6 +25,8 @@ export interface BookingInput {
   payerPhone: string;
   /** Nom complet du payeur (optionnel). */
   payerName?: string;
+  /** Adresse du payeur/réservant (obligatoire). */
+  payerAddress: string;
   /** Un participant par place réservée. */
   participants: ParticipantInfo[];
   options?: BookingOption[];

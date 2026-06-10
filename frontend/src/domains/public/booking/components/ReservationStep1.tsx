@@ -8,7 +8,7 @@
 import { ArrowLeft, Check, Minus, Plus } from 'lucide-react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { formatAmount, formatDateRange, formatPrice } from '@/lib/formatters';
@@ -31,6 +31,15 @@ export function ReservationStep1({ event, ticketTypes, maxQuantity = 10 }: Reser
 
   const [selectedId, setSelectedId] = useState<string>(ticketTypes[0]?.id ?? '');
   const [quantity, setQuantity] = useState<number>(1);
+
+  // Les billets arrivent après le fetch (par événement) : resynchronise la
+  // sélection sur les billets de l'événement courant si l'id devient invalide.
+  // Évite de réserver/afficher le prix d'un autre événement.
+  useEffect(() => {
+    if (!ticketTypes.some((t) => t.id === selectedId)) {
+      setSelectedId(ticketTypes[0]?.id ?? '');
+    }
+  }, [ticketTypes, selectedId]);
 
   const selected = useMemo(
     () => ticketTypes.find((t) => t.id === selectedId) ?? ticketTypes[0],

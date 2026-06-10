@@ -45,11 +45,16 @@ export default function EventDetailPage({ params }: Readonly<{ params: Promise<{
     );
   }
 
-  const reserveBtn = (
-    <Button asChild variant="gold" size="lg">
-      <Link href={`${ROUTES.public.reservation.base}?event=${event.slug}`}>Réserver ma place</Link>
-    </Button>
-  );
+  const reserveBtn =
+    event.seatsAvailable > 0 ? (
+      <Button asChild variant="gold" size="lg" className="w-full">
+        <Link href={`${ROUTES.public.reservation.base}?event=${event.slug}`}>Réserver ma place</Link>
+      </Button>
+    ) : (
+      <Button variant="gold" size="lg" className="w-full" disabled>
+        Complet
+      </Button>
+    );
 
   return (
     <>

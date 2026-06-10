@@ -158,6 +158,8 @@ model Participant {
   lastName      String    @map("last_name")
   email         String    @db.Citext
   phone         String
+  // Adresse du payeur/réservant : destinataire des certificats et livrables.
+  address       String?
   company       String?
   position      String?
   metadata      Json      @default("{}")

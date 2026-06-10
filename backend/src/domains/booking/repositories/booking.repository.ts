@@ -39,6 +39,7 @@ export class BookingRepository {
             lastName: payerLastName,
             email: contactEmail,
             phone: data.payerPhone,
+            address: data.payerAddress,
             consentGiven: true,
             consentAt: new Date(),
             // Liste complète des participants (un par place) pour envoi des billets.

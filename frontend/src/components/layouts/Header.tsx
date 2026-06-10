@@ -107,7 +107,7 @@ export function Header() {
 
         <div className="hidden md:block">
           <Button asChild variant="gold" size="sm">
-            <Link href={ROUTES.public.reservation.base}>Réserver</Link>
+            <Link href={ROUTES.public.events}>Réserver</Link>
           </Button>
         </div>
 
@@ -152,7 +152,7 @@ export function Header() {
           </Link>
 
           <Button asChild variant="gold" size="sm" className="mt-2">
-            <Link href={ROUTES.public.reservation.base} onClick={() => setOpen(false)}>
+            <Link href={ROUTES.public.events} onClick={() => setOpen(false)}>
               Réserver
             </Link>
           </Button>

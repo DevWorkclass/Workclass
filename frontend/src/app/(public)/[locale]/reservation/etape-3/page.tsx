@@ -43,7 +43,7 @@ export default function ReservationEtape3Page() {
 
   useEffect(() => {
     const d = getDraft();
-    if (!d || !d.participants?.length || !d.payerPhone) {
+    if (!d || !d.participants?.length || !d.payerPhone || !d.payerAddress) {
       router.replace(`/${locale}/reservation/etape-${d ? '2' : '1'}`);
       return;
     }
@@ -95,6 +95,7 @@ export default function ReservationEtape3Page() {
           quantity: draft.quantity,
           payerPhone: draft.payerPhone,
           payerName: draft.payerName,
+          payerAddress: draft.payerAddress,
           participants: draft.participants,
         }),
       });
@@ -188,6 +189,14 @@ export default function ReservationEtape3Page() {
                   <div className="flex justify-between gap-4 px-4">
                     <dt className="text-brand-muted">Nom du payeur</dt>
                     <dd className="font-semibold text-brand-navy">{draft.payerName}</dd>
+                  </div>
+                )}
+                {draft.payerAddress && (
+                  <div className="flex justify-between gap-4 px-4">
+                    <dt className="text-brand-muted">Adresse</dt>
+                    <dd className="max-w-[60%] text-right font-semibold text-brand-navy">
+                      {draft.payerAddress}
+                    </dd>
                   </div>
                 )}
                 <div className="flex justify-between gap-4 border-t border-black/5 px-4 pt-3">

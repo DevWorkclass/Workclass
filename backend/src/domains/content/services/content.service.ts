@@ -22,6 +22,7 @@ import {
   SUPPORT_CONFIG_KEY,
   ADS_KEY,
   PROMOTERS_KEY,
+  FEATURED_EVENT_KEY,
   type AppConfig,
   type HomeTheme,
   type Partner,
@@ -31,6 +32,7 @@ import {
   type SupportConfig,
   type AdSlide,
   type Promoter,
+  type FeaturedEvent,
 } from '../types/content.types';
 import type { SetHomeThemesInput } from '../validators/content.validator';
 
@@ -278,6 +280,30 @@ export class ContentService {
       result: 'success',
     });
     return clean;
+  }
+
+  /** Événement à la une (id choisi en admin ; null = dernier publié par défaut). */
+  async getFeaturedEvent(): Promise<FeaturedEvent> {
+    const row = await prisma.siteSetting.findUnique({ where: { key: FEATURED_EVENT_KEY } });
+    return row ? (row.value as unknown as FeaturedEvent) : { eventId: null };
+  }
+
+  async setFeaturedEvent(eventId: string | null, userId?: string): Promise<FeaturedEvent> {
+    const value: FeaturedEvent = { eventId };
+    await prisma.siteSetting.upsert({
+      where: { key: FEATURED_EVENT_KEY },
+      create: { key: FEATURED_EVENT_KEY, value: value as unknown as object },
+      update: { value: value as unknown as object },
+    });
+    await logAudit({
+      action: 'CONTENT_FEATURED_EVENT_UPDATE',
+      userId,
+      resource: 'site_setting',
+      resourceId: FEATURED_EVENT_KEY,
+      details: { eventId },
+      result: 'success',
+    });
+    return value;
   }
 
   /** Config support client (WhatsApp + email) — défaut si absent. */

@@ -112,3 +112,8 @@ export const promoterSchema = z.object({
 export const setPromotersSchema = z.object({
   promoters: z.array(promoterSchema).max(30),
 });
+
+// --- Événement à la une ---
+export const setFeaturedEventSchema = z.object({
+  eventId: z.string().uuid('ID evenement invalide').nullable(),
+});

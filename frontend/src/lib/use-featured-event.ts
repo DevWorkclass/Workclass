@@ -1,33 +1,53 @@
 'use client';
 
 /**
- * Hook — slug de l'événement « à la une » (le plus récent publié, avec billets).
- * Sert aux CTA génériques (navbar, hero, CTA final) pour réserver l'événement vedette.
- * Renvoie null tant qu'aucun événement réservable n'est disponible.
+ * Événement « à la une » : choisi depuis l'admin (`/content/featured`),
+ * sinon le dernier événement publié (de préférence avec des billets).
+ * Utilisé par le hero, la navbar et le CTA final.
  */
 import { useEffect, useState } from 'react';
 
 import { getPublicEvents } from '@/lib/events-cache';
+import { apiFetch } from '@/lib/api';
+import type { PublicEvent } from '@/lib/public-event';
+
+/** Résout l'événement vedette (objet complet) ou null. */
+export async function getFeaturedEvent(): Promise<PublicEvent | null> {
+  const [events, featured] = await Promise.all([
+    getPublicEvents(),
+    apiFetch<{ data: { eventId: string | null } }>('/content/featured')
+      .then((r) => r.data)
+      .catch(() => ({ eventId: null })),
+  ]);
+
+  // Choix admin prioritaire (s'il existe encore).
+  if (featured.eventId) {
+    const chosen = events.find((e) => e.id === featured.eventId);
+    if (chosen) return chosen;
+  }
+
+  // Repli : dernier publié, de préférence avec des billets.
+  const withTickets = events.filter((e) => e.ticketTypes.length > 0);
+  const pool = withTickets.length > 0 ? withTickets : events;
+  return (
+    [...pool].sort((a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime())[0] ??
+    null
+  );
+}
 
 export function useFeaturedEventSlug(): string | null {
   const [slug, setSlug] = useState<string | null>(null);
-
   useEffect(() => {
     let active = true;
-    getPublicEvents()
-      .then((data) => {
-        if (!active) return;
-        const featured = [...data]
-          .filter((e) => e.ticketTypes.length > 0)
-          .sort((a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime())[0];
-        if (featured) setSlug(featured.slug);
+    getFeaturedEvent()
+      .then((e) => {
+        if (active && e) setSlug(e.slug);
       })
       .catch(() => {});
     return () => {
       active = false;
     };
   }, []);
-
   return slug;
 }
 

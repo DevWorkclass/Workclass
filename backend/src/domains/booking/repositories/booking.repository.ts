@@ -132,7 +132,12 @@ export class BookingRepository {
         skip,
         take: limit,
         orderBy: { createdAt: 'desc' },
-        include: { participant: true, event: true, ticketType: true },
+        include: {
+          participant: true,
+          event: true,
+          ticketType: true,
+          ticket: { select: { ticketNumber: true, pdfUrl: true } },
+        },
       }),
       prisma.booking.count({ where }),
     ]);

@@ -25,6 +25,12 @@ export const PAYMENT_CONFIG_KEY = 'payment_config';
 export const SUPPORT_CONFIG_KEY = 'support_config';
 export const ADS_KEY = 'ads';
 export const PROMOTERS_KEY = 'promoters';
+export const FEATURED_EVENT_KEY = 'featured_event';
+
+/** Événement « à la une » choisi depuis l'admin (sinon : dernier publié). */
+export interface FeaturedEvent {
+  eventId: string | null;
+}
 
 /** Porteur du projet (carte affichée sur l'accueil). */
 export interface Promoter {

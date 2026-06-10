@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { useState } from 'react';
 import { CalendarDays, MapPin, X } from 'lucide-react';
 
@@ -99,9 +100,23 @@ export function HeroSection({ event }: HeroSectionProps) {
       <div className="container relative grid items-center gap-8 py-12 sm:py-20 lg:grid-cols-2 lg:gap-14 lg:py-28">
         {/* ── Colonne accroche ── */}
         <div className="text-center lg:text-left">
+          {/* Logo officiel (identique à l'écran de chargement), bien visible */}
+          <div className="mb-6 flex justify-center lg:justify-start">
+            <span className="inline-flex rounded-2xl bg-white/95 p-3 shadow-lg">
+              <Image
+                src="/assets/images/logo/logo.png"
+                alt="Work Class Gabon"
+                width={150}
+                height={150}
+                priority
+                className="h-16 w-auto object-contain sm:h-20"
+              />
+            </span>
+          </div>
+
           <p className="mb-4 inline-flex items-center gap-3 text-xs font-bold uppercase tracking-[0.25em] text-brand-gold">
             <span className="h-px w-6 bg-brand-gold lg:w-8" aria-hidden />
-            Libreville &middot; Juillet 2026
+            Événement à la une
             <span className="h-px w-6 bg-brand-gold lg:hidden" aria-hidden />
           </p>
 

@@ -117,3 +117,9 @@ export const setPromotersSchema = z.object({
 export const setFeaturedEventSchema = z.object({
   eventId: z.string().uuid('ID evenement invalide').nullable(),
 });
+
+// --- Fenêtre « En découvrir plus » ---
+export const setAboutSchema = z.object({
+  title: z.string().min(2, 'Titre requis').max(160),
+  content: z.string().min(2, 'Contenu requis').max(4000),
+});

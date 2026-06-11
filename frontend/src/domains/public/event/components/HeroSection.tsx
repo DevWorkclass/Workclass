@@ -2,12 +2,13 @@
 
 import Link from 'next/link';
 import Image from 'next/image';
-import { useState } from 'react';
-import { CalendarDays, MapPin, X } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { X } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import type { Event } from '@/domains/public/event/types/event.types';
 import { formatDateRange } from '@/lib/formatters';
+import { apiFetch } from '@/lib/api';
 import { ROUTES } from '@/constants/routes';
 
 import { Countdown } from './Countdown';
@@ -16,30 +17,48 @@ interface HeroSectionProps {
   event: Event;
 }
 
-/** Fenêtre contextuelle « À propos de l'événement ». */
-function AboutModal({ event, onClose }: { event: Event; onClose: () => void }) {
+/**
+ * Fenêtre contextuelle « En découvrir plus » — contenu configurable depuis
+ * Paramètres → Config (`/content/about`). Apparition fluide (fondu + échelle).
+ */
+function AboutModal({ reserveHref, onClose }: { reserveHref: string; onClose: () => void }) {
+  const [about, setAbout] = useState<{ title: string; content: string } | null>(null);
+  const [shown, setShown] = useState(false);
+
+  useEffect(() => {
+    const id = requestAnimationFrame(() => setShown(true));
+    apiFetch<{ data: { title: string; content: string } }>('/content/about')
+      .then((res) => setAbout(res.data))
+      .catch(() => setAbout({ title: 'À propos', content: '' }));
+    return () => cancelAnimationFrame(id);
+  }, []);
+
+  const close = () => {
+    setShown(false);
+    setTimeout(onClose, 200);
+  };
+
   return (
     <div
       role="dialog"
       aria-modal="true"
-      aria-label={`À propos de ${event.title}`}
-      className="fixed inset-0 z-[80] grid place-items-center bg-black/60 p-4"
-      onMouseDown={onClose}
+      aria-label="En découvrir plus"
+      className={`fixed inset-0 z-[80] grid place-items-center bg-black/60 p-4 transition-opacity duration-200 ${
+        shown ? 'opacity-100' : 'opacity-0'
+      }`}
+      onMouseDown={close}
     >
       <div
-        className="max-h-[85vh] w-full max-w-lg overflow-y-auto rounded-2xl bg-white p-6 shadow-2xl sm:p-8"
+        className={`max-h-[85vh] w-full max-w-lg overflow-y-auto rounded-2xl bg-white p-6 text-brand-navy shadow-2xl transition-all duration-200 sm:p-8 ${
+          shown ? 'translate-y-0 scale-100 opacity-100' : 'translate-y-2 scale-95 opacity-0'
+        }`}
         onMouseDown={(e) => e.stopPropagation()}
       >
         <div className="flex items-start justify-between gap-4">
-          <div>
-            <p className="text-xs font-bold uppercase tracking-[0.2em] text-brand-gold">
-              À propos de l&apos;événement
-            </p>
-            <h2 className="mt-1 text-2xl font-extrabold text-brand-navy">{event.title}</h2>
-          </div>
+          <h2 className="text-2xl font-extrabold text-brand-navy">{about?.title ?? 'À propos'}</h2>
           <button
             type="button"
-            onClick={onClose}
+            onClick={close}
             aria-label="Fermer"
             className="rounded-full p-1.5 text-brand-muted transition-colors hover:bg-brand-cream hover:text-brand-navy"
           >
@@ -47,30 +66,17 @@ function AboutModal({ event, onClose }: { event: Event; onClose: () => void }) {
           </button>
         </div>
 
-        <div className="mt-4 flex flex-wrap gap-x-6 gap-y-1 text-sm text-brand-muted">
-          <span className="flex items-center gap-1.5">
-            <CalendarDays className="size-4" /> {formatDateRange(event.startDate, event.endDate)}
-          </span>
-          <span className="flex items-center gap-1.5">
-            <MapPin className="size-4" /> {event.location}
-          </span>
-        </div>
-
-        <p className="mt-4 whitespace-pre-line text-sm leading-relaxed text-brand-navy/80">
-          {event.description}
-        </p>
+        {about ? (
+          <p className="mt-4 whitespace-pre-line text-sm leading-relaxed text-brand-navy/80">
+            {about.content}
+          </p>
+        ) : (
+          <p className="mt-4 text-sm text-brand-muted">Chargement…</p>
+        )}
 
         <div className="mt-6 flex justify-end">
           <Button asChild variant="gold">
-            <Link
-              href={
-                event.slug
-                  ? `${ROUTES.public.reservation.base}?event=${event.slug}`
-                  : ROUTES.public.reservation.base
-              }
-            >
-              Réserver ma place
-            </Link>
+            <Link href={reserveHref}>Réserver ma place</Link>
           </Button>
         </div>
       </div>
@@ -118,14 +124,11 @@ export function HeroSection({ event }: HeroSectionProps) {
             <span className="h-px w-6 bg-brand-gold lg:hidden" aria-hidden />
           </p>
 
-          <h1 className="text-[1.875rem] font-extrabold leading-[1.06] sm:text-5xl lg:text-6xl">
-            L&apos;Élite
-            <br />
-            Professionnelle
-            <br />
-            du Gabon
-            <br />
-            <span className="text-brand-gold">se Réunit.</span>
+          <h1 className="text-[1.6rem] font-extrabold leading-[1.12] sm:text-4xl lg:text-[2.75rem]">
+            Les <span className="text-brand-gold">WorkClass</span> du Transport et de la Logistique
+            <span className="mt-2 block text-lg font-bold text-white/80 sm:text-xl lg:text-2xl">
+              au service des opérateurs économiques gabonais
+            </span>
           </h1>
 
           <p className="mx-auto mt-5 max-w-md text-sm leading-relaxed text-white/60 sm:text-base lg:mx-0">
@@ -187,7 +190,7 @@ export function HeroSection({ event }: HeroSectionProps) {
         </div>
       </div>
 
-      {aboutOpen && <AboutModal event={event} onClose={() => setAboutOpen(false)} />}
+      {aboutOpen && <AboutModal reserveHref={reserveHref} onClose={() => setAboutOpen(false)} />}
     </section>
   );
 }

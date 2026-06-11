@@ -8,6 +8,7 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 
 import { Logo } from '@/components/shared/Logo';
+import { ROUTES } from '@/constants/routes';
 import { apiFetch } from '@/lib/api';
 
 interface FooterLink {
@@ -67,7 +68,10 @@ export function Footer() {
     <footer className="border-t border-brand-navy/10 bg-brand-cream">
       <div className="container grid gap-6 py-8 sm:grid-cols-2 sm:gap-10 sm:py-12 lg:grid-cols-4">
         <div>
-          <Logo />
+          {/* Logo → accès admin (discret, derrière la marque). */}
+          <Link href={ROUTES.admin.login} aria-label="Espace administrateur" className="inline-block">
+            <Logo />
+          </Link>
           <p className="mt-3 max-w-xs text-sm text-brand-muted sm:mt-4">{footer.description}</p>
           {footer.contactEmail && (
             <a

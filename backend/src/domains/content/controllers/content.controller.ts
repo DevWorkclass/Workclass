@@ -18,6 +18,7 @@ import {
   setAdsSchema,
   setPromotersSchema,
   setFeaturedEventSchema,
+  setAboutSchema,
 } from '../validators/content.validator';
 import { ValidationError } from '../../shared/errors/types/error.types';
 
@@ -167,6 +168,24 @@ export class ContentController {
     try {
       const { eventId } = setFeaturedEventSchema.parse(req.body);
       const saved = await this.service.setFeaturedEvent(eventId, req.user?.userId);
+      res.json({ success: true, data: saved });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async getAbout(_req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      res.json({ success: true, data: await this.service.getAbout() });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async setAbout(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const about = setAboutSchema.parse(req.body);
+      const saved = await this.service.setAbout(about, req.user?.userId);
       res.json({ success: true, data: saved });
     } catch (error) {
       next(error);

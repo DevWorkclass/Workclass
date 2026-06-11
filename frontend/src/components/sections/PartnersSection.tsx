@@ -18,8 +18,9 @@ interface Partner {
 const FALLBACK: Partner[] = PARTNERS.map((p) => ({ name: p.name, description: p.description }));
 
 function PartnerLogo({ p }: Readonly<{ p: Partner }>) {
+  // Logo sans cadre ni fond : juste l'image en object-contain.
   return (
-    <div className="flex h-24 w-48 shrink-0 items-center justify-center rounded-xl border border-black/5 bg-white p-4 shadow-sm">
+    <div className="flex h-20 w-44 shrink-0 items-center justify-center px-2">
       {p.logoUrl ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img

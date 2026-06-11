@@ -106,12 +106,6 @@ export function Header() {
             Événements
             <span className={underline} />
           </Link>
-
-          {/* Lien Admin → navigation normale */}
-          <Link href={ROUTES.admin.login} className={linkBase}>
-            Admin
-            <span className={underline} />
-          </Link>
         </nav>
 
         <div className="hidden md:block">
@@ -158,14 +152,6 @@ export function Header() {
             className="rounded-lg px-3 py-2.5 text-sm font-medium text-brand-navy/80 transition-colors hover:bg-brand-navy/5 active:bg-brand-navy/10"
           >
             Événements
-          </Link>
-
-          <Link
-            href={ROUTES.admin.login}
-            onClick={() => setOpen(false)}
-            className="rounded-lg px-3 py-2.5 text-sm font-medium text-brand-navy/80 transition-colors hover:bg-brand-navy/5 active:bg-brand-navy/10"
-          >
-            Admin
           </Link>
 
           <Button asChild variant="gold" size="sm" className="mt-2">

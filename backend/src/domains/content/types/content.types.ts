@@ -26,6 +26,19 @@ export const SUPPORT_CONFIG_KEY = 'support_config';
 export const ADS_KEY = 'ads';
 export const PROMOTERS_KEY = 'promoters';
 export const FEATURED_EVENT_KEY = 'featured_event';
+export const ABOUT_KEY = 'about';
+
+/** Contenu de la fenêtre « En découvrir plus » (configurable depuis l'admin). */
+export interface AboutContent {
+  title: string;
+  content: string;
+}
+
+export const DEFAULT_ABOUT: AboutContent = {
+  title: 'À propos de l’événement',
+  content:
+    "Les WorkClass du Transport et de la Logistique réunissent les opérateurs économiques gabonais autour des enjeux concrets du secteur : réglementation, Incoterms, ZLECAf, logistique et accès aux marchés.\n\nUne journée de formation pratique, animée par des experts, pour structurer, exporter et se développer.",
+};
 
 /** Événement « à la une » choisi depuis l'admin (sinon : dernier publié). */
 export interface FeaturedEvent {

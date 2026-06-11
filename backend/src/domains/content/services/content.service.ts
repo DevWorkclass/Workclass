@@ -23,6 +23,8 @@ import {
   ADS_KEY,
   PROMOTERS_KEY,
   FEATURED_EVENT_KEY,
+  ABOUT_KEY,
+  DEFAULT_ABOUT,
   type AppConfig,
   type HomeTheme,
   type Partner,
@@ -33,6 +35,7 @@ import {
   type AdSlide,
   type Promoter,
   type FeaturedEvent,
+  type AboutContent,
 } from '../types/content.types';
 import type { SetHomeThemesInput } from '../validators/content.validator';
 
@@ -304,6 +307,28 @@ export class ContentService {
       result: 'success',
     });
     return value;
+  }
+
+  /** Contenu de la fenêtre « En découvrir plus » — défaut si absent. */
+  async getAbout(): Promise<AboutContent> {
+    const row = await prisma.siteSetting.findUnique({ where: { key: ABOUT_KEY } });
+    return row ? { ...DEFAULT_ABOUT, ...(row.value as object) } : DEFAULT_ABOUT;
+  }
+
+  async setAbout(about: AboutContent, userId?: string): Promise<AboutContent> {
+    await prisma.siteSetting.upsert({
+      where: { key: ABOUT_KEY },
+      create: { key: ABOUT_KEY, value: about as unknown as object },
+      update: { value: about as unknown as object },
+    });
+    await logAudit({
+      action: 'CONTENT_ABOUT_UPDATE',
+      userId,
+      resource: 'site_setting',
+      resourceId: ABOUT_KEY,
+      result: 'success',
+    });
+    return about;
   }
 
   /** Config support client (WhatsApp + email) — défaut si absent. */

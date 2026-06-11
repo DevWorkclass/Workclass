@@ -45,12 +45,12 @@ export class TicketGeneratorService {
   }
 
   /**
-   * Authentifie un certificat par son numéro (vérification publique via QR).
+   * Authentifie un certificat par son token opaque (vérification publique via QR).
    * Renvoie un objet minimal (pas de PII sensible : pas d'email/téléphone).
    */
-  async verifyCertificate(certificateNumber: string) {
+  async verifyCertificate(token: string) {
     const ticket = await prisma.ticket.findUnique({
-      where: { certificateNumber },
+      where: { certificateToken: token },
       include: {
         booking: {
           include: {
@@ -67,7 +67,7 @@ export class TicketGeneratorService {
 
     return {
       valid: true as const,
-      certificateNumber,
+      certificateNumber: ticket.certificateNumber,
       participantName: `${ticket.booking.participant.firstName} ${ticket.booking.participant.lastName}`,
       eventTitle: ticket.booking.event.title,
       eventDate: ticket.booking.event.startDate.toLocaleDateString('fr-FR'),

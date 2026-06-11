@@ -65,10 +65,12 @@ export class ScanService {
     const ticketYear = ticket.ticketNumber.split('-')[1] ?? new Date().getFullYear();
     const ticketSeq = ticket.ticketNumber.split('-')[2] ?? '000000';
     const certificateNumber = `WCG-CERT-${ticketYear}-${ticketSeq}`;
+    // Token opaque non séquentiel encodé dans le QR — empêche l'énumération des certificats.
+    const certificateToken = crypto.randomUUID();
 
     // QR d'authentification : URL publique de vérification (ouvrable par tout scanner).
     const appUrl = process.env.FRONTEND_URL ?? process.env.APP_URL ?? 'http://localhost:3000';
-    const verifyUrl = `${appUrl.replace(/\/$/, '')}/certificat/${certificateNumber}`;
+    const verifyUrl = `${appUrl.replace(/\/$/, '')}/certificat/${certificateToken}`;
     let qrCodeDataUrl: string | undefined;
     try {
       qrCodeDataUrl = await generatePlainQRCode(verifyUrl);
@@ -93,7 +95,7 @@ export class ScanService {
 
     const updatedTicket = await prisma.ticket.update({
       where: { id: ticketId },
-      data: { certificateSent: true, certificateUrl, certificateNumber },
+      data: { certificateSent: true, certificateUrl, certificateNumber, certificateToken },
     });
 
     // Envoi de l'email avec le certificat
@@ -104,7 +106,7 @@ export class ScanService {
         certificateUrl
       );
     } catch (err) {
-      console.error('Erreur lors de l\'envoi du certificat par email:', err);
+      logger.error({ err }, 'Erreur envoi certificat par email');
     }
 
     await logAudit({

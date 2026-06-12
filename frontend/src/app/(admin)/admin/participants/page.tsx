@@ -29,7 +29,7 @@ interface AdminBooking {
     firstName: string;
     lastName: string;
     email: string;
-    company: string | null;
+    metadata: { participants?: { firstName: string; lastName: string; email?: string }[] } | null;
   } | null;
 }
 
@@ -84,21 +84,34 @@ function ParticipantsContent() {
       });
   }, []);
 
-  // Un participant par réservation (le titulaire), réservations non annulées.
+  // Un participant individuel par personne dans metadata, ou titulaire si aucune metadata.
   const participants = useMemo(
     () =>
       bookings
         .filter((b) => b.participant && b.status !== 'cancelled')
-        .map((b) => ({
-          id: b.id,
-          name: `${b.participant!.firstName} ${b.participant!.lastName}`,
-          email: b.participant!.email,
-          company: b.participant!.company ?? '',
-          ticket: b.ticketType?.name ?? '—',
-          event: b.event?.title ?? '—',
-          quantity: b.quantity,
-          status: b.status,
-        })),
+        .flatMap((b) => {
+          const metaPs = b.participant!.metadata?.participants ?? [];
+          if (metaPs.length > 0) {
+            return metaPs.map((p, i) => ({
+              id: `${b.id}-${i}`,
+              name: `${p.firstName} ${p.lastName}`,
+              email: p.email ?? b.participant!.email,
+              ticket: b.ticketType?.name ?? '—',
+              event: b.event?.title ?? '—',
+              status: b.status,
+            }));
+          }
+          return [
+            {
+              id: b.id,
+              name: `${b.participant!.firstName} ${b.participant!.lastName}`,
+              email: b.participant!.email,
+              ticket: b.ticketType?.name ?? '—',
+              event: b.event?.title ?? '—',
+              status: b.status,
+            },
+          ];
+        }),
     [bookings],
   );
 
@@ -106,7 +119,7 @@ function ParticipantsContent() {
     const q = query.trim().toLowerCase();
     if (!q) return participants;
     return participants.filter((p) =>
-      [p.name, p.email, p.company].some((v) => v.toLowerCase().includes(q)),
+      [p.name, p.email].some((v) => v.toLowerCase().includes(q)),
     );
   }, [participants, query]);
 
@@ -117,16 +130,15 @@ function ParticipantsContent() {
   const pagedRows = paginate(rows, page, PAGE_SIZE);
 
   const stats = useMemo(() => {
-    const seats = participants.reduce((sum, p) => sum + p.quantity, 0);
-    const companies = new Set(participants.filter((p) => p.company).map((p) => p.company)).size;
-    return { total: participants.length, seats, companies };
+    const confirmed = participants.filter((p) => p.status === 'confirmed').length;
+    return { total: participants.length, confirmed };
   }, [participants]);
 
   return (
     <>
       <PageHeader
         title="Participants"
-        subtitle={`${stats.seats} place${stats.seats > 1 ? 's' : ''} réservée${stats.seats > 1 ? 's' : ''}`}
+        subtitle={`${stats.total} participant${stats.total > 1 ? 's' : ''}`}
         actions={
           <>
             <select
@@ -151,10 +163,9 @@ function ParticipantsContent() {
         }
       />
 
-      <section className="grid gap-4 sm:grid-cols-3">
-        <StatCard label="Inscrits" value={stats.total} accent="gold" />
-        <StatCard label="Places réservées" value={stats.seats} accent="green" />
-        <StatCard label="Entreprises" value={stats.companies} accent="blue" />
+      <section className="grid gap-4 sm:grid-cols-2">
+        <StatCard label="Participants" value={stats.total} accent="gold" />
+        <StatCard label="Entrées confirmées" value={stats.confirmed} accent="green" />
       </section>
 
       <section className="mt-6 rounded-2xl border border-black/5 bg-white p-4 shadow-sm sm:p-6">
@@ -164,7 +175,7 @@ function ParticipantsContent() {
             type="search"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Nom, email, entreprise…"
+            placeholder="Nom, email…"
             aria-label="Rechercher un participant"
             className="w-64 max-w-full rounded-full border border-black/10 bg-brand-cream px-4 py-2 text-sm text-brand-navy placeholder:text-brand-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-gold"
           />
@@ -186,10 +197,9 @@ function ParticipantsContent() {
               <thead>
                 <tr className="text-left text-xs uppercase tracking-wider text-brand-muted">
                   <th className="pb-3 font-semibold">Participant</th>
-                  <th className="hidden pb-3 font-semibold sm:table-cell">Entreprise</th>
                   <th className="hidden pb-3 font-semibold md:table-cell">Événement</th>
                   <th className="pb-3 font-semibold">Billet</th>
-                  <th className="pb-3 text-right font-semibold">Places</th>
+                  <th className="pb-3 text-right font-semibold">Statut</th>
                 </tr>
               </thead>
               <tbody>
@@ -199,17 +209,16 @@ function ParticipantsContent() {
                       <p className="truncate font-semibold text-brand-navy">{p.name}</p>
                       <p className="truncate text-xs text-brand-muted">{p.email}</p>
                     </td>
-                    <td className="hidden max-w-[140px] py-3 pr-2 sm:table-cell">
-                      <span className="block truncate text-brand-navy">{p.company || '—'}</span>
-                    </td>
                     <td className="hidden max-w-[160px] py-3 pr-2 md:table-cell">
                       <span className="block truncate text-brand-navy">{p.event}</span>
                     </td>
                     <td className="py-3 pr-2 text-brand-navy">
                       <span className="block truncate">{p.ticket}</span>
                     </td>
-                    <td className="py-3 text-right font-semibold text-brand-navy">
-                      <Badge tone={p.status === 'confirmed' ? 'success' : 'warning'}>×{p.quantity}</Badge>
+                    <td className="py-3 text-right">
+                      <Badge tone={p.status === 'confirmed' ? 'success' : 'warning'}>
+                        {p.status === 'confirmed' ? 'Confirmé' : 'En attente'}
+                      </Badge>
                     </td>
                   </tr>
                 ))}

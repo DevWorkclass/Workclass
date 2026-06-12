@@ -3,10 +3,13 @@
 /**
  * Admin — Événements. Branché backend.
  *  - Liste : GET /api/events (tous les événements, tri par date de création)
+ *  - Modal certificats : GET /api/admin/scan/event/:id/scanned
+ *                        POST /api/admin/scan/certificates
  */
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { Award, Search, X } from 'lucide-react';
 
 import { Badge, type BadgeTone } from '@/components/admin/Badge';
 import { PageHeader } from '@/components/admin/PageHeader';
@@ -30,6 +33,22 @@ interface AdminEvent {
   seatsAvailable: number;
 }
 
+interface ScannedTicket {
+  id: string;
+  ticketNumber: string;
+  scannedAt: string;
+  certificateSent: boolean;
+  certificateUrl: string | null;
+  booking: {
+    participant: {
+      firstName: string;
+      lastName: string;
+      email: string;
+      metadata: { participants?: { firstName: string; lastName: string }[] } | null;
+    } | null;
+  } | null;
+}
+
 const STATUS_BADGE: Record<AdminEvent['status'], { tone: BadgeTone; label: string }> = {
   published: { tone: 'success', label: 'Publié' },
   draft: { tone: 'warning', label: 'Brouillon' },
@@ -43,14 +62,257 @@ function formatRange(start: string, end: string): string {
   return s === e ? s : `${s} → ${e}`;
 }
 
+function participantNames(ticket: ScannedTicket): string {
+  const metaPs = ticket.booking?.participant?.metadata?.participants ?? [];
+  if (metaPs.length > 0) return metaPs.map((p) => `${p.firstName} ${p.lastName}`).join(', ');
+  if (ticket.booking?.participant)
+    return `${ticket.booking.participant.firstName} ${ticket.booking.participant.lastName}`;
+  return '—';
+}
+
+// ── Modal Certificats ─────────────────────────────────────────────────────────
+interface CertModalProps {
+  event: AdminEvent;
+  onClose: () => void;
+}
+
+function CertificatesModal({ event, onClose }: Readonly<CertModalProps>) {
+  const [tickets, setTickets] = useState<ScannedTicket[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [query, setQuery] = useState('');
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [sending, setSending] = useState(false);
+  const [result, setResult] = useState<{ sent: number; errors: number } | null>(null);
+  const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const load = useCallback(
+    async (q = '') => {
+      setLoading(true);
+      try {
+        const qs = q.trim() ? `?q=${encodeURIComponent(q.trim())}` : '';
+        const res = await apiAuth<{ data: ScannedTicket[] }>(`/admin/scan/event/${event.id}/scanned${qs}`);
+        setTickets(res.data);
+        setSelected(new Set());
+      } catch {
+        setTickets([]);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [event.id],
+  );
+
+  useEffect(() => {
+    void load();
+  }, [load]);
+
+  const onQueryChange = (value: string) => {
+    setQuery(value);
+    if (searchTimer.current) clearTimeout(searchTimer.current);
+    searchTimer.current = setTimeout(() => void load(value), 350);
+  };
+
+  const toggleAll = () => {
+    if (selected.size === tickets.length) {
+      setSelected(new Set());
+    } else {
+      setSelected(new Set(tickets.map((t) => t.id)));
+    }
+  };
+
+  const toggle = (id: string) => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const sendCertificates = async () => {
+    if (selected.size === 0) return;
+    setSending(true);
+    setResult(null);
+    try {
+      const res = await apiAuth<{ data: { sent: number; errors: number } }>('/admin/scan/certificates', {
+        method: 'POST',
+        body: JSON.stringify({ ticketIds: [...selected] }),
+      });
+      setResult(res.data);
+      setSelected(new Set());
+    } catch {
+      setResult({ sent: 0, errors: selected.size });
+    } finally {
+      setSending(false);
+    }
+  };
+
+  const allChecked = tickets.length > 0 && selected.size === tickets.length;
+  const indeterminate = selected.size > 0 && selected.size < tickets.length;
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+      role="dialog"
+      aria-modal
+      aria-label={`Certificats — ${event.title}`}
+    >
+      <div className="flex w-full max-w-2xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl">
+        {/* Header */}
+        <div className="flex items-center justify-between border-b border-black/5 px-6 py-4">
+          <div className="flex items-center gap-3">
+            <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-brand-gold/15">
+              <Award className="size-5 text-brand-gold" />
+            </div>
+            <div>
+              <h2 className="font-bold text-brand-navy">Certificats — {event.title}</h2>
+              <p className="text-xs text-brand-muted">Billets scannés · sélectionnez et envoyez</p>
+            </div>
+          </div>
+          <button
+            onClick={onClose}
+            className="rounded-full p-1.5 text-brand-muted transition-colors hover:bg-brand-cream hover:text-brand-navy"
+            aria-label="Fermer"
+          >
+            <X className="size-5" />
+          </button>
+        </div>
+
+        {/* Search */}
+        <div className="border-b border-black/5 px-6 py-3">
+          <div className="relative">
+            <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-brand-muted" />
+            <input
+              type="search"
+              value={query}
+              onChange={(e) => onQueryChange(e.target.value)}
+              placeholder="Rechercher un participant…"
+              className="w-full rounded-full border border-black/10 bg-brand-cream py-2 pl-9 pr-4 text-sm text-brand-navy placeholder:text-brand-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-gold"
+            />
+          </div>
+        </div>
+
+        {/* Feedback */}
+        {result && (
+          <div
+            className={`mx-6 mt-4 rounded-lg px-4 py-3 text-sm ${
+              result.errors > 0
+                ? 'bg-semantic-error/10 text-semantic-error'
+                : 'bg-semantic-success/10 text-semantic-success'
+            }`}
+          >
+            {result.sent} certificat{result.sent > 1 ? 's' : ''} envoyé{result.sent > 1 ? 's' : ''}
+            {result.errors > 0 && ` · ${result.errors} erreur${result.errors > 1 ? 's' : ''}`}
+          </div>
+        )}
+
+        {/* Ticket list */}
+        <div className="max-h-[52vh] overflow-y-auto">
+          {loading ? (
+            <div className="flex justify-center py-10">
+              <LoadingSpinner label="Chargement des billets scannés…" />
+            </div>
+          ) : tickets.length === 0 ? (
+            <EmptyState
+              title="Aucun billet scanné"
+              description="Il n'y a pas encore de billet scanné pour cet événement."
+            />
+          ) : (
+            <table className="w-full text-sm">
+              <thead className="sticky top-0 bg-white">
+                <tr className="border-b border-black/5 text-left text-xs uppercase tracking-wider text-brand-muted">
+                  <th className="px-6 py-3 font-semibold">
+                    <input
+                      type="checkbox"
+                      checked={allChecked}
+                      ref={(el) => { if (el) el.indeterminate = indeterminate; }}
+                      onChange={toggleAll}
+                      className="size-4 accent-brand-gold"
+                      aria-label="Tout sélectionner"
+                    />
+                  </th>
+                  <th className="py-3 pr-4 font-semibold">Participant(s)</th>
+                  <th className="hidden py-3 pr-4 font-semibold sm:table-cell">N° billet</th>
+                  <th className="py-3 pr-6 text-right font-semibold">Certificat</th>
+                </tr>
+              </thead>
+              <tbody>
+                {tickets.map((t) => (
+                  <tr
+                    key={t.id}
+                    className={`border-b border-black/5 transition-colors hover:bg-brand-cream/40 ${
+                      selected.has(t.id) ? 'bg-brand-gold/5' : ''
+                    }`}
+                    onClick={() => toggle(t.id)}
+                    style={{ cursor: 'pointer' }}
+                  >
+                    <td className="px-6 py-3">
+                      <input
+                        type="checkbox"
+                        checked={selected.has(t.id)}
+                        onChange={() => toggle(t.id)}
+                        onClick={(e) => e.stopPropagation()}
+                        className="size-4 accent-brand-gold"
+                      />
+                    </td>
+                    <td className="py-3 pr-4">
+                      <p className="font-semibold text-brand-navy">{participantNames(t)}</p>
+                      <p className="text-xs text-brand-muted">
+                        {t.booking?.participant?.email ?? ''}
+                      </p>
+                    </td>
+                    <td className="hidden py-3 pr-4 font-mono text-xs text-brand-muted sm:table-cell">
+                      {t.ticketNumber}
+                    </td>
+                    <td className="py-3 pr-6 text-right">
+                      {t.certificateSent ? (
+                        <Badge tone="success">Envoyé</Badge>
+                      ) : (
+                        <Badge tone="warning">En attente</Badge>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
+
+        {/* Footer */}
+        <div className="flex items-center justify-between border-t border-black/5 px-6 py-4">
+          <p className="text-sm text-brand-muted">
+            {selected.size > 0
+              ? `${selected.size} sélectionné${selected.size > 1 ? 's' : ''}`
+              : `${tickets.length} billet${tickets.length > 1 ? 's' : ''} scanné${tickets.length > 1 ? 's' : ''}`}
+          </p>
+          <div className="flex gap-3">
+            <Button variant="outline" size="sm" onClick={onClose}>
+              Fermer
+            </Button>
+            <Button
+              variant="gold"
+              size="sm"
+              disabled={selected.size === 0 || sending}
+              onClick={() => void sendCertificates()}
+            >
+              {sending ? 'Envoi…' : `Envoyer ${selected.size > 0 ? `(${selected.size})` : ''}`}
+            </Button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Page principale ────────────────────────────────────────────────────────────
 export default function AdminEventsPage() {
   const router = useRouter();
   const [events, setEvents] = useState<AdminEvent[]>([]);
   const [featuredId, setFeaturedId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [certEvent, setCertEvent] = useState<AdminEvent | null>(null);
 
   const handleAuthError = useCallback(
     (err: unknown): boolean => {
@@ -83,13 +345,11 @@ export default function AdminEventsPage() {
   useEffect(() => {
     apiAuth<{ data: { eventId: string | null } }>('/content/featured')
       .then((res) => setFeaturedId(res.data.eventId))
-      .catch(() => {
-        /* optionnel */
-      });
+      .catch(() => { /* optionnel */ });
   }, []);
 
   const setFeatured = async (ev: AdminEvent) => {
-    const next = featuredId === ev.id ? null : ev.id; // re-clic = retirer
+    const next = featuredId === ev.id ? null : ev.id;
     try {
       setBusyId(ev.id);
       await apiAuth('/admin/content/featured', {
@@ -175,7 +435,7 @@ export default function AdminEventsPage() {
                 <p className="mt-1 text-sm text-brand-muted">{formatRange(ev.startDate, ev.endDate)}</p>
                 <p className="truncate text-sm text-brand-muted">{ev.location}</p>
 
-                {/* Places disponibles (mis à jour après chaque réservation) */}
+                {/* Places disponibles */}
                 <div className="mt-4">
                   <div className="flex items-baseline justify-between text-sm">
                     <span className="font-semibold text-brand-navy">
@@ -210,6 +470,15 @@ export default function AdminEventsPage() {
                       Modifier
                     </Button>
                   </Link>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="flex items-center gap-1.5"
+                    onClick={() => setCertEvent(ev)}
+                  >
+                    <Award className="size-3.5" />
+                    Certificats
+                  </Button>
                   <Link href={ROUTES.public.eventDetail(ev.slug)} target="_blank">
                     <Button variant="outline" size="sm">
                       Voir la page
@@ -247,6 +516,11 @@ export default function AdminEventsPage() {
             </div>
           )}
         </section>
+      )}
+
+      {/* Modal certificats */}
+      {certEvent && (
+        <CertificatesModal event={certEvent} onClose={() => setCertEvent(null)} />
       )}
     </>
   );

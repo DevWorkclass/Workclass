@@ -25,8 +25,15 @@ interface VerifiedTicket {
   id: string;
   ticketNumber: string;
   booking: {
+    totalAmount: number;
+    quantity: number;
     event: { title: string } | null;
-    participant: { firstName: string; lastName: string } | null;
+    ticketType: { name: string } | null;
+    participant: {
+      firstName: string;
+      lastName: string;
+      metadata: { participants?: { firstName: string; lastName: string }[] } | null;
+    } | null;
   } | null;
 }
 
@@ -136,6 +143,13 @@ function ScanContent() {
     [verifyPayload],
   );
 
+  const pendingParticipants: string[] = (() => {
+    if (!pending?.booking?.participant) return [];
+    const metaPs = pending.booking.participant.metadata?.participants ?? [];
+    if (metaPs.length > 0) return metaPs.map((p) => `${p.firstName} ${p.lastName}`);
+    return [`${pending.booking.participant.firstName} ${pending.booking.participant.lastName}`];
+  })();
+
   const confirm = async () => {
     if (!pending) return;
     try {
@@ -227,14 +241,43 @@ function ScanContent() {
 
           {pending ? (
             <div className="mt-4 rounded-xl border border-semantic-success/30 bg-semantic-success/5 p-4">
-              <p className="font-semibold text-brand-navy">
-                {pending.booking?.participant
-                  ? `${pending.booking.participant.firstName} ${pending.booking.participant.lastName}`
-                  : '—'}
-              </p>
-              <p className="text-xs text-brand-muted">
-                {pending.ticketNumber} · {pending.booking?.event?.title ?? ''}
-              </p>
+              {/* Participants */}
+              <div className="mb-2">
+                {pendingParticipants.length > 0 ? (
+                  pendingParticipants.map((name, i) => (
+                    <p key={i} className={i === 0 ? 'font-semibold text-brand-navy' : 'text-sm text-brand-navy'}>
+                      {name}
+                    </p>
+                  ))
+                ) : (
+                  <p className="font-semibold text-brand-navy">—</p>
+                )}
+              </div>
+
+              {/* Infos billet */}
+              <div className="space-y-0.5 text-xs text-brand-muted">
+                <p>
+                  <span className="font-mono font-semibold text-brand-navy">{pending.ticketNumber}</span>
+                  {pending.booking?.ticketType && (
+                    <> · <span className="font-medium text-brand-navy">{pending.booking.ticketType.name}</span></>
+                  )}
+                </p>
+                {pending.booking?.event && (
+                  <p className="text-brand-navy">{pending.booking.event.title}</p>
+                )}
+                {pending.booking != null && (
+                  <p>
+                    Total :{' '}
+                    <span className="font-semibold text-brand-navy">
+                      {pending.booking.totalAmount.toLocaleString('fr-FR')} FCFA
+                    </span>
+                    {pending.booking.quantity > 1 && (
+                      <> · {pending.booking.quantity} places</>
+                    )}
+                  </p>
+                )}
+              </div>
+
               <div className="mt-3 flex gap-3">
                 <Button variant="gold" className="flex-1" disabled={busy} onClick={confirm}>
                   Confirmer l&apos;entrée

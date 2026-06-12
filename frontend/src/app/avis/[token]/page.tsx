@@ -13,10 +13,10 @@ import { Button } from '@/components/ui/button';
 import { apiFetch, ApiError } from '@/lib/api';
 
 const CRITERIA: { key: string; label: string }[] = [
-  { key: 'organisation', label: 'Organisation' },
-  { key: 'contenu', label: 'Contenu / programme' },
-  { key: 'intervenants', label: 'Intervenants' },
-  { key: 'global', label: 'Appréciation globale' },
+  { key: 'overall', label: 'Appréciation globale' },
+  { key: 'organization', label: 'Organisation' },
+  { key: 'content', label: 'Contenu / programme' },
+  { key: 'speakers', label: 'Intervenants' },
 ];
 
 function StarInput({

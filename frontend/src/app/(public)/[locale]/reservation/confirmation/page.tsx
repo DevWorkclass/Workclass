@@ -155,16 +155,9 @@ function ConfirmationContent() {
           </div>
 
           {/* Actions */}
-          <div className="mt-8 flex flex-col gap-2 sm:flex-row sm:justify-center">
+          <div className="mt-8 flex justify-center">
             <Button asChild variant="gold">
               <Link href={`/${locale}`}>Retour à l&apos;accueil</Link>
-            </Button>
-            <Button
-              asChild
-              variant="outline"
-              className="border-white/30 text-white hover:bg-white/10 hover:text-white"
-            >
-              <Link href={`/${locale}/participant`}>Consulter mon billet</Link>
             </Button>
           </div>
         </div>

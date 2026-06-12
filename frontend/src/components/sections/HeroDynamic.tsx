@@ -1,38 +1,33 @@
 'use client';
 
 /**
- * Hero d'accueil branché sur le dernier événement publié (réel).
- *  - GET /api/public/events → événement publié le plus récent (par date de début).
- * Repli sur l'événement vedette statique (MOCK_EVENT) tant qu'aucun n'est publié.
+ * Hero d'accueil branché sur l'événement « à la une » (choisi en admin,
+ * sinon dernier publié). Repli sur MOCK_EVENT tant qu'aucun n'est disponible.
  */
 import { useEffect, useState } from 'react';
 
 import { HeroSection } from '@/domains/public/event/components/HeroSection';
 import type { Event } from '@/domains/public/event/types/event.types';
-import { getPublicEvents } from '@/lib/events-cache';
+import { getFeaturedEvent } from '@/lib/use-featured-event';
 import { MOCK_EVENT } from '@/data/mockData';
 
 export function HeroDynamic() {
   const [event, setEvent] = useState<Event>(MOCK_EVENT);
 
   useEffect(() => {
-    getPublicEvents()
-      .then((data) => {
-        if (!Array.isArray(data) || data.length === 0) return;
-        const latest = [...data].sort(
-          (a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime(),
-        )[0];
-        if (!latest) return;
+    getFeaturedEvent()
+      .then((featured) => {
+        if (!featured) return;
         setEvent({
           ...MOCK_EVENT,
-          id: latest.id,
-          title: latest.title,
-          slug: latest.slug,
-          description: latest.description,
-          location: latest.location,
-          startDate: new Date(latest.startDate),
-          endDate: new Date(latest.endDate),
-          coverImage: latest.coverImage ?? undefined,
+          id: featured.id,
+          title: featured.title,
+          slug: featured.slug,
+          description: featured.description,
+          location: featured.location,
+          startDate: new Date(featured.startDate),
+          endDate: new Date(featured.endDate),
+          coverImage: featured.coverImage ?? undefined,
         });
       })
       .catch(() => {

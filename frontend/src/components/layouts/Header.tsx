@@ -19,12 +19,12 @@ import { Logo } from '@/components/shared/Logo';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { ROUTES } from '@/constants/routes';
+import { featuredReserveHref, useFeaturedEventSlug } from '@/lib/use-featured-event';
 
 /** Liens avec un identifiant de section (scroll homepage) et un label. */
 const SECTION_LINKS = [
-  { section: 'accueil',    label: 'Accueil' },
-  { section: 'evenements', label: 'Événements' },
-  { section: 'faq',        label: 'FAQ' },
+  { section: 'accueil', label: 'Accueil' },
+  { section: 'faq', label: 'FAQ' },
 ] as const;
 
 export function Header() {
@@ -32,6 +32,9 @@ export function Header() {
   const pathname = usePathname();
   const params = useParams<{ locale: string }>();
   const locale = params?.locale ?? 'fr';
+  // CTA « Réserver » de la navbar → événement à la une.
+  const featuredSlug = useFeaturedEventSlug();
+  const reserveHref = featuredReserveHref(featuredSlug);
 
   /**
    * Détecte si on est sur la homepage (ex : /fr, /en, /).
@@ -98,16 +101,16 @@ export function Header() {
             </Link>
           ))}
 
-          {/* Lien Admin → navigation normale */}
-          <Link href={ROUTES.admin.login} className={linkBase}>
-            Admin
+          {/* Événements → page liste de tous les événements (navigation normale) */}
+          <Link href={ROUTES.public.events} className={linkBase}>
+            Événements
             <span className={underline} />
           </Link>
         </nav>
 
         <div className="hidden md:block">
           <Button asChild variant="gold" size="sm">
-            <Link href={ROUTES.public.reservation.base}>Réserver</Link>
+            <Link href={reserveHref}>Réserver</Link>
           </Button>
         </div>
 
@@ -144,15 +147,15 @@ export function Header() {
           ))}
 
           <Link
-            href={ROUTES.admin.login}
+            href={ROUTES.public.events}
             onClick={() => setOpen(false)}
             className="rounded-lg px-3 py-2.5 text-sm font-medium text-brand-navy/80 transition-colors hover:bg-brand-navy/5 active:bg-brand-navy/10"
           >
-            Admin
+            Événements
           </Link>
 
           <Button asChild variant="gold" size="sm" className="mt-2">
-            <Link href={ROUTES.public.reservation.base} onClick={() => setOpen(false)}>
+            <Link href={reserveHref} onClick={() => setOpen(false)}>
               Réserver
             </Link>
           </Button>

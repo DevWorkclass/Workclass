@@ -45,10 +45,16 @@ export function PublicEventCard({ event }: Readonly<{ event: PublicEvent }>) {
           )}
         </p>
 
-        <div className="mt-auto flex flex-wrap gap-2 pt-4">
-          <Button asChild variant="gold" size="sm">
-            <Link href={ROUTES.public.reservation.base}>Réserver</Link>
-          </Button>
+        <div className="relative z-10 mt-auto flex flex-wrap gap-2 pt-4">
+          {event.seatsAvailable > 0 ? (
+            <Button asChild variant="gold" size="sm">
+              <Link href={`${ROUTES.public.reservation.base}?event=${event.slug}`}>Réserver</Link>
+            </Button>
+          ) : (
+            <Button variant="gold" size="sm" disabled>
+              Complet
+            </Button>
+          )}
           <Button asChild variant="outline" size="sm">
             <Link href={detail}>
               Détails <ArrowRight className="ml-1 size-4" />

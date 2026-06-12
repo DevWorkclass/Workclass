@@ -33,6 +33,10 @@ router.get('/content/industries', controller.getIndustries.bind(controller));
 router.get('/content/footer', controller.getFooter.bind(controller));
 router.get('/content/payment-config', controller.getPaymentConfig.bind(controller));
 router.get('/content/support', controller.getSupportConfig.bind(controller));
+router.get('/content/ads', controller.getAds.bind(controller));
+router.get('/content/promoters', controller.getPromoters.bind(controller));
+router.get('/content/featured', controller.getFeaturedEvent.bind(controller));
+router.get('/content/about', controller.getAbout.bind(controller));
 
 // --- Admin : gestion du contenu (guard content:manage) ---
 router.post('/admin/content/home-themes', ...guard, controller.setHomeThemes.bind(controller));
@@ -41,6 +45,16 @@ router.post('/admin/content/app-config', ...guard, controller.setAppConfig.bind(
 router.post('/admin/content/industries', ...guard, controller.setIndustries.bind(controller));
 router.post('/admin/content/footer', ...guard, controller.setFooter.bind(controller));
 router.post('/admin/content/support', ...guard, controller.setSupportConfig.bind(controller));
+router.post('/admin/content/ads', ...guard, controller.setAds.bind(controller));
+router.post('/admin/content/promoters', ...guard, controller.setPromoters.bind(controller));
+router.post('/admin/content/about', ...guard, controller.setAbout.bind(controller));
+// Événement à la une : géré par les admins qui gèrent les événements.
+router.post(
+  '/admin/content/featured',
+  authMiddleware,
+  requireRole('admin', 'super_admin'),
+  controller.setFeaturedEvent.bind(controller),
+);
 // Paiement : permission dédiée payments:manage.
 router.post('/admin/content/payment-config', ...guardPayments, controller.setPaymentConfig.bind(controller));
 

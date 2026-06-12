@@ -20,6 +20,11 @@ import {
   FOOTER_KEY,
   PAYMENT_CONFIG_KEY,
   SUPPORT_CONFIG_KEY,
+  ADS_KEY,
+  PROMOTERS_KEY,
+  FEATURED_EVENT_KEY,
+  ABOUT_KEY,
+  DEFAULT_ABOUT,
   type AppConfig,
   type HomeTheme,
   type Partner,
@@ -27,6 +32,10 @@ import {
   type FooterContent,
   type PaymentConfig,
   type SupportConfig,
+  type AdSlide,
+  type Promoter,
+  type FeaturedEvent,
+  type AboutContent,
 } from '../types/content.types';
 import type { SetHomeThemesInput } from '../validators/content.validator';
 
@@ -214,6 +223,112 @@ export class ContentService {
       result: 'success',
     });
     return config;
+  }
+
+  /** Publicités / annonces du carrousel d'accueil (vide si absent). */
+  async getAds(): Promise<AdSlide[]> {
+    const row = await prisma.siteSetting.findUnique({ where: { key: ADS_KEY } });
+    return row ? (row.value as unknown as AdSlide[]) : [];
+  }
+
+  async setAds(ads: AdSlide[], userId?: string): Promise<AdSlide[]> {
+    const clean = ads.map((a) => ({
+      tag: a.tag || '',
+      title: a.title,
+      body: a.body || '',
+      cta: a.cta || undefined,
+      href: a.href || undefined,
+      imageUrl: a.imageUrl || undefined,
+      active: Boolean(a.active),
+    }));
+    await prisma.siteSetting.upsert({
+      where: { key: ADS_KEY },
+      create: { key: ADS_KEY, value: clean as unknown as object },
+      update: { value: clean as unknown as object },
+    });
+    await logAudit({
+      action: 'CONTENT_ADS_UPDATE',
+      userId,
+      resource: 'site_setting',
+      resourceId: ADS_KEY,
+      details: { count: clean.length },
+      result: 'success',
+    });
+    return clean;
+  }
+
+  /** Porteurs du projet (cartes accueil) — vide si absent. */
+  async getPromoters(): Promise<Promoter[]> {
+    const row = await prisma.siteSetting.findUnique({ where: { key: PROMOTERS_KEY } });
+    return row ? (row.value as unknown as Promoter[]) : [];
+  }
+
+  async setPromoters(promoters: Promoter[], userId?: string): Promise<Promoter[]> {
+    const clean = promoters.map((p) => ({
+      name: p.name,
+      role: p.role || undefined,
+      photoUrl: p.photoUrl || undefined,
+    }));
+    await prisma.siteSetting.upsert({
+      where: { key: PROMOTERS_KEY },
+      create: { key: PROMOTERS_KEY, value: clean as unknown as object },
+      update: { value: clean as unknown as object },
+    });
+    await logAudit({
+      action: 'CONTENT_PROMOTERS_UPDATE',
+      userId,
+      resource: 'site_setting',
+      resourceId: PROMOTERS_KEY,
+      details: { count: clean.length },
+      result: 'success',
+    });
+    return clean;
+  }
+
+  /** Événement à la une (id choisi en admin ; null = dernier publié par défaut). */
+  async getFeaturedEvent(): Promise<FeaturedEvent> {
+    const row = await prisma.siteSetting.findUnique({ where: { key: FEATURED_EVENT_KEY } });
+    return row ? (row.value as unknown as FeaturedEvent) : { eventId: null };
+  }
+
+  async setFeaturedEvent(eventId: string | null, userId?: string): Promise<FeaturedEvent> {
+    const value: FeaturedEvent = { eventId };
+    await prisma.siteSetting.upsert({
+      where: { key: FEATURED_EVENT_KEY },
+      create: { key: FEATURED_EVENT_KEY, value: value as unknown as object },
+      update: { value: value as unknown as object },
+    });
+    await logAudit({
+      action: 'CONTENT_FEATURED_EVENT_UPDATE',
+      userId,
+      resource: 'site_setting',
+      resourceId: FEATURED_EVENT_KEY,
+      details: { eventId },
+      result: 'success',
+    });
+    return value;
+  }
+
+  /** Contenu de la fenêtre « En découvrir plus » — défaut si absent. */
+  async getAbout(): Promise<AboutContent> {
+    const row = await prisma.siteSetting.findUnique({ where: { key: ABOUT_KEY } });
+    return row ? { ...DEFAULT_ABOUT, ...(row.value as object) } : DEFAULT_ABOUT;
+  }
+
+  async setAbout(about: AboutContent, userId?: string): Promise<AboutContent> {
+    await prisma.siteSetting.upsert({
+      where: { key: ABOUT_KEY },
+      create: { key: ABOUT_KEY, value: about as unknown as object },
+      update: { value: about as unknown as object },
+    });
+    await logAudit({
+      action: 'CONTENT_ABOUT_UPDATE',
+      userId,
+      resource: 'site_setting',
+      resourceId: ABOUT_KEY,
+      result: 'success',
+    });
+    return about;
   }
 
   /** Config support client (WhatsApp + email) — défaut si absent. */

@@ -158,6 +158,8 @@ model Participant {
   lastName      String    @map("last_name")
   email         String    @db.Citext
   phone         String
+  // Adresse du payeur/réservant : destinataire des certificats et livrables.
+  address       String?
   company       String?
   position      String?
   metadata      Json      @default("{}")
@@ -187,6 +189,10 @@ model Ticket {
   scannedBy       String?   @map("scanned_by")
   certificateSent Boolean   @default(false) @map("certificate_sent")
   certificateUrl  String?   @map("certificate_url")
+  // Numéro de certificat (WCG-CERT-YYYY-NNNNNN) — affiché sur le document.
+  certificateNumber String? @unique @map("certificate_number")
+  // Token opaque (UUID) encodé dans le QR — non devinable, non séquentiel.
+  certificateToken  String? @unique @map("certificate_token")
   createdAt       DateTime  @default(now()) @map("created_at")
   updatedAt       DateTime  @updatedAt       @map("updated_at")
 

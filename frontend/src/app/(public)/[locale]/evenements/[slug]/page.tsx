@@ -7,7 +7,7 @@
  */
 import { use, useEffect, useState } from 'react';
 import Link from 'next/link';
-import { CalendarDays, MapPin, Users } from 'lucide-react';
+import { CalendarDays, CheckCircle2, MapPin, Users } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { ROUTES } from '@/constants/routes';
@@ -45,11 +45,16 @@ export default function EventDetailPage({ params }: Readonly<{ params: Promise<{
     );
   }
 
-  const reserveBtn = (
-    <Button asChild variant="gold" size="lg">
-      <Link href={ROUTES.public.reservation.base}>Réserver ma place</Link>
-    </Button>
-  );
+  const reserveBtn =
+    event.seatsAvailable > 0 ? (
+      <Button asChild variant="gold" size="lg" className="w-full">
+        <Link href={`${ROUTES.public.reservation.base}?event=${event.slug}`}>Réserver ma place</Link>
+      </Button>
+    ) : (
+      <Button variant="gold" size="lg" className="w-full" disabled>
+        Complet
+      </Button>
+    );
 
   return (
     <>
@@ -125,7 +130,20 @@ export default function EventDetailPage({ params }: Readonly<{ params: Promise<{
           {event.recommendations && (
             <section>
               <h2 className="text-xl font-bold text-brand-navy">Recommandations</h2>
-              <p className="mt-3 whitespace-pre-line text-brand-muted">{event.recommendations}</p>
+              <div className="mt-4 rounded-2xl border border-brand-gold/30 bg-brand-gold/5 p-5">
+                <ul className="space-y-2.5">
+                  {event.recommendations
+                    .split('\n')
+                    .map((l) => l.trim())
+                    .filter(Boolean)
+                    .map((line, i) => (
+                      <li key={i} className="flex items-start gap-3 text-sm text-brand-navy/85">
+                        <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-brand-gold" aria-hidden />
+                        <span>{line.replace(/^[-•*]\s*/, '')}</span>
+                      </li>
+                    ))}
+                </ul>
+              </div>
             </section>
           )}
         </div>

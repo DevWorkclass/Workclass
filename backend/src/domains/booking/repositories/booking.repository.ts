@@ -39,6 +39,7 @@ export class BookingRepository {
             lastName: payerLastName,
             email: contactEmail,
             phone: data.payerPhone,
+            address: data.payerAddress,
             consentGiven: true,
             consentAt: new Date(),
             // Liste complète des participants (un par place) pour envoi des billets.
@@ -131,7 +132,12 @@ export class BookingRepository {
         skip,
         take: limit,
         orderBy: { createdAt: 'desc' },
-        include: { participant: true, event: true, ticketType: true, ticket: { select: { pdfUrl: true } } },
+        include: {
+          participant: true,
+          event: true,
+          ticketType: true,
+          ticket: { select: { ticketNumber: true, pdfUrl: true } },
+        },
       }),
       prisma.booking.count({ where }),
     ]);

@@ -1,11 +1,18 @@
+'use client';
+
 /**
- * CTA final — bande marine, accroche + bouton de réservation.
+ * CTA final — bande marine, accroche + boutons.
+ * « Réserver ma place » → événement à la une ; « Tous les événements » → liste.
  */
 import Link from 'next/link';
 
 import { Button } from '@/components/ui/button';
+import { ROUTES } from '@/constants/routes';
+import { featuredReserveHref, useFeaturedEventSlug } from '@/lib/use-featured-event';
 
 export function FinalCta() {
+  const reserveHref = featuredReserveHref(useFeaturedEventSlug());
+
   return (
     <section className="container py-16">
       <div className="overflow-hidden rounded-3xl bg-brand-navy px-8 py-12 text-white sm:px-12">
@@ -22,14 +29,14 @@ export function FinalCta() {
           </div>
           <div className="flex flex-wrap gap-3">
             <Button asChild variant="gold" size="lg">
-              <Link href="/reservation">Réserver ma place</Link>
+              <Link href={reserveHref}>Réserver ma place</Link>
             </Button>
             <Button
               asChild
               size="lg"
               className="border border-white/30 bg-transparent text-white hover:bg-white/10"
             >
-              <Link href="#chronogramme">Programme complet</Link>
+              <Link href={ROUTES.public.events}>Tous les événements</Link>
             </Button>
           </div>
         </div>

@@ -46,6 +46,7 @@ function formatRange(start: string, end: string): string {
 export default function AdminEventsPage() {
   const router = useRouter();
   const [events, setEvents] = useState<AdminEvent[]>([]);
+  const [featuredId, setFeaturedId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -78,6 +79,30 @@ export default function AdminEventsPage() {
   useEffect(() => {
     void load();
   }, [load]);
+
+  useEffect(() => {
+    apiAuth<{ data: { eventId: string | null } }>('/content/featured')
+      .then((res) => setFeaturedId(res.data.eventId))
+      .catch(() => {
+        /* optionnel */
+      });
+  }, []);
+
+  const setFeatured = async (ev: AdminEvent) => {
+    const next = featuredId === ev.id ? null : ev.id; // re-clic = retirer
+    try {
+      setBusyId(ev.id);
+      await apiAuth('/admin/content/featured', {
+        method: 'POST',
+        body: JSON.stringify({ eventId: next }),
+      });
+      setFeaturedId(next);
+    } catch (err) {
+      if (!handleAuthError(err)) setError("Impossible de définir l'événement à la une.");
+    } finally {
+      setBusyId(null);
+    }
+  };
 
   const remove = async (ev: AdminEvent) => {
     if (!window.confirm(`Supprimer définitivement « ${ev.title} » ?`)) return;
@@ -139,6 +164,11 @@ export default function AdminEventsPage() {
                     {STATUS_BADGE[ev.status].label}
                   </Badge>
                 </span>
+                {featuredId === ev.id && (
+                  <span className="absolute left-4 top-4 rounded-full bg-brand-gold px-2.5 py-0.5 text-xs font-bold text-brand-navy shadow">
+                    ★ À la une
+                  </span>
+                )}
               </div>
               <div className="flex flex-1 flex-col p-5">
                 <h2 className="truncate text-lg font-bold text-brand-navy">{ev.title}</h2>
@@ -167,6 +197,14 @@ export default function AdminEventsPage() {
                 </div>
 
                 <div className="mt-auto flex flex-wrap gap-2 pt-4">
+                  <Button
+                    variant={featuredId === ev.id ? 'gold' : 'outline'}
+                    size="sm"
+                    disabled={busyId === ev.id}
+                    onClick={() => void setFeatured(ev)}
+                  >
+                    {featuredId === ev.id ? '★ À la une' : 'Mettre à la une'}
+                  </Button>
                   <Link href={`${ROUTES.admin.events}/${ev.id}/modifier`}>
                     <Button variant="outline" size="sm">
                       Modifier

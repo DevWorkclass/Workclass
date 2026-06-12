@@ -32,6 +32,18 @@ export function verifyQRCode(data: QRCodeData): boolean {
 }
 
 /**
+ * Génère un QR code « texte simple » (data-URL PNG) — typiquement une URL
+ * ouvrable par n'importe quel scanner. Utilisé pour authentifier les certificats.
+ */
+export async function generatePlainQRCode(text: string): Promise<string> {
+  return QRCode.toDataURL(text, {
+    width: 300,
+    margin: 1,
+    color: { dark: '#0F172A', light: '#FFFFFF' },
+  });
+}
+
+/**
  * Parse + vérifie un payload QR brut (chaîne JSON).
  * Retourne le `QRCodeData` si valide, `null` sinon.
  */

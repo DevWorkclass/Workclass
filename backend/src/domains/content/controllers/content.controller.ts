@@ -15,6 +15,10 @@ import {
   setFooterSchema,
   setPaymentConfigSchema,
   setSupportConfigSchema,
+  setAdsSchema,
+  setPromotersSchema,
+  setFeaturedEventSchema,
+  setAboutSchema,
 } from '../validators/content.validator';
 import { ValidationError } from '../../shared/errors/types/error.types';
 
@@ -110,6 +114,78 @@ export class ContentController {
     try {
       const { industries } = setIndustriesSchema.parse(req.body);
       const saved = await this.service.setIndustries(industries, req.user?.userId);
+      res.json({ success: true, data: saved });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async getAds(_req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      res.json({ success: true, data: await this.service.getAds() });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async setAds(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const { ads } = setAdsSchema.parse(req.body);
+      const saved = await this.service.setAds(ads, req.user?.userId);
+      res.json({ success: true, data: saved });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async getPromoters(_req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      res.json({ success: true, data: await this.service.getPromoters() });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async setPromoters(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const { promoters } = setPromotersSchema.parse(req.body);
+      const saved = await this.service.setPromoters(promoters, req.user?.userId);
+      res.json({ success: true, data: saved });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async getFeaturedEvent(_req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      res.json({ success: true, data: await this.service.getFeaturedEvent() });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async setFeaturedEvent(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const { eventId } = setFeaturedEventSchema.parse(req.body);
+      const saved = await this.service.setFeaturedEvent(eventId, req.user?.userId);
+      res.json({ success: true, data: saved });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async getAbout(_req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      res.json({ success: true, data: await this.service.getAbout() });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async setAbout(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const about = setAboutSchema.parse(req.body);
+      const saved = await this.service.setAbout(about, req.user?.userId);
       res.json({ success: true, data: saved });
     } catch (error) {
       next(error);

@@ -44,6 +44,37 @@ export class TicketGeneratorService {
     return { tickets, total };
   }
 
+  /**
+   * Authentifie un certificat par son token opaque (vérification publique via QR).
+   * Renvoie un objet minimal (pas de PII sensible : pas d'email/téléphone).
+   */
+  async verifyCertificate(token: string) {
+    const ticket = await prisma.ticket.findUnique({
+      where: { certificateToken: token },
+      include: {
+        booking: {
+          include: {
+            participant: { select: { firstName: true, lastName: true } },
+            event: { select: { title: true, startDate: true } },
+          },
+        },
+      },
+    });
+
+    if (!ticket || !ticket.certificateSent || !ticket.booking.participant) {
+      return { valid: false as const };
+    }
+
+    return {
+      valid: true as const,
+      certificateNumber: ticket.certificateNumber,
+      participantName: `${ticket.booking.participant.firstName} ${ticket.booking.participant.lastName}`,
+      eventTitle: ticket.booking.event.title,
+      eventDate: ticket.booking.event.startDate.toLocaleDateString('fr-FR'),
+      issuedAt: ticket.scannedAt?.toISOString() ?? null,
+    };
+  }
+
   async generateTicket(bookingId: string): Promise<TicketGenerationResult> {
     const booking = await prisma.booking.findUnique({
       where: { id: bookingId },
@@ -65,6 +96,14 @@ export class TicketGeneratorService {
     // Signature HMAC + génération QR data-URL
     const qrCodeDataUrl = await generateQRCode(ticket.id);
 
+    // Extrait tous les participants depuis metadata (ou repli sur le payeur seul)
+    const metaPs = (booking.participant.metadata as { participants?: { firstName: string; lastName: string }[] } | null)
+      ?.participants ?? [];
+    const participantNames: string[] =
+      metaPs.length > 0
+        ? metaPs.map((p) => `${p.firstName} ${p.lastName}`)
+        : [`${booking.participant.firstName} ${booking.participant.lastName}`];
+
     // Génération du PDF
     const pdfBuffer = await generateTicketPDF({
       ticketNumber,
@@ -75,6 +114,7 @@ export class TicketGeneratorService {
       participantEmail: booking.participant.email,
       ticketType: booking.ticketType.name,
       qrCodeDataUrl,
+      participants: participantNames,
     });
 
     // Stockage (Supabase Storage en prod, disque local en dev)

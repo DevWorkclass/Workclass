@@ -26,6 +26,7 @@ const participantSchema = z.object({
 const schema = z.object({
   payerPhone: z.string().regex(/^\+?\d{8,15}$/, 'Numéro invalide (8 à 15 chiffres, ex: +24177…)'),
   payerName: z.string().max(120).optional(),
+  payerAddress: z.string().min(5, 'Adresse requise (au moins 5 caractères)').max(300),
   participants: z.array(participantSchema).min(1),
   consent: z.literal(true, { errorMap: () => ({ message: 'Consentement obligatoire' }) }),
 });
@@ -93,12 +94,14 @@ export default function ReservationEtape2Page() {
     setValue('participants', filled);
     if (d.payerPhone) setValue('payerPhone', d.payerPhone);
     if (d.payerName) setValue('payerName', d.payerName);
+    if (d.payerAddress) setValue('payerAddress', d.payerAddress);
   }, [locale, router, setValue]);
 
   const onSubmit = (data: FormValues) => {
     patchDraft({
       payerPhone: data.payerPhone,
       payerName: data.payerName || undefined,
+      payerAddress: data.payerAddress,
       participants: data.participants.map((p) => ({
         firstName: p.firstName,
         lastName: p.lastName,
@@ -179,6 +182,20 @@ export default function ReservationEtape2Page() {
                     placeholder="Prénom Nom"
                     className={`mt-1 ${inputClass}`}
                   />
+                </label>
+                <label className="block sm:col-span-2">
+                  <span className="text-sm font-semibold text-brand-navy">Adresse *</span>
+                  <input
+                    {...register('payerAddress')}
+                    placeholder="Quartier, ville, point de repère…"
+                    className={`mt-1 ${inputClass}`}
+                  />
+                  <span className="mt-1 block text-xs text-brand-muted">
+                    Adresse de livraison des certificats et documents (pour vous et toutes vos places).
+                  </span>
+                  {errors.payerAddress && (
+                    <p className="mt-1 text-xs text-semantic-error">{errors.payerAddress.message}</p>
+                  )}
                 </label>
               </div>
             </section>

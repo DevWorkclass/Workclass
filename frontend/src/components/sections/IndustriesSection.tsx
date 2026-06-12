@@ -46,11 +46,8 @@ export function IndustriesSection() {
         <p className="mb-2 text-center text-xs font-bold uppercase tracking-[0.25em] text-brand-gold">
           Domaines couverts
         </p>
-        <h2 className="text-center text-2xl font-bold sm:text-3xl">
-          Au service de toutes les industries
-        </h2>
 
-        <div className="mt-10 grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <div className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-4">
           {items.map((item, i) => (
             <div
               key={`${item.name}-${i}`}

@@ -9,7 +9,6 @@ import {
   BarChart3,
   CalendarDays,
   Home,
-  LogOut,
   Megaphone,
   MessageSquare,
   ScanLine,
@@ -19,13 +18,13 @@ import {
   UserCog,
 } from 'lucide-react';
 import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 import type { LucideIcon } from 'lucide-react';
 
 import { Logo } from '@/components/shared/Logo';
 import { ROUTES } from '@/constants/routes';
 import { ROUTE_PERMISSIONS } from '@/constants/permissions';
-import { clearSession, hasPermission } from '@/lib/auth';
+import { hasPermission } from '@/lib/auth';
 import { useAuthUser } from '@/domains/shared/auth/hooks/useAuthUser';
 import { cn } from '@/lib/utils';
 
@@ -77,7 +76,6 @@ interface SidebarProps {
 
 export function Sidebar({ open = false, onClose }: SidebarProps) {
   const pathname = usePathname();
-  const router = useRouter();
   const { user } = useAuthUser();
 
   // N'affiche que les entrées autorisées par les permissions du compte.
@@ -89,12 +87,6 @@ export function Sidebar({ open = false, onClose }: SidebarProps) {
       hasPermission(user, ROUTE_PERMISSIONS[item.href] ?? null),
     ),
   })).filter((section) => section.items.length > 0);
-
-  function handleLogout() {
-    onClose?.();
-    clearSession();
-    router.push(ROUTES.admin.login);
-  }
 
   return (
     <aside
@@ -147,8 +139,8 @@ export function Sidebar({ open = false, onClose }: SidebarProps) {
         ))}
       </nav>
 
-      {/* Pied de sidebar — actions globales */}
-      <div className="shrink-0 space-y-1 border-t border-white/10 p-4">
+      {/* Pied de sidebar — retour au site public (sans déconnexion). */}
+      <div className="shrink-0 border-t border-white/10 p-4">
         <Link
           href={ROUTES.public.home}
           onClick={onClose}
@@ -157,14 +149,6 @@ export function Sidebar({ open = false, onClose }: SidebarProps) {
           <Home className="size-4 shrink-0" />
           Retour à l&apos;accueil
         </Link>
-        <button
-          type="button"
-          onClick={handleLogout}
-          className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-semantic-error/70 transition-colors hover:bg-semantic-error/10 hover:text-semantic-error"
-        >
-          <LogOut className="size-4 shrink-0" />
-          Déconnexion
-        </button>
       </div>
     </aside>
   );

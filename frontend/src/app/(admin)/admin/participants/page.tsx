@@ -15,6 +15,7 @@ import { PermissionGuard } from '@/components/admin/PermissionGuard';
 import { ExportButtons } from '@/components/admin/ExportButtons';
 import { EmptyState } from '@/components/shared/EmptyState';
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner';
+import { Pagination, paginate } from '@/components/admin/Pagination';
 import { ROUTES } from '@/constants/routes';
 import { ApiError, apiAuth } from '@/lib/api';
 
@@ -109,6 +110,12 @@ function ParticipantsContent() {
     );
   }, [participants, query]);
 
+  const PAGE_SIZE = 15;
+  const [page, setPage] = useState(1);
+  useEffect(() => setPage(1), [query, eventId]);
+  const pageCount = Math.ceil(rows.length / PAGE_SIZE);
+  const pagedRows = paginate(rows, page, PAGE_SIZE);
+
   const stats = useMemo(() => {
     const seats = participants.reduce((sum, p) => sum + p.quantity, 0);
     const companies = new Set(participants.filter((p) => p.company).map((p) => p.company)).size;
@@ -186,7 +193,7 @@ function ParticipantsContent() {
                 </tr>
               </thead>
               <tbody>
-                {rows.map((p) => (
+                {pagedRows.map((p) => (
                   <tr key={p.id} className="border-t border-black/5 align-top">
                     <td className="max-w-[200px] py-3 pr-2">
                       <p className="truncate font-semibold text-brand-navy">{p.name}</p>
@@ -208,6 +215,7 @@ function ParticipantsContent() {
                 ))}
               </tbody>
             </table>
+            <Pagination page={page} pageCount={pageCount} onChange={setPage} />
           </div>
         )}
       </section>

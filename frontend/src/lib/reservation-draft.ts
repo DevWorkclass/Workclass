@@ -26,8 +26,8 @@ export interface ReservationDraft {
   payerPhone?: string;
   /** Nom complet du payeur (optionnel, défini à l'étape 2). */
   payerName?: string;
-  /** Adresse du payeur/réservant (obligatoire, défini à l'étape 2). */
-  payerAddress?: string;
+  /** Email du payeur — adresse où le billet sera envoyé (défini à l'étape 2). */
+  payerEmail?: string;
   /** Un participant par place (défini à l'étape 2). */
   participants?: ParticipantEntry[];
 }

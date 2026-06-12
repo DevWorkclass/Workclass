@@ -13,6 +13,6 @@ export default createMiddleware({
 });
 
 export const config = {
-  // Tout sauf: api, _next, _vercel, /admin, et toute requête avec extension (assets).
-  matcher: ['/((?!api|_next|_vercel|admin|.*\\..*).*)'],
+  // Tout sauf: api, _next, _vercel, /admin, /avis (lien email sans locale), et assets.
+  matcher: ['/((?!api|_next|_vercel|admin|avis|.*\\..*).*)'],
 };

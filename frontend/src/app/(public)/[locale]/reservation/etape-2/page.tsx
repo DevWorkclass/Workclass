@@ -2,9 +2,9 @@
 
 /**
  * Réservation — Étape 2/3 : informations du payeur + participants.
- * Section A : numéro de téléphone du payeur (obligatoire) + nom (optionnel).
+ * Section A : téléphone (obligatoire), nom (optionnel), email pour recevoir le billet (obligatoire).
  * Section B : un formulaire par place réservée (prénom + nom obligatoires, email recommandé).
- * Si 1 seule place, le nom du participant est pré-rempli avec le nom du payeur dès que celui-ci est saisi.
+ * Si 1 seule place, les infos du payeur pré-remplissent automatiquement la Section B.
  */
 import { ArrowLeft, User } from 'lucide-react';
 import { useParams, useRouter } from 'next/navigation';
@@ -26,7 +26,7 @@ const participantSchema = z.object({
 const schema = z.object({
   payerPhone: z.string().regex(/^\+?\d{8,15}$/, 'Numéro invalide (8 à 15 chiffres, ex: +24177…)'),
   payerName: z.string().max(120).optional(),
-  payerAddress: z.string().min(5, 'Adresse requise (au moins 5 caractères)').max(300),
+  payerEmail: z.string().email('Adresse email invalide').or(z.literal('')).optional(),
   participants: z.array(participantSchema).min(1),
   consent: z.literal(true, { errorMap: () => ({ message: 'Consentement obligatoire' }) }),
 });
@@ -60,19 +60,27 @@ export default function ReservationEtape2Page() {
   const { fields } = useFieldArray({ control, name: 'participants' });
 
   const payerName = watch('payerName');
+  const payerEmail = watch('payerEmail');
+  const payerEmailRef = useRef<string>('');
 
-  // Pré-rempli le participant unique avec le nom du payeur quand il y a 1 seule place
+  // Quand quantity=1 : pré-remplit le participant unique avec le nom + email du payeur
   useEffect(() => {
     if (!draft || draft.quantity !== 1) return;
     if (payerName && payerName !== payerNameRef.current) {
       payerNameRef.current = payerName;
       const parts = payerName.trim().split(/\s+/);
-      const first = parts[0] ?? '';
-      const last = parts.slice(1).join(' ');
-      setValue('participants.0.firstName', first, { shouldValidate: false });
-      setValue('participants.0.lastName', last, { shouldValidate: false });
+      setValue('participants.0.firstName', parts[0] ?? '', { shouldValidate: false });
+      setValue('participants.0.lastName', parts.slice(1).join(' '), { shouldValidate: false });
     }
   }, [payerName, draft, setValue]);
+
+  useEffect(() => {
+    if (!draft || draft.quantity !== 1) return;
+    if (payerEmail && payerEmail !== payerEmailRef.current) {
+      payerEmailRef.current = payerEmail;
+      setValue('participants.0.email', payerEmail, { shouldValidate: false });
+    }
+  }, [payerEmail, draft, setValue]);
 
   useEffect(() => {
     const d = getDraft();
@@ -94,14 +102,14 @@ export default function ReservationEtape2Page() {
     setValue('participants', filled);
     if (d.payerPhone) setValue('payerPhone', d.payerPhone);
     if (d.payerName) setValue('payerName', d.payerName);
-    if (d.payerAddress) setValue('payerAddress', d.payerAddress);
+    if (d.payerEmail) setValue('payerEmail', d.payerEmail);
   }, [locale, router, setValue]);
 
   const onSubmit = (data: FormValues) => {
     patchDraft({
       payerPhone: data.payerPhone,
       payerName: data.payerName || undefined,
-      payerAddress: data.payerAddress,
+      payerEmail: data.payerEmail || undefined,
       participants: data.participants.map((p) => ({
         firstName: p.firstName,
         lastName: p.lastName,
@@ -184,17 +192,18 @@ export default function ReservationEtape2Page() {
                   />
                 </label>
                 <label className="block sm:col-span-2">
-                  <span className="text-sm font-semibold text-brand-navy">Adresse *</span>
+                  <span className="text-sm font-semibold text-brand-navy">
+                    Adresse email{' '}
+                    <span className="font-normal text-brand-muted">(pour recevoir le billet)</span>
+                  </span>
                   <input
-                    {...register('payerAddress')}
-                    placeholder="Quartier, ville, point de repère…"
+                    {...register('payerEmail')}
+                    type="email"
+                    placeholder="exemple@email.com"
                     className={`mt-1 ${inputClass}`}
                   />
-                  <span className="mt-1 block text-xs text-brand-muted">
-                    Adresse de livraison des certificats et documents (pour vous et toutes vos places).
-                  </span>
-                  {errors.payerAddress && (
-                    <p className="mt-1 text-xs text-semantic-error">{errors.payerAddress.message}</p>
+                  {errors.payerEmail && (
+                    <p className="mt-1 text-xs text-semantic-error">{errors.payerEmail.message}</p>
                   )}
                 </label>
               </div>

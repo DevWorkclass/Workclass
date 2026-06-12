@@ -19,9 +19,11 @@ export class BookingRepository {
     const payerFirstName = nameParts[0] || 'Payeur';
     const payerLastName = nameParts.slice(1).join(' ') || 'Anonyme';
 
-    // Email de contact = premier participant ayant un email, sinon chaîne vide.
+    // Email de contact = payerEmail s'il est fourni, sinon premier participant avec email.
     const contactEmail =
-      data.participants.find((p) => p.email && p.email.trim() !== '')?.email ?? '';
+      (data.payerEmail && data.payerEmail.trim()) ||
+      data.participants.find((p) => p.email && p.email.trim() !== '')?.email ||
+      '';
 
     return prisma.booking.create({
       data: {

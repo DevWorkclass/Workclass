@@ -105,11 +105,12 @@ export async function generateTicketPDF(data: TicketPDFData): Promise<Buffer> {
       try { doc.image(logoPath, cardX + 18, cardY + 12, { height: 46 }); } catch (_) {}
     }
 
-    // Titre
-    doc.fillColor('#FFFFFF').font('Helvetica-Bold').fontSize(17)
-      .text('WORK CLASS', cardX + 85, cardY + 14);
+    // Titre — mesure dynamique pour éviter le chevauchement
+    doc.font('Helvetica-Bold').fontSize(17);
+    const wcWidth = doc.widthOfString('WORK CLASS ');
+    doc.fillColor('#FFFFFF').text('WORK CLASS', cardX + 85, cardY + 14);
     doc.fillColor('#0E2450').font('Helvetica-Bold').fontSize(17)
-      .text('GABON', cardX + 85 + 97, cardY + 14);
+      .text('GABON', cardX + 85 + wcWidth, cardY + 14);
     doc.fillColor('rgba(255,255,255,0.75)').font('Helvetica').fontSize(8.5)
       .text('BILLET OFFICIEL D\'ACCÈS À L\'ÉVÉNEMENT', cardX + 85, cardY + 38);
 
@@ -150,7 +151,7 @@ export async function generateTicketPDF(data: TicketPDFData): Promise<Buffer> {
       .text(`PARTICIPANT${data.participants.length > 1 ? 'S' : ''} (${data.participants.length} place${data.participants.length > 1 ? 's' : ''})`, colLeft, cursor);
     cursor += 16;
     for (const name of data.participants) {
-      doc.fillColor('#0E2450').font('Helvetica-Bold').fontSize(10).text(`▸ ${name}`, colLeft, cursor, { width: 200 });
+      doc.fillColor('#0E2450').font('Helvetica-Bold').fontSize(10).text(`> ${name}`, colLeft, cursor, { width: 200 });
       cursor += 18;
     }
     cursor += 8;

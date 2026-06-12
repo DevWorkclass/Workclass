@@ -12,8 +12,10 @@ export const createBookingSchema = z.object({
   payerPhone: z.string().regex(/^\+?\d{8,15}$/, 'Telephone payeur invalide'),
   /** Nom complet du payeur (optionnel). */
   payerName: z.string().max(120).optional(),
-  /** Adresse du payeur/réservant (obligatoire — destinataire des certificats/livrables). */
-  payerAddress: z.string().min(5, 'Adresse requise').max(300),
+  /** Email du payeur — adresse où le billet sera envoyé. */
+  payerEmail: z.preprocess((v) => v || undefined, z.string().email('Email invalide').optional()),
+  /** Adresse postale (optionnel). */
+  payerAddress: z.string().max(300).optional(),
   /** Un objet par place réservée (prénom + nom requis, email recommandé). */
   participants: z
     .array(

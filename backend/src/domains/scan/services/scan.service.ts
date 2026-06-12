@@ -14,7 +14,7 @@ import { NotFoundError, ValidationError } from '../../shared/errors/types/error.
 import { logAudit } from '../../shared/audit/services/audit.service';
 import { logger } from '../../../utils/logger';
 import type { QRCodeData, ScanErrorCode } from '../types/scan.types';
-import { EmailService } from '../../notifications/services/email.service';
+import { EmailService, type ExtraCertificate } from '../../notifications/services/email.service';
 
 interface ParticipantMeta {
   firstName: string;
@@ -60,15 +60,7 @@ export class ScanService {
   async confirmScan(ticketId: string, scannerId: string): Promise<ConfirmResult> {
     const ticket = await prisma.ticket.findUnique({
       where: { id: ticketId },
-      include: {
-        booking: {
-          include: {
-            participant: true,
-            event: true,
-            ticketType: true,
-          },
-        },
-      },
+      include: { booking: { include: { participant: true, event: true, ticketType: true } } },
     });
     if (!ticket) throw new NotFoundError('Ticket');
     if (ticket.scannedAt) throw new ValidationError('Ticket deja scanne');
@@ -81,92 +73,136 @@ export class ScanService {
     });
     if (claim.count === 0) throw new ValidationError('Ticket deja scanne');
 
-    // Génération du numéro et token de certificat
-    const ticketYear = ticket.ticketNumber.split('-')[1] ?? new Date().getFullYear();
+    const participant = ticket.booking.participant;
+    const eventTitle = ticket.booking.event.title;
+    const eventDate = ticket.booking.event.startDate.toLocaleDateString('fr-FR');
+    const appUrl = (process.env.FRONTEND_URL ?? process.env.APP_URL ?? 'http://localhost:3000').replace(/\/$/, '');
+    const feedbackExpiry = new Date();
+    feedbackExpiry.setDate(feedbackExpiry.getDate() + 30);
+
+    // ── 1. Certificat principal (payeur) ─────────────────────────────────────
+    const ticketYear = ticket.ticketNumber.split('-')[1] ?? String(new Date().getFullYear());
     const ticketSeq = ticket.ticketNumber.split('-')[2] ?? '000000';
     const certificateNumber = `WCG-CERT-${ticketYear}-${ticketSeq}`;
     const certificateToken = crypto.randomUUID();
 
-    // QR d'authentification (URL publique de vérification)
-    const appUrl = process.env.FRONTEND_URL ?? process.env.APP_URL ?? 'http://localhost:3000';
-    const verifyUrl = `${appUrl.replace(/\/$/, '')}/certificat/${certificateToken}`;
+    const verifyUrl = `${appUrl}/certificat/${certificateToken}`;
     let qrCodeDataUrl: string | undefined;
-    try {
-      qrCodeDataUrl = await generatePlainQRCode(verifyUrl);
-    } catch {
-      qrCodeDataUrl = undefined;
-    }
+    try { qrCodeDataUrl = await generatePlainQRCode(verifyUrl); } catch { /* sans QR */ }
 
-    const participant = ticket.booking.participant;
-    const pdfBuffer = await generateCertificatePDF({
+    const payerPdfBuffer = await generateCertificatePDF({
       participantName: `${participant.firstName} ${participant.lastName}`,
-      eventTitle: ticket.booking.event.title,
-      eventDate: ticket.booking.event.startDate.toLocaleDateString('fr-FR'),
+      eventTitle,
+      eventDate,
       certificateNumber,
       qrCodeDataUrl,
     });
+    const certificateUrl = await uploadPdf('certificates', `${certificateNumber}.pdf`, payerPdfBuffer);
 
-    const certificateUrl = await uploadPdf('certificates', `${certificateNumber}.pdf`, pdfBuffer);
-
+    const certData = { certificateSent: true, certificateUrl, certificateNumber, certificateToken };
     const updatedTicket = await prisma.ticket.update({
       where: { id: ticketId },
-      data: { certificateSent: true, certificateUrl, certificateNumber, certificateToken },
+      data: certData as Parameters<typeof prisma.ticket.update>[0]['data'],
     });
 
-    // ── Collecte de tous les emails des participants ──────────────────────────
+    // ── 2. Participants secondaires (depuis metadata) ─────────────────────────
     const metaPs: ParticipantMeta[] =
       (participant.metadata as { participants?: ParticipantMeta[] } | null)?.participants ?? [];
 
-    // Ensemble dédupliqué : payeur + participants individuels
-    const emailSet = new Set<string>();
-    if (participant.email) emailSet.add(participant.email.trim().toLowerCase());
-    for (const p of metaPs) {
-      if (p.email && p.email.trim()) emailSet.add(p.email.trim().toLowerCase());
-    }
-    const allEmails = [...emailSet].filter(Boolean);
+    // Exclure le payeur (déjà traité) pour éviter les doublons
+    const payerEmailNorm = participant.email.trim().toLowerCase();
+    const others = metaPs.filter(
+      (p) => !p.email || p.email.trim().toLowerCase() !== payerEmailNorm,
+    );
 
-    // ── Envoi certificat au payeur ────────────────────────────────────────────
-    try {
-      if (participant.email) {
-        await this.emailService.sendCertificate(participant.email, certificateNumber, certificateUrl);
+    // Génération des PDFs secondaires en parallèle
+    const otherCerts = (
+      await Promise.allSettled(
+        others.map(async (p, i) => {
+          const certNum = `${certificateNumber}-P${i + 2}`;
+          const buf = await generateCertificatePDF({
+            participantName: `${p.firstName} ${p.lastName}`,
+            eventTitle,
+            eventDate,
+            certificateNumber: certNum,
+            qrCodeDataUrl: undefined, // pas de QR pour les certificats secondaires
+          });
+          return { name: `${p.firstName} ${p.lastName}`, email: p.email?.trim() || null, certNum, buf };
+        }),
+      )
+    )
+      .filter((r): r is PromiseFulfilledResult<{ name: string; email: string | null; certNum: string; buf: Buffer }> => r.status === 'fulfilled')
+      .map((r) => r.value);
+
+    // Séparer ceux avec / sans email
+    const othersWithEmail = otherCerts.filter((c) => c.email);
+    const othersNoEmail = otherCerts.filter((c) => !c.email);
+
+    // Pièces jointes extras (participants sans email) → jointes à l'email du payeur
+    const extraAttachments: ExtraCertificate[] = othersNoEmail.map((c) => ({
+      name: c.name,
+      buffer: c.buf,
+    }));
+
+    // ── 3. Email payeur : certificat + feedback + extras ──────────────────────
+    if (participant.email) {
+      try {
+        const feedbackToken = crypto.randomUUID();
+        await prisma.feedbackLink.create({
+          data: { eventId: ticket.booking.eventId, bookingId: ticket.booking.id, token: feedbackToken, expiresAt: feedbackExpiry },
+        });
+        await this.emailService.sendCertificateWithFeedback({
+          email: participant.email,
+          participantName: `${participant.firstName} ${participant.lastName}`,
+          certificateNumber,
+          pdfUrl: certificateUrl,
+          feedbackToken,
+          eventTitle,
+          extraCertificates: extraAttachments,
+        });
+      } catch (err) {
+        logger.error({ err }, 'Erreur envoi email payeur');
       }
-    } catch (err) {
-      logger.error({ err }, 'Erreur envoi certificat par email');
     }
 
-    // ── Envoi lien feedback à tous les participants ───────────────────────────
-    const feedbackExpiry = new Date();
-    feedbackExpiry.setDate(feedbackExpiry.getDate() + 30); // valide 30 jours
-
+    // ── 4. Emails participants secondaires avec email : cert + feedback ────────
     await Promise.allSettled(
-      allEmails.map(async (email) => {
+      othersWithEmail.map(async (c) => {
         try {
+          const certUrl = await uploadPdf('certificates', `${c.certNum}.pdf`, c.buf);
           const feedbackToken = crypto.randomUUID();
           await prisma.feedbackLink.create({
-            data: {
-              eventId: ticket.booking.eventId,
-              bookingId: ticket.booking.id,
-              token: feedbackToken,
-              expiresAt: feedbackExpiry,
-            },
+            data: { eventId: ticket.booking.eventId, bookingId: ticket.booking.id, token: feedbackToken, expiresAt: feedbackExpiry },
           });
-          await this.emailService.sendFeedbackLink(email, feedbackToken);
+          await this.emailService.sendCertificateWithFeedback({
+            email: c.email!,
+            participantName: c.name,
+            certificateNumber: c.certNum,
+            pdfUrl: certUrl,
+            feedbackToken,
+            eventTitle,
+          });
         } catch (err) {
-          logger.error({ err, email }, 'Erreur envoi lien feedback');
+          logger.error({ err, name: c.name }, 'Erreur envoi email participant secondaire');
         }
       }),
     );
 
+    const emailsSent = (participant.email ? 1 : 0) + othersWithEmail.length;
     await logAudit({
       action: 'TICKET_SCANNED',
       userId: scannerId,
       resource: 'ticket',
       resourceId: ticketId,
-      details: { certificateNumber, feedbacksSent: allEmails.length },
+      details: {
+        certificateNumber,
+        emailsSent,
+        extrasJoints: othersNoEmail.length,
+      },
       result: 'success',
     });
 
-    logger.info({ ticketNumber: ticket.ticketNumber, certificateNumber }, 'Ticket scanne');
+    logger.info({ ticketNumber: ticket.ticketNumber, certificateNumber, emailsSent }, 'Ticket scanne');
     return { ticket: updatedTicket, certificateUrl };
   }
 
@@ -248,7 +284,20 @@ export class ScanService {
           }
 
           if (participant.email && certificateUrl && certificateNumber) {
-            await this.emailService.sendCertificate(participant.email, certificateNumber, certificateUrl);
+            const feedbackToken = crypto.randomUUID();
+            const feedbackExpiry = new Date();
+            feedbackExpiry.setDate(feedbackExpiry.getDate() + 30);
+            await prisma.feedbackLink.create({
+              data: { eventId: ticket.booking.eventId, bookingId: ticket.booking.id, token: feedbackToken, expiresAt: feedbackExpiry },
+            });
+            await this.emailService.sendCertificateWithFeedback({
+              email: participant.email,
+              participantName: `${participant.firstName} ${participant.lastName}`,
+              certificateNumber,
+              pdfUrl: certificateUrl,
+              feedbackToken,
+              eventTitle: ticket.booking.event.title,
+            });
             sent++;
           }
         } catch (err) {

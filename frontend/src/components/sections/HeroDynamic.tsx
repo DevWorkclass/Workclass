@@ -1,8 +1,9 @@
 'use client';
 
 /**
- * Hero d'accueil branché sur l'événement « à la une » (choisi en admin,
- * sinon dernier publié). Repli sur MOCK_EVENT tant qu'aucun n'est disponible.
+ * Hero d'accueil branché sur l'événement « à la une ».
+ * Reçoit initialEvent du Server Component (page.tsx) → affichage immédiat sans useEffect.
+ * Si aucune prop serveur, repli sur fetch client-side puis MOCK_EVENT.
  */
 import { useEffect, useState } from 'react';
 
@@ -10,30 +11,37 @@ import { HeroSection } from '@/domains/public/event/components/HeroSection';
 import type { Event } from '@/domains/public/event/types/event.types';
 import { getFeaturedEvent } from '@/lib/use-featured-event';
 import { MOCK_EVENT } from '@/data/mockData';
+import type { PublicEvent } from '@/lib/public-event';
 
-export function HeroDynamic() {
-  const [event, setEvent] = useState<Event>(MOCK_EVENT);
+function toEvent(src: PublicEvent | null | undefined): Event {
+  if (!src) return MOCK_EVENT;
+  return {
+    ...MOCK_EVENT,
+    id: src.id,
+    title: src.title,
+    slug: src.slug,
+    description: src.description,
+    location: src.location,
+    startDate: new Date(src.startDate),
+    endDate: new Date(src.endDate),
+    coverImage: src.coverImage ?? undefined,
+  };
+}
+
+interface Props {
+  initialEvent?: PublicEvent | null;
+}
+
+export function HeroDynamic({ initialEvent }: Props) {
+  const [event, setEvent] = useState<Event>(() => toEvent(initialEvent));
 
   useEffect(() => {
+    // Données serveur déjà présentes — pas besoin de re-fetcher
+    if (initialEvent !== undefined) return;
     getFeaturedEvent()
-      .then((featured) => {
-        if (!featured) return;
-        setEvent({
-          ...MOCK_EVENT,
-          id: featured.id,
-          title: featured.title,
-          slug: featured.slug,
-          description: featured.description,
-          location: featured.location,
-          startDate: new Date(featured.startDate),
-          endDate: new Date(featured.endDate),
-          coverImage: featured.coverImage ?? undefined,
-        });
-      })
-      .catch(() => {
-        /* repli statique conservé */
-      });
-  }, []);
+      .then((featured) => { if (featured) setEvent(toEvent(featured)); })
+      .catch(() => {});
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   return <HeroSection event={event} />;
 }

@@ -158,6 +158,7 @@ export class ContentController {
 
   async getFeaturedEvent(_req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
+      res.set('Cache-Control', 'public, max-age=60, stale-while-revalidate=300');
       res.json({ success: true, data: await this.service.getFeaturedEvent() });
     } catch (error) {
       next(error);

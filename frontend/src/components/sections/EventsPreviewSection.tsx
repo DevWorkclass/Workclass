@@ -1,9 +1,9 @@
 'use client';
 
 /**
- * Accueil — aperçu des 3 événements publiés les plus récents (dynamique).
- *  - GET /api/public/events
- * Masquée s'il n'y a aucun événement publié.
+ * Accueil — aperçu des 3 événements publiés les plus récents.
+ * Reçoit initialEvents du Server Component (page.tsx) → affichage immédiat.
+ * Si aucune prop serveur, repli sur fetch client-side.
  */
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
@@ -14,11 +14,17 @@ import { ROUTES } from '@/constants/routes';
 import { getPublicEvents } from '@/lib/events-cache';
 import type { PublicEvent } from '@/lib/public-event';
 
-export function EventsPreviewSection() {
-  const [events, setEvents] = useState<PublicEvent[]>([]);
-  const [loaded, setLoaded] = useState(false);
+interface Props {
+  initialEvents?: PublicEvent[];
+}
+
+export function EventsPreviewSection({ initialEvents }: Props) {
+  const [events, setEvents] = useState<PublicEvent[]>(initialEvents ?? []);
+  const [loaded, setLoaded] = useState(initialEvents !== undefined);
 
   useEffect(() => {
+    // Données serveur déjà présentes — pas besoin de re-fetcher
+    if (initialEvents !== undefined) return;
     getPublicEvents()
       .then((data) => {
         const sorted = [...data].sort(
@@ -28,7 +34,7 @@ export function EventsPreviewSection() {
       })
       .catch(() => {})
       .finally(() => setLoaded(true));
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (loaded && events.length === 0) return null;
 

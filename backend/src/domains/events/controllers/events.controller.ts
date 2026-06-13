@@ -45,6 +45,7 @@ export class EventsController {
   async publicList(_req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const events = await this.service.getPublicEvents();
+      res.set('Cache-Control', 'public, max-age=60, stale-while-revalidate=300');
       res.json({ success: true, data: events });
     } catch (err) {
       next(err);

@@ -5,6 +5,10 @@
 import type { Request, Response, NextFunction } from 'express';
 import { z } from 'zod';
 import { TicketGeneratorService } from '../services/ticket-generator.service';
+import { verifyHMAC } from '../../../utils/crypto';
+import { prisma } from '../../../config/database';
+import { getSupabaseServiceClient } from '../../../config/supabase';
+import { env } from '../../../config/env';
 
 const generateSchema = z.object({
   bookingId: z.string().uuid('ID reservation invalide'),
@@ -29,6 +33,48 @@ export class TicketsController {
       const number = String(req.params.number ?? '').slice(0, 60);
       const result = await this.service.verifyCertificate(number);
       res.json({ success: true, data: result });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
+   * GET /public/tickets/:ticketNumber/download?t=<hmac>
+   * Lien permanent : régénère une URL Supabase fraîche à chaque appel.
+   */
+  async downloadTicket(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const ticketNumber = String(req.params.ticketNumber ?? '').slice(0, 30);
+      const token = String(req.query.t ?? '');
+
+      if (!verifyHMAC(`download:${ticketNumber}`, token)) {
+        res.status(403).json({ success: false, error: { message: 'Lien invalide ou expiré.' } });
+        return;
+      }
+
+      const ticket = await prisma.ticket.findFirst({ where: { ticketNumber } });
+      if (!ticket?.pdfUrl) {
+        res.status(404).json({ success: false, error: { message: 'Billet introuvable.' } });
+        return;
+      }
+
+      // Supabase configuré → on régénère une URL signée fraîche (1h)
+      if (env.SUPABASE_URL && env.SUPABASE_SERVICE_ROLE_KEY) {
+        const supabase = getSupabaseServiceClient();
+        const objectPath = `tickets/${ticketNumber}.pdf`;
+        const { data, error } = await supabase.storage
+          .from(env.SUPABASE_STORAGE_BUCKET)
+          .createSignedUrl(objectPath, 3600);
+        if (error || !data) {
+          res.status(502).json({ success: false, error: { message: 'Impossible de générer le lien.' } });
+          return;
+        }
+        res.redirect(302, data.signedUrl);
+        return;
+      }
+
+      // Fallback dev : URL locale stockée en DB
+      res.redirect(302, ticket.pdfUrl);
     } catch (error) {
       next(error);
     }

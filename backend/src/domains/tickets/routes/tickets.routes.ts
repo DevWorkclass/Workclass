@@ -17,6 +17,9 @@ const controller = new TicketsController();
 // Vérification publique d'un certificat (scannée depuis le QR du document).
 router.get('/public/certificate/:number', controller.verifyCertificate.bind(controller));
 
+// Téléchargement permanent d'un billet PDF (lien sécurisé HMAC, sans expiry).
+router.get('/public/tickets/:ticketNumber/download', controller.downloadTicket.bind(controller));
+
 router.post(
   '/tickets/generate',
   authMiddleware,

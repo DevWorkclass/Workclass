@@ -14,7 +14,23 @@ import { generateQRCode } from '../../../utils/qr-generator';
 import { logger } from '../../../utils/logger';
 import { uploadPdf } from '../../shared/storage/storage.service';
 import { NotFoundError, ConflictError } from '../../shared/errors/types/error.types';
+import { generateHMAC } from '../../../utils/crypto';
 import type { TicketGenerationResult } from '../types/tickets.types';
+
+/** URL de base de l'API (Render la définit automatiquement via RENDER_EXTERNAL_URL). */
+function apiBaseUrl(): string {
+  const base = process.env.RENDER_EXTERNAL_URL ?? process.env.API_EXTERNAL_URL ?? 'http://localhost:3001';
+  return base.replace(/\/$/, '') + '/api';
+}
+
+/** Token de téléchargement HMAC-SHA256 — permanent tant que QR_HMAC_SECRET ne change pas. */
+export function buildDownloadToken(ticketNumber: string): string {
+  return generateHMAC(`download:${ticketNumber}`);
+}
+
+export function buildDownloadUrl(ticketNumber: string): string {
+  return `${apiBaseUrl()}/public/tickets/${ticketNumber}/download?t=${buildDownloadToken(ticketNumber)}`;
+}
 
 export class TicketGeneratorService {
   /**
@@ -127,6 +143,6 @@ export class TicketGeneratorService {
     });
 
     logger.info({ ticketNumber, bookingId }, 'Billet genere');
-    return { ticketNumber, pdfUrl, qrCode: qrCodeDataUrl, pdfBuffer };
+    return { ticketNumber, pdfUrl, qrCode: qrCodeDataUrl, pdfBuffer, downloadUrl: buildDownloadUrl(ticketNumber) };
   }
 }

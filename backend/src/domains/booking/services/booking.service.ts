@@ -92,14 +92,15 @@ export class BookingService {
     const updated = await this.repository.updateStatus(id, 'confirmed');
 
     try {
-      const { ticketNumber, pdfUrl } = await this.ticketGenerator.generateTicket(id);
+      const { ticketNumber, pdfBuffer, downloadUrl } = await this.ticketGenerator.generateTicket(id);
 
       // Envoi de l'email (uniquement si une adresse de contact est disponible).
       if (updated.participant?.email) {
         await this.emailService.sendTicketConfirmation(
           updated.participant.email,
           ticketNumber,
-          pdfUrl,
+          pdfBuffer,
+          downloadUrl,
         );
       }
     } catch (err) {

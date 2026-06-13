@@ -181,19 +181,27 @@ export class EmailService {
     }
   }
 
-  async sendTicketConfirmation(email: string, ticketNumber: string, pdf: Buffer): Promise<void> {
+  async sendTicketConfirmation(email: string, ticketNumber: string, ticketUrl: string): Promise<void> {
+    const hasLink = ticketUrl.startsWith('http');
+    const downloadBtn = hasLink
+      ? `<p style="margin:24px 0">
+           <a href="${ticketUrl}" style="display:inline-block;padding:12px 28px;background:${BRAND_NAVY};color:#ffffff;text-decoration:none;border-radius:6px;font-weight:bold;font-size:15px">
+             Télécharger mon billet PDF →
+           </a>
+         </p>`
+      : '';
     const html = emailWrapper(`
       <p>Bonjour,</p>
-      <p>Votre réservation est confirmée. Votre billet <strong>${ticketNumber}</strong> est en pièce jointe.</p>
-      <p>Présentez le QR code à l'entrée de l'événement.</p>
+      <p>Votre réservation est confirmée. Votre numéro de billet est <strong>${ticketNumber}</strong>.</p>
+      ${downloadBtn}
+      <p style="font-size:13px;color:#6b7280">Présentez le QR code à l'entrée de l'événement.</p>
       <p style="margin-top:24px;color:#4b5563;font-size:14px">À bientôt !</p>
     `);
     await this.send({
       to: email,
-      subject: `Votre billet Work Class Gabon — ${ticketNumber}`,
+      subject: `Confirmation de réservation — ${ticketNumber}`,
       html,
-      text: `Bonjour,\n\nVotre réservation est confirmée. Votre billet ${ticketNumber} est en pièce jointe.\n\nPrésentez le QR code à l'entrée de l'événement.\n\nÀ bientôt !`,
-      attachments: [{ filename: `${ticketNumber}.pdf`, content: pdf }],
+      text: `Bonjour,\n\nVotre réservation est confirmée. Votre billet : ${ticketNumber}\n\n${hasLink ? `Télécharger : ${ticketUrl}\n\n` : ''}Présentez le QR code à l'entrée.\n\nÀ bientôt !`,
     });
   }
 
@@ -237,10 +245,20 @@ export class EmailService {
           </div>`
         : '';
 
+    const hasCertLink = pdfUrl.startsWith('http');
+    const certBtn = hasCertLink
+      ? `<p style="margin:16px 0">
+           <a href="${pdfUrl}" style="display:inline-block;padding:12px 28px;background:${BRAND_NAVY};color:#ffffff;text-decoration:none;border-radius:6px;font-weight:bold;font-size:15px">
+             Télécharger mon certificat →
+           </a>
+         </p>`
+      : '';
+
     const html = emailWrapper(`
       <p>Bonjour <strong>${participantName}</strong>,</p>
       <p>Merci d'avoir participé à <strong>${eventTitle}</strong>.</p>
-      <p>Votre certificat de participation n° <strong>${certificateNumber}</strong> est en pièce jointe.</p>
+      <p>Votre certificat de participation n° <strong>${certificateNumber}</strong> est disponible ici :</p>
+      ${certBtn}
       ${feedbackButton(feedbackUrl)}
       ${extraSection}
       <p style="margin-top:24px;color:#4b5563;font-size:14px">À bientôt sur Work Class Gabon !</p>
@@ -251,10 +269,11 @@ export class EmailService {
       `Bonjour ${participantName},`,
       '',
       `Merci d'avoir participé à ${eventTitle}.`,
-      `Votre certificat de participation n° ${certificateNumber} est en pièce jointe.`,
+      `Votre certificat n° ${certificateNumber} :`,
+      hasCertLink ? pdfUrl : '(disponible sur demande)',
       '',
       '── Donnez votre avis ──',
-      `Aidez-nous à améliorer Work Class Gabon en répondant à un court questionnaire (2 min) :`,
+      'Aidez-nous à améliorer Work Class Gabon (2 min) :',
       feedbackUrl,
       '',
       ...(extraCertificates.length > 0
@@ -268,20 +287,19 @@ export class EmailService {
       'À bientôt sur Work Class Gabon !',
     ].join('\n');
 
-    const attachments: EmailAttachment[] = [
-      { filename: `certificat-${certificateNumber}.pdf`, path: pdfUrl },
-      ...extraCertificates.map((c) => ({
-        filename: `certificat-${c.name.replace(/\s+/g, '-').toLowerCase()}.pdf`,
-        content: c.buffer,
-      })),
-    ];
+    // Seuls les certificats "extra" (participants sans email) sont joints en PDF
+    // pour que le payeur puisse les transmettre — le certificat principal passe par lien
+    const attachments: EmailAttachment[] = extraCertificates.map((c) => ({
+      filename: `certificat-${c.name.replace(/\s+/g, '-').toLowerCase()}.pdf`,
+      content: c.buffer,
+    }));
 
     await this.send({
       to: email,
       subject: `Votre certificat de participation — ${eventTitle}`,
       html,
       text,
-      attachments,
+      attachments: attachments.length > 0 ? attachments : undefined,
     });
   }
 

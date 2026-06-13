@@ -92,15 +92,14 @@ export class BookingService {
     const updated = await this.repository.updateStatus(id, 'confirmed');
 
     try {
-      // Génération du billet — le buffer PDF est retourné pour éviter un re-téléchargement
-      const { ticketNumber, pdfBuffer } = await this.ticketGenerator.generateTicket(id);
+      const { ticketNumber, pdfUrl } = await this.ticketGenerator.generateTicket(id);
 
       // Envoi de l'email (uniquement si une adresse de contact est disponible).
       if (updated.participant?.email) {
         await this.emailService.sendTicketConfirmation(
           updated.participant.email,
           ticketNumber,
-          pdfBuffer,
+          pdfUrl,
         );
       }
     } catch (err) {

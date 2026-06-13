@@ -45,7 +45,6 @@ function buildFromAddress(): string {
 const REPLY_TO = process.env.EMAIL_REPLY_TO ?? process.env.SMTP_USER ?? 'contact@workclass-gabon.com';
 
 const BRAND_NAVY = '#0E2450';
-const BRAND_BLUE = '#2152B6';
 const BRAND_GOLD = '#D4AF37';
 const BRAND_CREAM = '#F9F5EC';
 
@@ -78,21 +77,13 @@ function emailWrapper(body: string): string {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
   <title>Work Class Gabon</title>
 </head>
-<body style="margin:0;padding:0;background:#f3f4f6;font-family:Arial,Helvetica,sans-serif;-webkit-text-size-adjust:100%">
-  <div style="max-width:600px;margin:32px auto;font-size:15px;color:#1f2937">
-    <div style="background:linear-gradient(160deg,${BRAND_NAVY} 5%,${BRAND_BLUE} 95%);padding:28px 32px;border-radius:12px 12px 0 0;text-align:center">
-      <p style="margin:0;font-size:22px;font-weight:bold;color:${BRAND_GOLD};letter-spacing:1px">WORK CLASS GABON</p>
-    </div>
-    <div style="background:#ffffff;padding:32px;border:1px solid #e5e7eb;border-top:none;line-height:1.6">
-      ${body}
-    </div>
-    <div style="background:${BRAND_CREAM};padding:16px 32px;border:1px solid #e5e7eb;border-top:none;border-radius:0 0 12px 12px;text-align:center">
-      <p style="margin:0;font-size:12px;color:#6b7280">Work Class Gabon · Libreville, Gabon</p>
-      <p style="margin:4px 0 0;font-size:11px;color:#9ca3af">Cet email a été envoyé automatiquement. Pour ne plus recevoir nos communications, contactez-nous à <a href="mailto:contact@workclass-gabon.com" style="color:#9ca3af">contact@workclass-gabon.com</a>.</p>
-    </div>
+<body style="margin:0;padding:0;font-family:Arial,Helvetica,sans-serif;background:#ffffff">
+  <div style="max-width:560px;margin:24px auto;padding:0 16px;font-size:15px;color:#1f2937;line-height:1.6">
+    <p style="margin:0 0 24px;font-weight:bold;color:${BRAND_NAVY};font-size:16px;border-bottom:2px solid ${BRAND_GOLD};padding-bottom:8px">Work Class Gabon</p>
+    ${body}
+    <p style="margin:32px 0 0;font-size:12px;color:#9ca3af;border-top:1px solid #e5e7eb;padding-top:12px">Work Class Gabon · Libreville, Gabon<br>Pour toute question : <a href="mailto:${REPLY_TO}" style="color:#9ca3af">${REPLY_TO}</a></p>
   </div>
 </body>
 </html>`;
@@ -147,7 +138,6 @@ export class EmailService {
 
     try {
       const from = buildFromAddress();
-      const unsubscribeEmail = `mailto:${REPLY_TO}?subject=unsubscribe`;
 
       // Pré-télécharge les pièces jointes HTTP avant MailComposer
       // (MailComposer ne gère pas bien les URLs signées Supabase)
@@ -171,14 +161,6 @@ export class EmailService {
         text: data.text ?? htmlToText(data.html),
         html: data.html,
         attachments,
-        headers: {
-          // Requis Gmail/Yahoo 2024 pour tous les expéditeurs en masse
-          'List-Unsubscribe': `<${unsubscribeEmail}>`,
-          'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
-          // Classe l'email comme transactionnel (non marketing)
-          'Precedence': 'transactional',
-          'X-Mailer': 'Work Class Gabon Mailer/1.0',
-        },
       };
 
       const mail = new MailComposer(mailOptions);

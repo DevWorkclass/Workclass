@@ -149,6 +149,20 @@ export class EmailService {
       const from = buildFromAddress();
       const unsubscribeEmail = `mailto:${REPLY_TO}?subject=unsubscribe`;
 
+      // Pré-télécharge les pièces jointes HTTP avant MailComposer
+      // (MailComposer ne gère pas bien les URLs signées Supabase)
+      const attachments = await Promise.all(
+        (data.attachments ?? []).map(async (att) => {
+          if (att.path && (att.path.startsWith('https://') || att.path.startsWith('http://'))) {
+            const res = await fetch(att.path);
+            if (!res.ok) throw new Error(`Telechargement piece jointe echoue (HTTP ${res.status}): ${att.path}`);
+            const content = Buffer.from(await res.arrayBuffer());
+            return { filename: att.filename, content };
+          }
+          return att;
+        }),
+      );
+
       const mailOptions = {
         from,
         to: data.to,
@@ -156,7 +170,7 @@ export class EmailService {
         subject: data.subject,
         text: data.text ?? htmlToText(data.html),
         html: data.html,
-        attachments: data.attachments,
+        attachments,
         headers: {
           // Requis Gmail/Yahoo 2024 pour tous les expéditeurs en masse
           'List-Unsubscribe': `<${unsubscribeEmail}>`,
@@ -185,7 +199,7 @@ export class EmailService {
     }
   }
 
-  async sendTicketConfirmation(email: string, ticketNumber: string, pdfPath: string): Promise<void> {
+  async sendTicketConfirmation(email: string, ticketNumber: string, pdf: Buffer): Promise<void> {
     const html = emailWrapper(`
       <p>Bonjour,</p>
       <p>Votre réservation est confirmée. Votre billet <strong>${ticketNumber}</strong> est en pièce jointe.</p>
@@ -197,7 +211,7 @@ export class EmailService {
       subject: `Votre billet Work Class Gabon — ${ticketNumber}`,
       html,
       text: `Bonjour,\n\nVotre réservation est confirmée. Votre billet ${ticketNumber} est en pièce jointe.\n\nPrésentez le QR code à l'entrée de l'événement.\n\nÀ bientôt !`,
-      attachments: [{ filename: `${ticketNumber}.pdf`, path: pdfPath }],
+      attachments: [{ filename: `${ticketNumber}.pdf`, content: pdf }],
     });
   }
 

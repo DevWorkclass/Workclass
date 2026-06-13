@@ -13,15 +13,15 @@ const envSchema = z.object({
   CORS_ORIGIN: z.string().default('http://localhost:3000'),
 
   // --- Base de données ---
-  DATABASE_URL: z.string().url().optional(),
-  DIRECT_URL: z.string().url().optional(),
+  DATABASE_URL: z.preprocess((v) => v || undefined, z.string().url().optional()),
+  DIRECT_URL: z.preprocess((v) => v || undefined, z.string().url().optional()),
 
   // --- Redis ---
-  REDIS_URL: z.string().optional(),
+  REDIS_URL: z.preprocess((v) => v || undefined, z.string().optional()),
 
   // --- Supabase (Storage — optionnel) ---
-  SUPABASE_URL: z.string().url().optional(),
-  SUPABASE_SERVICE_ROLE_KEY: z.string().optional(),
+  SUPABASE_URL: z.preprocess((v) => v || undefined, z.string().url().optional()),
+  SUPABASE_SERVICE_ROLE_KEY: z.preprocess((v) => v || undefined, z.string().optional()),
   SUPABASE_STORAGE_BUCKET: z.string().default('documents'),
   // Bucket PUBLIC pour les images affichées sur le site (domaines, etc.).
   SUPABASE_PUBLIC_BUCKET: z.string().default('public'),

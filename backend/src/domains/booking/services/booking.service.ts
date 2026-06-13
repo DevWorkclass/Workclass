@@ -15,6 +15,7 @@ import { logAudit } from '../../shared/audit/services/audit.service';
 import { generateSecureToken } from '../../../utils/crypto';
 import { TicketGeneratorService } from '../../tickets/services/ticket-generator.service';
 import { EmailService } from '../../notifications/services/email.service';
+import { logger } from '../../../utils/logger';
 
 const REFERENCE_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 
@@ -91,20 +92,20 @@ export class BookingService {
     const updated = await this.repository.updateStatus(id, 'confirmed');
 
     try {
-      // Génération du billet
-      const { ticketNumber, pdfUrl } = await this.ticketGenerator.generateTicket(id);
+      // Génération du billet — le buffer PDF est retourné pour éviter un re-téléchargement
+      const { ticketNumber, pdfBuffer } = await this.ticketGenerator.generateTicket(id);
 
       // Envoi de l'email (uniquement si une adresse de contact est disponible).
       if (updated.participant?.email) {
         await this.emailService.sendTicketConfirmation(
           updated.participant.email,
           ticketNumber,
-          pdfUrl
+          pdfBuffer,
         );
       }
     } catch (err) {
-      // Si la génération échoue (ex: billet déjà généré), on continue sans bloquer la validation
-      console.error('Erreur generation/envoi billet:', err);
+      // Si la génération/envoi échoue, on continue sans bloquer la validation
+      logger.error({ err }, 'Erreur generation/envoi billet');
     }
 
     await logAudit({

@@ -127,6 +127,6 @@ export class TicketGeneratorService {
     });
 
     logger.info({ ticketNumber, bookingId }, 'Billet genere');
-    return { ticketNumber, pdfUrl, qrCode: qrCodeDataUrl };
+    return { ticketNumber, pdfUrl, qrCode: qrCodeDataUrl, pdfBuffer };
   }
 }

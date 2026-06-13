@@ -17,4 +17,5 @@ export interface TicketGenerationResult {
   ticketNumber: string;
   pdfUrl: string;
   qrCode: string;
+  pdfBuffer: Buffer;
 }

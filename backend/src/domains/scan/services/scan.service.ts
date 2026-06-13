@@ -9,12 +9,13 @@
 import { prisma } from '../../../config/database';
 import { verifyQRCode, generatePlainQRCode } from '../../../utils/qr-generator';
 import { generateCertificatePDF } from '../../../utils/pdf-generator';
-import { uploadPdf } from '../../shared/storage/storage.service';
+import { uploadPdf, getSignedUrl } from '../../shared/storage/storage.service';
 import { NotFoundError, ValidationError } from '../../shared/errors/types/error.types';
 import { logAudit } from '../../shared/audit/services/audit.service';
 import { logger } from '../../../utils/logger';
 import type { QRCodeData, ScanErrorCode } from '../types/scan.types';
 import { EmailService, type ExtraCertificate } from '../../notifications/services/email.service';
+import { buildCertDownloadUrl } from '../../tickets/services/ticket-generator.service';
 
 interface ParticipantMeta {
   firstName: string;
@@ -156,6 +157,7 @@ export class ScanService {
           participantName: `${participant.firstName} ${participant.lastName}`,
           certificateNumber,
           pdfUrl: certificateUrl,
+          downloadUrl: buildCertDownloadUrl(certificateNumber),
           feedbackToken,
           eventTitle,
           extraCertificates: extraAttachments,
@@ -179,6 +181,7 @@ export class ScanService {
             participantName: c.name,
             certificateNumber: c.certNum,
             pdfUrl: certUrl,
+            downloadUrl: buildCertDownloadUrl(c.certNum),
             feedbackToken,
             eventTitle,
           });
@@ -284,6 +287,9 @@ export class ScanService {
           }
 
           if (participant.email && certificateUrl && certificateNumber) {
+            // Régénère une URL Supabase fraîche (l'URL stockée en DB peut être expirée > 30j)
+            const freshUrl = await getSignedUrl('certificates', `${certificateNumber}.pdf`) ?? certificateUrl;
+
             const feedbackToken = crypto.randomUUID();
             const feedbackExpiry = new Date();
             feedbackExpiry.setDate(feedbackExpiry.getDate() + 30);
@@ -294,7 +300,8 @@ export class ScanService {
               email: participant.email,
               participantName: `${participant.firstName} ${participant.lastName}`,
               certificateNumber,
-              pdfUrl: certificateUrl,
+              pdfUrl: freshUrl,
+              downloadUrl: buildCertDownloadUrl(certificateNumber),
               feedbackToken,
               eventTitle: ticket.booking.event.title,
             });

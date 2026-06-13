@@ -32,6 +32,15 @@ export function buildDownloadUrl(ticketNumber: string): string {
   return `${apiBaseUrl()}/public/tickets/${ticketNumber}/download?t=${buildDownloadToken(ticketNumber)}`;
 }
 
+/** Lien permanent de téléchargement d'un certificat. */
+export function buildCertDownloadToken(certificateNumber: string): string {
+  return generateHMAC(`cert-download:${certificateNumber}`);
+}
+
+export function buildCertDownloadUrl(certificateNumber: string): string {
+  return `${apiBaseUrl()}/public/certificates/${certificateNumber}/download?t=${buildCertDownloadToken(certificateNumber)}`;
+}
+
 export class TicketGeneratorService {
   /**
    * Liste paginée des billets (gestion des certificats côté admin).

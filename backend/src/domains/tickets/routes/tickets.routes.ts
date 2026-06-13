@@ -20,6 +20,9 @@ router.get('/public/certificate/:number', controller.verifyCertificate.bind(cont
 // Téléchargement permanent d'un billet PDF (lien sécurisé HMAC, sans expiry).
 router.get('/public/tickets/:ticketNumber/download', controller.downloadTicket.bind(controller));
 
+// Téléchargement permanent d'un certificat PDF.
+router.get('/public/certificates/:certificateNumber/download', controller.downloadCertificate.bind(controller));
+
 router.post(
   '/tickets/generate',
   authMiddleware,

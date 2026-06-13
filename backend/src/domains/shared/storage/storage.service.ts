@@ -47,6 +47,25 @@ async function ensureBucket(bucket: string, isPublic: boolean): Promise<void> {
 }
 
 /**
+ * Génère une URL signée fraîche pour un objet déjà uploadé (sans re-upload).
+ * Utile quand l'URL stockée en DB a expiré (> 30 jours).
+ * @param ttl durée en secondes (défaut 1h)
+ */
+export async function getSignedUrl(
+  category: string,
+  filename: string,
+  ttl = 3600,
+): Promise<string | null> {
+  if (!supabaseConfigured()) return null;
+  const supabase = getSupabaseServiceClient();
+  const { data, error } = await supabase.storage
+    .from(env.SUPABASE_STORAGE_BUCKET)
+    .createSignedUrl(`${category}/${filename}`, ttl);
+  if (error || !data) return null;
+  return data.signedUrl;
+}
+
+/**
  * Téléverse un PDF et renvoie une URL exploitable.
  * @param category sous-dossier logique (ex. `tickets`, `certificates`)
  * @param filename nom de fichier (ex. `WCG-2026-000001.pdf`)

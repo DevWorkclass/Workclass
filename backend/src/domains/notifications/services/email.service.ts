@@ -215,6 +215,7 @@ export class EmailService {
     participantName: string;
     certificateNumber: string;
     pdfUrl: string;
+    downloadUrl?: string;
     feedbackToken: string;
     eventTitle: string;
     extraCertificates?: ExtraCertificate[];
@@ -224,6 +225,7 @@ export class EmailService {
       participantName,
       certificateNumber,
       pdfUrl,
+      downloadUrl,
       feedbackToken,
       eventTitle,
       extraCertificates = [],
@@ -245,10 +247,15 @@ export class EmailService {
           </div>`
         : '';
 
+    const certLinkLine = downloadUrl
+      ? `<p>Vous pouvez également le télécharger à tout moment : <a href="${downloadUrl}" style="color:${BRAND_NAVY}">Télécharger mon certificat</a></p>`
+      : '';
+
     const html = emailWrapper(`
       <p>Bonjour <strong>${participantName}</strong>,</p>
       <p>Merci d'avoir participé à <strong>${eventTitle}</strong>.</p>
       <p>Votre certificat de participation n° <strong>${certificateNumber}</strong> est en pièce jointe.</p>
+      ${certLinkLine}
       ${feedbackButton(feedbackUrl)}
       ${extraSection}
       <p style="margin-top:24px;color:#4b5563;font-size:14px">À bientôt sur Work Class Gabon !</p>

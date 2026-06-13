@@ -80,6 +80,40 @@ export class TicketsController {
     }
   }
 
+  /**
+   * GET /public/certificates/:certificateNumber/download?t=<hmac>
+   * Lien permanent pour télécharger un certificat PDF.
+   */
+  async downloadCertificate(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const certificateNumber = String(req.params.certificateNumber ?? '').slice(0, 40);
+      const token = String(req.query.t ?? '');
+
+      if (!verifyHMAC(`cert-download:${certificateNumber}`, token)) {
+        res.status(403).json({ success: false, error: { message: 'Lien invalide ou expiré.' } });
+        return;
+      }
+
+      if (env.SUPABASE_URL && env.SUPABASE_SERVICE_ROLE_KEY) {
+        const supabase = getSupabaseServiceClient();
+        const { data, error } = await supabase.storage
+          .from(env.SUPABASE_STORAGE_BUCKET)
+          .createSignedUrl(`certificates/${certificateNumber}.pdf`, 3600);
+        if (error || !data) {
+          res.status(404).json({ success: false, error: { message: 'Certificat introuvable.' } });
+          return;
+        }
+        res.redirect(302, data.signedUrl);
+        return;
+      }
+
+      // Fallback dev : URL locale
+      res.redirect(302, `/uploads/certificates/${certificateNumber}.pdf`);
+    } catch (error) {
+      next(error);
+    }
+  }
+
   async list(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const page = parseInt(String(req.query.page ?? '1'), 10) || 1;

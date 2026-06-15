@@ -106,46 +106,36 @@ export class ScanService {
       data: certData as Parameters<typeof prisma.ticket.update>[0]['data'],
     });
 
-    // ── 2. Participants secondaires (depuis metadata) ─────────────────────────
-    const metaPs: ParticipantMeta[] =
-      (participant.metadata as { participants?: ParticipantMeta[] } | null)?.participants ?? [];
+    // ── 2. Participants secondaires (depuis metadata) — tous joints au mail payeur ──
+    const metaPs: ParticipantMeta[] = (
+      (participant.metadata as { participants?: ParticipantMeta[] } | null)?.participants ?? []
+    ).filter((p): p is ParticipantMeta => p !== null && p !== undefined);
 
-    // Exclure le payeur (déjà traité) pour éviter les doublons
     const payerEmailNorm = participant.email.trim().toLowerCase();
-    const others = metaPs.filter(
+    const secondaryPs = metaPs.filter(
       (p) => !p.email || p.email.trim().toLowerCase() !== payerEmailNorm,
     );
 
-    // Génération des PDFs secondaires en parallèle
-    const otherCerts = (
+    // Génération des PDFs secondaires en parallèle (buffer uniquement — pas d'upload)
+    const extraCertificates: ExtraCertificate[] = (
       await Promise.allSettled(
-        others.map(async (p, i) => {
+        secondaryPs.map(async (p, i) => {
           const certNum = `${certificateNumber}-P${i + 2}`;
-          const buf = await generateCertificatePDF({
+          const buffer = await generateCertificatePDF({
             participantName: `${p.firstName} ${p.lastName}`,
             eventTitle,
             eventDate,
             certificateNumber: certNum,
-            qrCodeDataUrl: undefined, // pas de QR pour les certificats secondaires
+            qrCodeDataUrl: undefined,
           });
-          return { name: `${p.firstName} ${p.lastName}`, email: p.email?.trim() || null, certNum, buf };
+          return { name: `${p.firstName} ${p.lastName}`, buffer };
         }),
       )
     )
-      .filter((r): r is PromiseFulfilledResult<{ name: string; email: string | null; certNum: string; buf: Buffer }> => r.status === 'fulfilled')
+      .filter((r): r is PromiseFulfilledResult<ExtraCertificate> => r.status === 'fulfilled')
       .map((r) => r.value);
 
-    // Séparer ceux avec / sans email
-    const othersWithEmail = otherCerts.filter((c) => c.email);
-    const othersNoEmail = otherCerts.filter((c) => !c.email);
-
-    // Pièces jointes extras (participants sans email) → jointes à l'email du payeur
-    const extraAttachments: ExtraCertificate[] = othersNoEmail.map((c) => ({
-      name: c.name,
-      buffer: c.buf,
-    }));
-
-    // ── 3. Email payeur : certificat + feedback + extras ──────────────────────
+    // ── 3. Un seul email au payeur avec TOUS les certificats en pièces jointes ──
     if (participant.email) {
       try {
         const feedbackToken = crypto.randomUUID();
@@ -156,42 +146,18 @@ export class ScanService {
           email: participant.email,
           participantName: `${participant.firstName} ${participant.lastName}`,
           certificateNumber,
-          pdfUrl: certificateUrl,
+          pdfBuffer: payerPdfBuffer,
           downloadUrl: buildCertDownloadUrl(certificateNumber),
           feedbackToken,
           eventTitle,
-          extraCertificates: extraAttachments,
+          extraCertificates,
         });
       } catch (err) {
         logger.error({ err }, 'Erreur envoi email payeur');
       }
     }
 
-    // ── 4. Emails participants secondaires avec email : cert + feedback ────────
-    await Promise.allSettled(
-      othersWithEmail.map(async (c) => {
-        try {
-          const certUrl = await uploadPdf('certificates', `${c.certNum}.pdf`, c.buf);
-          const feedbackToken = crypto.randomUUID();
-          await prisma.feedbackLink.create({
-            data: { eventId: ticket.booking.eventId, bookingId: ticket.booking.id, token: feedbackToken, expiresAt: feedbackExpiry },
-          });
-          await this.emailService.sendCertificateWithFeedback({
-            email: c.email!,
-            participantName: c.name,
-            certificateNumber: c.certNum,
-            pdfUrl: certUrl,
-            downloadUrl: buildCertDownloadUrl(c.certNum),
-            feedbackToken,
-            eventTitle,
-          });
-        } catch (err) {
-          logger.error({ err, name: c.name }, 'Erreur envoi email participant secondaire');
-        }
-      }),
-    );
-
-    const emailsSent = (participant.email ? 1 : 0) + othersWithEmail.length;
+    const emailsSent = participant.email ? 1 : 0;
     await logAudit({
       action: 'TICKET_SCANNED',
       userId: scannerId,
@@ -200,7 +166,7 @@ export class ScanService {
       details: {
         certificateNumber,
         emailsSent,
-        extrasJoints: othersNoEmail.length,
+        extrasJoints: extraCertificates.length,
       },
       result: 'success',
     });
@@ -288,51 +254,35 @@ export class ScanService {
             await prisma.ticket.update({ where: { id: ticketId }, data: certData as Parameters<typeof prisma.ticket.update>[0]['data'] });
           }
 
-          // ── 2. Participants secondaires (depuis metadata) ──────────────────
-          const metaPs: ParticipantMeta[] =
-            (participant.metadata as { participants?: ParticipantMeta[] } | null)?.participants ?? [];
+          // ── 2. Participants secondaires — tous joints au mail payeur ─────────
+          const metaPs: ParticipantMeta[] = (
+            (participant.metadata as { participants?: ParticipantMeta[] } | null)?.participants ?? []
+          ).filter((p): p is ParticipantMeta => p !== null && p !== undefined);
           const payerEmailNorm = participant.email?.trim().toLowerCase() ?? '';
           const secondaryPs = metaPs.filter(
             (p) => !p.email || p.email.trim().toLowerCase() !== payerEmailNorm,
           );
 
-          // Récupère ou régénère chaque PDF secondaire
-          const secondaryCerts = (
+          // Génère les PDFs secondaires (buffer uniquement — joints à l'email payeur)
+          const extraCertificates: ExtraCertificate[] = (
             await Promise.allSettled(
               secondaryPs.map(async (p, i) => {
                 const certNum = `${certificateNumber}-P${i + 2}`;
-                // Tente de récupérer depuis Supabase, sinon régénère
-                let buffer: Buffer | null = null;
-                const signedUrl = await getSignedUrl('certificates', `${certNum}.pdf`);
-                if (signedUrl) {
-                  try {
-                    const res = await fetch(signedUrl);
-                    if (res.ok) buffer = Buffer.from(await res.arrayBuffer());
-                  } catch { /* régénération ci-dessous */ }
-                }
-                if (!buffer) {
-                  buffer = await generateCertificatePDF({
-                    participantName: `${p.firstName} ${p.lastName}`,
-                    eventTitle,
-                    eventDate,
-                    certificateNumber: certNum,
-                    qrCodeDataUrl: undefined,
-                  });
-                  await uploadPdf('certificates', `${certNum}.pdf`, buffer);
-                }
-                return { name: `${p.firstName} ${p.lastName}`, email: p.email?.trim() || null, certNum, buffer };
+                const buffer = await generateCertificatePDF({
+                  participantName: `${p.firstName} ${p.lastName}`,
+                  eventTitle,
+                  eventDate,
+                  certificateNumber: certNum,
+                  qrCodeDataUrl: undefined,
+                });
+                return { name: `${p.firstName} ${p.lastName}`, buffer };
               }),
             )
           )
-            .filter((r): r is PromiseFulfilledResult<{ name: string; email: string | null; certNum: string; buffer: Buffer }> => r.status === 'fulfilled')
+            .filter((r): r is PromiseFulfilledResult<ExtraCertificate> => r.status === 'fulfilled')
             .map((r) => r.value);
 
-          const secondaryWithEmail = secondaryCerts.filter((c) => c.email);
-          const secondaryNoEmail: ExtraCertificate[] = secondaryCerts
-            .filter((c) => !c.email)
-            .map((c) => ({ name: c.name, buffer: c.buffer }));
-
-          // ── 3. Email payeur + extras (participants sans email joints) ──────
+          // ── 3. Un seul email au payeur avec TOUS les certificats ─────────────
           if (participant.email && certificateUrl && certificateNumber) {
             const freshUrl = await getSignedUrl('certificates', `${certificateNumber}.pdf`) ?? certificateUrl;
             const feedbackToken = crypto.randomUUID();
@@ -347,37 +297,12 @@ export class ScanService {
               downloadUrl: buildCertDownloadUrl(certificateNumber),
               feedbackToken,
               eventTitle,
-              extraCertificates: secondaryNoEmail,
+              extraCertificates,
             });
             sent++;
           }
-
-          // ── 4. Emails participants secondaires avec email ──────────────────
-          await Promise.allSettled(
-            secondaryWithEmail.map(async (c) => {
-              try {
-                const feedbackToken = crypto.randomUUID();
-                await prisma.feedbackLink.create({
-                  data: { eventId: ticket.booking.eventId, bookingId: ticket.booking.id, token: feedbackToken, expiresAt: feedbackExpiry },
-                });
-                await this.emailService.sendCertificateWithFeedback({
-                  email: c.email!,
-                  participantName: c.name,
-                  certificateNumber: c.certNum,
-                  pdfUrl: (await getSignedUrl('certificates', `${c.certNum}.pdf`)) ?? '',
-                  downloadUrl: buildCertDownloadUrl(c.certNum),
-                  feedbackToken,
-                  eventTitle,
-                });
-                sent++;
-              } catch (err) {
-                logger.error({ err, name: c.name }, 'Erreur envoi certificat participant secondaire (batch)');
-                errors++;
-              }
-            }),
-          );
         } catch (err) {
-          logger.error({ err: (err as Error).message, ticketId }, 'Erreur generation/envoi certificat');
+          logger.error({ err, ticketId }, 'Erreur generation/envoi certificat');
           errors++;
         }
       }),

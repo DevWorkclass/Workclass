@@ -214,22 +214,24 @@ export class EmailService {
     email: string;
     participantName: string;
     certificateNumber: string;
-    pdfUrl: string;
+    pdfUrl?: string;
+    pdfBuffer?: Buffer;
     downloadUrl?: string;
     feedbackToken: string;
     eventTitle: string;
-    extraCertificates?: ExtraCertificate[];
+    extraCertificates?: ExtraCertificate[] | null;
   }): Promise<void> {
     const {
       email,
       participantName,
       certificateNumber,
       pdfUrl,
+      pdfBuffer,
       downloadUrl,
       feedbackToken,
       eventTitle,
-      extraCertificates = [],
     } = params;
+    const extraCertificates = params.extraCertificates ?? [];
 
     const appUrl = (process.env.FRONTEND_URL ?? process.env.APP_URL ?? 'http://localhost:3000').replace(/\/$/, '');
     const feedbackUrl = `${appUrl}/avis/${feedbackToken}`;
@@ -237,9 +239,9 @@ export class EmailService {
     const extraSection =
       extraCertificates.length > 0
         ? `<div style="margin-top:24px;padding:16px;background:#fef3c7;border-radius:8px;border:1px solid #fbbf24">
-            <p style="margin:0 0 8px;font-weight:bold;color:#92400e">Certificats joints pour transmission</p>
+            <p style="margin:0 0 8px;font-weight:bold;color:#92400e">Certificats des autres participants</p>
             <p style="margin:0 0 10px;font-size:14px;color:#78350f">
-              Les participants suivants n'avaient pas renseigné d'adresse email. Merci de leur transmettre leur certificat en pièce jointe :
+              Les certificats des participants suivants sont également joints à cet email :
             </p>
             <ul style="margin:0;padding-left:20px;font-size:14px;color:#78350f">
               ${extraCertificates.map((c) => `<li style="margin-bottom:4px"><strong>${c.name}</strong></li>`).join('')}
@@ -274,8 +276,8 @@ export class EmailService {
       '',
       ...(extraCertificates.length > 0
         ? [
-            '── Certificats à transmettre ──',
-            "Les participants suivants n'avaient pas d'email. Merci de leur transmettre leur certificat joint :",
+            '── Certificats des autres participants ──',
+            'Les certificats des participants suivants sont également joints à cet email :',
             extraNames,
             '',
           ]
@@ -283,8 +285,11 @@ export class EmailService {
       'À bientôt sur Work Class Gabon !',
     ].join('\n');
 
+    const mainAttachment: EmailAttachment = pdfBuffer
+      ? { filename: `certificat-${certificateNumber}.pdf`, content: pdfBuffer }
+      : { filename: `certificat-${certificateNumber}.pdf`, path: pdfUrl ?? '' };
     const attachments: EmailAttachment[] = [
-      { filename: `certificat-${certificateNumber}.pdf`, path: pdfUrl },
+      mainAttachment,
       ...extraCertificates.map((c) => ({
         filename: `certificat-${c.name.replace(/\s+/g, '-').toLowerCase()}.pdf`,
         content: c.buffer,

@@ -173,6 +173,28 @@ export class ScanService {
     return { ticket: updatedTicket, certificateUrl };
   }
 
+  // ── Statistiques globales de scan (tous événements) ──────────────────────
+  async getScanStats() {
+    const [totalValidated, recentTickets] = await Promise.all([
+      prisma.ticket.count({ where: { scannedAt: { not: null } } }),
+      prisma.ticket.findMany({
+        where: { scannedAt: { not: null } },
+        orderBy: { scannedAt: 'desc' },
+        take: 20,
+        include: {
+          booking: {
+            include: {
+              participant: { select: { firstName: true, lastName: true } },
+              event: { select: { title: true } },
+              ticketType: { select: { name: true } },
+            },
+          },
+        },
+      }),
+    ]);
+    return { totalValidated, recentTickets };
+  }
+
   // ── Billets scannés d'un événement ───────────────────────────────────────
   async getScannedByEvent(eventId: string, query?: string) {
     const participantFilter = query

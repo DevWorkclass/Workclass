@@ -30,6 +30,12 @@ router.post(
   controller.confirm.bind(controller),
 );
 router.get(
+  '/admin/scan/stats',
+  authMiddleware,
+  requirePermission(PERMISSIONS.SCAN),
+  controller.stats.bind(controller),
+);
+router.get(
   '/admin/scan/event/:eventId/scanned',
   authMiddleware,
   requirePermission(PERMISSIONS.SCAN),

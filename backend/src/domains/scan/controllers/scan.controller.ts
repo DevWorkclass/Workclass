@@ -43,6 +43,16 @@ export class ScanController {
     }
   }
 
+  /** GET /admin/scan/stats — compteurs globaux (tous événements) */
+  async stats(_req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const data = await this.service.getScanStats();
+      res.json({ success: true, data });
+    } catch (error) {
+      next(error);
+    }
+  }
+
   /** GET /admin/scan/event/:eventId/scanned?q=… — billets scannés d'un événement */
   async scannedByEvent(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {

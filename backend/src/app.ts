@@ -35,14 +35,20 @@ app.use(helmet());
 
 // Origines autorisées : CORS_ORIGIN (prioritaire) ou FRONTEND_URL, séparées par
 // des virgules pour supporter plusieurs domaines (ex. prod + preview).
-const corsOrigins = (
-  process.env.CORS_ORIGIN ??
-  process.env.FRONTEND_URL ??
-  'http://localhost:3000'
-)
-  .split(',')
-  .map((o) => o.trim())
-  .filter(Boolean);
+// Le domaine de production est toujours inclus comme filet de sécurité.
+const corsOrigins = [
+  ...(
+    process.env.CORS_ORIGIN ??
+    process.env.FRONTEND_URL ??
+    'http://localhost:3000'
+  )
+    .split(',')
+    .map((o) => o.trim())
+    .filter(Boolean),
+  'https://workclass-tl.com',
+  'https://www.workclass-tl.com',
+  'https://workclass.vercel.app',
+].filter((v, i, arr) => arr.indexOf(v) === i); // déduplique
 app.use(
   cors({
     origin: corsOrigins,

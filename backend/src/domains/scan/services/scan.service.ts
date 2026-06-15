@@ -111,10 +111,8 @@ export class ScanService {
       (participant.metadata as { participants?: ParticipantMeta[] } | null)?.participants ?? []
     ).filter((p): p is ParticipantMeta => p !== null && p !== undefined);
 
-    const payerEmailNorm = participant.email.trim().toLowerCase();
-    const secondaryPs = metaPs.filter(
-      (p) => !p.email || p.email.trim().toLowerCase() !== payerEmailNorm,
-    );
+    // Participants secondaires = tous sauf le premier (index 0 = toujours le payeur)
+    const secondaryPs = metaPs.slice(1);
 
     // Génération des PDFs secondaires en parallèle (buffer uniquement — pas d'upload)
     const extraCertificates: ExtraCertificate[] = (
@@ -258,10 +256,8 @@ export class ScanService {
           const metaPs: ParticipantMeta[] = (
             (participant.metadata as { participants?: ParticipantMeta[] } | null)?.participants ?? []
           ).filter((p): p is ParticipantMeta => p !== null && p !== undefined);
-          const payerEmailNorm = participant.email?.trim().toLowerCase() ?? '';
-          const secondaryPs = metaPs.filter(
-            (p) => !p.email || p.email.trim().toLowerCase() !== payerEmailNorm,
-          );
+          // Participants secondaires = tous sauf le premier (index 0 = toujours le payeur)
+          const secondaryPs = metaPs.slice(1);
 
           // Génère les PDFs secondaires (buffer uniquement — joints à l'email payeur)
           const extraCertificates: ExtraCertificate[] = (

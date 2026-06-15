@@ -246,66 +246,79 @@ export async function generateCertificatePDF(data: CertificatePDFData): Promise<
     doc.save(); doc.translate(W - 18, H - 18); doc.rotate(180); corner(0, 0, 40, 40); doc.restore();
     doc.save(); doc.translate(18, H - 18); doc.rotate(270); corner(0, 0, 40, 40); doc.restore();
 
-    // ── Logo centré en haut ──
+    // ── Logo centré en haut (fit dans une boîte 240×72 centrée) ──
     const logoPath = getLogoPath();
-    const logoH = 64;
-    const logoY = 34;
+    const logoBoxW = 240;
+    const logoBoxH = 72;
+    const logoY = 32;
     if (logoPath) {
-      try { doc.image(logoPath, W / 2 - logoH / 2, logoY, { height: logoH }); } catch (_) {}
+      try {
+        doc.image(logoPath, (W - logoBoxW) / 2, logoY, { fit: [logoBoxW, logoBoxH], align: 'center', valign: 'center' });
+      } catch (_) {}
     }
 
     // ── Titre ──
-    doc.font('Helvetica-Bold').fontSize(26).fillColor('#0E2450')
-      .text('CERTIFICAT DE PARTICIPATION', 0, logoY + logoH + 10, { align: 'center' });
+    doc.font('Helvetica-Bold').fontSize(24).fillColor('#0E2450')
+      .text('CERTIFICAT DE PARTICIPATION', 0, logoY + logoBoxH + 8, { align: 'center' });
 
     // Ligne dorée sous le titre
-    const lineY = logoY + logoH + 46;
+    const lineY = logoY + logoBoxH + 42;
     doc.moveTo(W / 2 - 160, lineY).lineTo(W / 2 + 160, lineY)
       .lineWidth(1.5).strokeColor('#D4AF37').stroke();
 
     // ── Corps ──
-    doc.fillColor('#475569').font('Helvetica-Oblique').fontSize(13)
-      .text('Ce certificat est officiellement décerné à', 0, lineY + 16, { align: 'center' });
+    doc.fillColor('#475569').font('Helvetica-Oblique').fontSize(12)
+      .text('Ce certificat est officiellement décerné à', 0, lineY + 14, { align: 'center' });
 
-    // Nom du participant sur fond doré léger
-    const nameBgY = lineY + 40;
-    doc.roundedRect(W / 2 - 220, nameBgY, 440, 52, 8).fill('#FEF3C7');
-    doc.fillColor('#0E2450').font('Helvetica-Bold').fontSize(30)
-      .text(data.participantName, 0, nameBgY + 10, { align: 'center' });
+    // Nom du participant — taille dynamique selon longueur
+    const nameBgY = lineY + 36;
+    const nameLen = data.participantName.length;
+    const nameFontSize = nameLen <= 24 ? 28 : nameLen <= 34 ? 22 : nameLen <= 44 ? 17 : 14;
+    const nameBoxH = 52;
+    doc.roundedRect(W / 2 - 240, nameBgY, 480, nameBoxH, 8).fill('#FEF3C7');
+    doc.fillColor('#0E2450').font('Helvetica-Bold').fontSize(nameFontSize)
+      .text(data.participantName, W / 2 - 240, nameBgY + (nameBoxH - nameFontSize) / 2 - 1, {
+        width: 480,
+        align: 'center',
+        lineGap: 2,
+        lineBreak: false,
+        ellipsis: true,
+      });
 
     // Ligne dorée après le nom
-    doc.moveTo(W / 2 - 100, nameBgY + 60).lineTo(W / 2 + 100, nameBgY + 60)
+    doc.moveTo(W / 2 - 100, nameBgY + nameBoxH + 8).lineTo(W / 2 + 100, nameBgY + nameBoxH + 8)
       .lineWidth(1).strokeColor('#D4AF37').stroke();
 
-    doc.fillColor('#64748B').font('Helvetica').fontSize(13)
-      .text("pour sa présence et sa participation active à l'événement :", 0, nameBgY + 72, { align: 'center' });
+    doc.fillColor('#64748B').font('Helvetica').fontSize(12)
+      .text("pour sa présence et sa participation active à l'événement :", 0, nameBgY + nameBoxH + 18, { align: 'center' });
 
-    doc.fillColor('#0E2450').font('Helvetica-Bold').fontSize(18)
-      .text(data.eventTitle.toUpperCase(), 0, nameBgY + 98, { align: 'center' });
+    doc.fillColor('#0E2450').font('Helvetica-Bold').fontSize(17)
+      .text(data.eventTitle.toUpperCase(), 0, nameBgY + nameBoxH + 38, { align: 'center', width: W - 100, lineGap: 2 });
 
-    // Date et numéro
+    // Date et numéro (légèrement plus bas)
+    const afterTitle = nameBgY + nameBoxH + 80;
     doc.fillColor('#64748B').font('Helvetica-Bold').fontSize(11)
-      .text(`Délivré le ${data.eventDate}`, 0, nameBgY + 132, { align: 'center' });
+      .text(`Délivré le ${data.eventDate}`, 0, afterTitle, { align: 'center' });
     doc.fillColor('#94A3B8').font('Helvetica').fontSize(8.5)
-      .text(`N° CERTIFICAT : ${data.certificateNumber}`, 0, nameBgY + 150, { align: 'center' });
+      .text(`N° CERTIFICAT : ${data.certificateNumber}`, 0, afterTitle + 18, { align: 'center' });
 
     // ── QR d'authentification ──
     if (data.qrCodeDataUrl) {
       try {
         const qrBase64 = data.qrCodeDataUrl.replace(/^data:image\/\w+;base64,/, '');
         const qrBuffer = Buffer.from(qrBase64, 'base64');
-        const qrSize = 60;
+        const qrSize = 58;
         const qrX = W / 2 - qrSize / 2;
-        const qrY = nameBgY + 168;
+        const qrY = afterTitle + 36;
         doc.roundedRect(qrX - 5, qrY - 5, qrSize + 10, qrSize + 10, 6).fill('#FFFFFF');
         doc.image(qrBuffer, qrX, qrY, { width: qrSize });
         doc.fillColor('#94A3B8').font('Helvetica').fontSize(7)
-          .text('Scannez pour authentifier', 0, qrY + qrSize + 8, { align: 'center' });
+          .text('Scannez pour authentifier', 0, qrY + qrSize + 6, { align: 'center' });
       } catch (_) {}
     }
 
-    // ── Signatures ──
-    const sigY = nameBgY + 316;
+    // ── Signatures (ancrées par rapport au bas de la page) ──
+    const sigY = H - 80;
     const leftX = W / 4;
     const rightX = (3 * W) / 4;
 

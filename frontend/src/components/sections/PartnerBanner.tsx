@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import Link from 'next/link';
 
@@ -74,6 +74,34 @@ export function PartnerBanner() {
     return () => clearInterval(id);
   }, [next, paused]);
 
+  // --- Drag / swipe entre slides (souris + tactile) ---
+  const dragRef = useRef<{ active: boolean; startX: number; pointerId: number | null }>({
+    active: false,
+    startX: 0,
+    pointerId: null,
+  });
+  const bannerRef = useRef<HTMLDivElement>(null);
+
+  const onPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    dragRef.current = { active: true, startX: e.clientX, pointerId: e.pointerId };
+    setPaused(true);
+    try {
+      bannerRef.current?.setPointerCapture(e.pointerId);
+    } catch {
+      /* ignore */
+    }
+  };
+  const onPointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!dragRef.current.active) return;
+    const delta = e.clientX - dragRef.current.startX;
+    dragRef.current = { active: false, startX: 0, pointerId: null };
+    setPaused(false);
+    if (Math.abs(delta) > 40) {
+      if (delta < 0) next();
+      else prev();
+    }
+  };
+
   return (
     <section
       className="bg-brand-navy"
@@ -82,7 +110,13 @@ export function PartnerBanner() {
     >
       <div className="container py-5">
         {/* Bannière */}
-        <div className="relative h-[200px] overflow-hidden rounded-xl">
+        <div
+          ref={bannerRef}
+          onPointerDown={onPointerDown}
+          onPointerUp={onPointerUp}
+          onPointerCancel={onPointerUp}
+          className="relative h-[200px] cursor-grab touch-pan-y overflow-hidden rounded-xl active:cursor-grabbing"
+        >
           {slides.map((slide, i) => {
             const isActive = i === current;
             return (

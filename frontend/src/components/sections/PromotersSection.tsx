@@ -1,15 +1,15 @@
 'use client';
 
 /**
- * Porteurs du projet — cartes (photo + nom + rôle) gérées depuis l'admin,
- * en défilement semi-automatique (auto toutes les 3,5 s, pause au survol, flèches).
+ * Porteurs du projet — cartes (photo + nom + rôle) gérées depuis l'admin.
+ * Défilement continu fluide (RAF) avec drag manuel souris / swipe tactile.
  *  - GET /api/content/promoters
  * Section masquée s'il n'y a aucun porteur enregistré.
  */
-import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import { apiFetch } from '@/lib/api';
+import { useInfiniteMarquee } from '@/hooks/useInfiniteMarquee';
 
 interface Promoter {
   name: string;
@@ -27,11 +27,34 @@ function initialsOf(name: string): string {
     .toUpperCase();
 }
 
+function PromoterCard({ p }: Readonly<{ p: Promoter }>) {
+  return (
+    <article className="pointer-events-none w-60 shrink-0 select-none overflow-hidden rounded-2xl border border-brand-navy/10 bg-white shadow-sm">
+      <div
+        className="flex aspect-square items-center justify-center bg-gradient-to-br from-brand-navy to-[#2152B6] bg-cover bg-center"
+        style={p.photoUrl ? { backgroundImage: `url(${p.photoUrl})` } : undefined}
+        role="img"
+        aria-label={p.name}
+      >
+        {!p.photoUrl && (
+          <span className="text-4xl font-extrabold text-white/90">{initialsOf(p.name)}</span>
+        )}
+      </div>
+      <div className="p-4">
+        <h3 className="font-semibold text-brand-navy">{p.name}</h3>
+        {p.role && <p className="text-sm text-brand-muted">{p.role}</p>}
+      </div>
+    </article>
+  );
+}
+
 export function PromotersSection() {
   const [promoters, setPromoters] = useState<Promoter[]>([]);
   const [loaded, setLoaded] = useState(false);
-  const trackRef = useRef<HTMLDivElement>(null);
-  const pausedRef = useRef(false);
+  const { containerRef, trackRef, dragProps } = useInfiniteMarquee({
+    speed: 40,
+    enabled: promoters.length > 0,
+  });
 
   useEffect(() => {
     apiFetch<{ data: Promoter[] }>('/content/promoters')
@@ -40,27 +63,9 @@ export function PromotersSection() {
       .finally(() => setLoaded(true));
   }, []);
 
-  const step = useCallback((dir: 1 | -1) => {
-    const track = trackRef.current;
-    if (!track) return;
-    const card = track.querySelector('article');
-    const delta = (card ? card.clientWidth : 260) + 24;
-    if (dir === 1 && track.scrollLeft + track.clientWidth >= track.scrollWidth - 8) {
-      track.scrollTo({ left: 0, behavior: 'smooth' });
-    } else {
-      track.scrollBy({ left: dir * delta, behavior: 'smooth' });
-    }
-  }, []);
-
-  useEffect(() => {
-    if (promoters.length === 0) return;
-    const id = setInterval(() => {
-      if (!pausedRef.current) step(1);
-    }, 3500);
-    return () => clearInterval(id);
-  }, [promoters.length, step]);
-
   if (loaded && promoters.length === 0) return null;
+
+  const loop = [...promoters, ...promoters];
 
   return (
     <section id="porteurs" className="py-16">
@@ -72,55 +77,15 @@ export function PromotersSection() {
           Celles &amp; ceux qui <span className="text-brand-gold">portent l&apos;initiative</span>
         </h2>
 
-        <div className="relative mt-10">
-          <div
-            ref={trackRef}
-            className="flex snap-x snap-mandatory gap-6 overflow-x-auto scroll-smooth pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-            onMouseEnter={() => (pausedRef.current = true)}
-            onMouseLeave={() => (pausedRef.current = false)}
-            onFocusCapture={() => (pausedRef.current = true)}
-            onBlurCapture={() => (pausedRef.current = false)}
-          >
-            {promoters.map((p, i) => (
-              <article
-                key={`${p.name}-${i}`}
-                className="w-60 shrink-0 snap-start overflow-hidden rounded-2xl border border-brand-navy/10 bg-white shadow-sm"
-              >
-                <div
-                  className="flex aspect-square items-center justify-center bg-gradient-to-br from-brand-navy to-[#2152B6] bg-cover bg-center"
-                  style={p.photoUrl ? { backgroundImage: `url(${p.photoUrl})` } : undefined}
-                  role="img"
-                  aria-label={p.name}
-                >
-                  {!p.photoUrl && (
-                    <span className="text-4xl font-extrabold text-white/90">{initialsOf(p.name)}</span>
-                  )}
-                </div>
-                <div className="p-4">
-                  <h3 className="font-semibold text-brand-navy">{p.name}</h3>
-                  {p.role && <p className="text-sm text-brand-muted">{p.role}</p>}
-                </div>
-              </article>
+        <div
+          ref={containerRef}
+          {...dragProps}
+          className="relative mt-10 cursor-grab overflow-hidden touch-pan-y active:cursor-grabbing"
+        >
+          <div ref={trackRef} className="flex w-max gap-6 will-change-transform">
+            {loop.map((p, i) => (
+              <PromoterCard key={`${p.name}-${i}`} p={p} />
             ))}
-          </div>
-
-          <div className="mt-6 flex justify-center gap-3">
-            <button
-              type="button"
-              onClick={() => step(-1)}
-              aria-label="Précédent"
-              className="grid size-10 place-items-center rounded-full border border-brand-navy/15 text-brand-navy/70 transition-colors hover:bg-brand-navy/5"
-            >
-              <ChevronLeft className="size-5" />
-            </button>
-            <button
-              type="button"
-              onClick={() => step(1)}
-              aria-label="Suivant"
-              className="grid size-10 place-items-center rounded-full border border-brand-navy/15 text-brand-navy/70 transition-colors hover:bg-brand-navy/5"
-            >
-              <ChevronRight className="size-5" />
-            </button>
           </div>
         </div>
       </div>

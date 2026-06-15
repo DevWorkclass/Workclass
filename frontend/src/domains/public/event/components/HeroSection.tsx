@@ -127,7 +127,7 @@ export function HeroSection({ event }: HeroSectionProps) {
           <h1 className="text-[1.6rem] font-extrabold leading-[1.12] sm:text-4xl lg:text-[2.75rem]">
             Les <span className="text-brand-gold">WorkClass</span> du Transport et de la Logistique
             <span className="mt-2 block text-lg font-bold text-white/80 sm:text-xl lg:text-2xl">
-              au service des opérateurs économiques gabonais
+              
             </span>
           </h1>
 

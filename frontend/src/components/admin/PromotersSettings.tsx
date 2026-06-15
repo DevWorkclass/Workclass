@@ -9,6 +9,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Plus, Trash2 } from 'lucide-react';
 
+import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 import { Button } from '@/components/ui/button';
 import { apiAuth, apiFetch, apiUpload, ApiError } from '@/lib/api';
 
@@ -95,6 +96,7 @@ export function PromotersSettings() {
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [confirmIndex, setConfirmIndex] = useState<number | null>(null);
 
   useEffect(() => {
     apiFetch<{ data: Promoter[] }>('/content/promoters')
@@ -106,12 +108,12 @@ export function PromotersSettings() {
   const patch = (i: number, p: Partial<Promoter>) =>
     setPromoters((l) => l.map((x, idx) => (idx === i ? { ...x, ...p } : x)));
 
-  const save = async () => {
+  const save = async (list: Promoter[]) => {
     try {
       setError(null);
       setMessage(null);
       setSaving(true);
-      await apiAuth('/admin/content/promoters', { method: 'POST', body: JSON.stringify({ promoters }) });
+      await apiAuth('/admin/content/promoters', { method: 'POST', body: JSON.stringify({ promoters: list }) });
       setMessage('Porteurs enregistrés.');
     } catch (err) {
       setError(
@@ -124,6 +126,16 @@ export function PromotersSettings() {
     }
   };
 
+  const confirmDelete = async () => {
+    if (confirmIndex === null) return;
+    const updated = promoters.filter((_, idx) => idx !== confirmIndex);
+    setConfirmIndex(null);
+    setPromoters(updated);
+    await save(updated);
+  };
+
+  const pendingPromoter = confirmIndex !== null ? promoters[confirmIndex] : null;
+
   return (
     <section className="rounded-2xl border border-black/5 bg-white p-6 shadow-sm">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -135,7 +147,7 @@ export function PromotersSettings() {
           <Button variant="outline" size="sm" onClick={() => setPromoters((l) => [...l, { name: '' }])}>
             <Plus className="mr-1 size-4" /> Ajouter
           </Button>
-          <Button variant="gold" size="sm" disabled={saving || loading} onClick={save}>
+          <Button variant="gold" size="sm" disabled={saving || loading} onClick={() => save(promoters)}>
             {saving ? 'Enregistrement…' : 'Enregistrer'}
           </Button>
         </div>
@@ -159,11 +171,20 @@ export function PromotersSettings() {
               key={i}
               promoter={p}
               onChange={(patchP) => patch(i, patchP)}
-              onRemove={() => setPromoters((l) => l.filter((_, idx) => idx !== i))}
+              onRemove={() => setConfirmIndex(i)}
             />
           ))}
         </div>
       )}
+
+      <ConfirmDialog
+        open={confirmIndex !== null}
+        title="Supprimer ce porteur ?"
+        description={pendingPromoter?.name ? `« ${pendingPromoter.name} » sera supprimé définitivement.` : 'Ce porteur sera supprimé définitivement.'}
+        confirmLabel="Supprimer"
+        onCancel={() => setConfirmIndex(null)}
+        onConfirm={() => { void confirmDelete(); }}
+      />
     </section>
   );
 }

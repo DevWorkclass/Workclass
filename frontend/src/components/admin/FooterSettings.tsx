@@ -9,6 +9,7 @@
 import { useEffect, useState } from 'react';
 import { Plus, Trash2 } from 'lucide-react';
 
+import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 import { Button } from '@/components/ui/button';
 import { apiAuth, apiFetch, ApiError } from '@/lib/api';
 
@@ -36,6 +37,7 @@ export function FooterSettings() {
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [confirmLink, setConfirmLink] = useState<{ ci: number; li: number } | null>(null);
 
   useEffect(() => {
     apiFetch<{ data: FooterContent }>('/content/footer')
@@ -66,13 +68,12 @@ export function FooterSettings() {
         : f,
     );
 
-  const save = async () => {
-    if (!footer) return;
+  const saveData = async (data: FooterContent) => {
     try {
       setError(null);
       setMessage(null);
       setSaving(true);
-      await apiAuth('/admin/content/footer', { method: 'POST', body: JSON.stringify(footer) });
+      await apiAuth('/admin/content/footer', { method: 'POST', body: JSON.stringify(data) });
       setMessage('Footer enregistré.');
     } catch (err) {
       if (err instanceof ApiError && err.status === 422) {
@@ -87,6 +88,8 @@ export function FooterSettings() {
     }
   };
 
+  const save = () => { if (footer) void saveData(footer); };
+
   return (
     <section className="rounded-2xl border border-black/5 bg-white p-6 shadow-sm">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -94,7 +97,7 @@ export function FooterSettings() {
           <h2 className="font-bold text-brand-navy">Contenu du footer</h2>
           <p className="text-sm text-brand-muted">Description, contact et colonnes de liens.</p>
         </div>
-        <Button variant="gold" size="sm" disabled={saving || loading || !footer} onClick={save}>
+        <Button variant="gold" size="sm" disabled={saving || loading || !footer} onClick={() => save()}>
           {saving ? 'Enregistrement…' : 'Enregistrer'}
         </Button>
       </div>
@@ -173,9 +176,7 @@ export function FooterSettings() {
                       variant="ghost"
                       size="sm"
                       className="shrink-0 text-semantic-error"
-                      onClick={() =>
-                        patchColumn(ci, { links: col.links.filter((_, j) => j !== li) })
-                      }
+                      onClick={() => setConfirmLink({ ci, li })}
                     >
                       <Trash2 className="size-4" />
                     </Button>
@@ -194,6 +195,27 @@ export function FooterSettings() {
           ))}
         </div>
       )}
+
+      <ConfirmDialog
+        open={confirmLink !== null}
+        title="Supprimer ce lien ?"
+        description="Ce lien sera retiré définitivement de la colonne du footer."
+        confirmLabel="Supprimer"
+        onCancel={() => setConfirmLink(null)}
+        onConfirm={() => {
+          if (!confirmLink || !footer) { setConfirmLink(null); return; }
+          const { ci, li } = confirmLink;
+          const updated: FooterContent = {
+            ...footer,
+            columns: footer.columns.map((c, i) =>
+              i === ci ? { ...c, links: c.links.filter((_, j) => j !== li) } : c,
+            ),
+          };
+          setConfirmLink(null);
+          setFooter(updated);
+          void saveData(updated);
+        }}
+      />
     </section>
   );
 }

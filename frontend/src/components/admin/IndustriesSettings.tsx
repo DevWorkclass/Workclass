@@ -9,6 +9,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Plus, Trash2 } from 'lucide-react';
 
+import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 import { Button } from '@/components/ui/button';
 import { apiAuth, apiFetch, apiUpload, ApiError } from '@/lib/api';
 
@@ -86,6 +87,7 @@ export function IndustriesSettings() {
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [confirmIndex, setConfirmIndex] = useState<number | null>(null);
 
   useEffect(() => {
     apiFetch<{ data: Industry[] }>('/content/industries')
@@ -97,14 +99,14 @@ export function IndustriesSettings() {
   const patch = (i: number, p: Partial<Industry>) =>
     setItems((list) => list.map((x, idx) => (idx === i ? { ...x, ...p } : x)));
 
-  const save = async () => {
+  const save = async (list: Industry[]) => {
     try {
       setError(null);
       setMessage(null);
       setSaving(true);
       await apiAuth('/admin/content/industries', {
         method: 'POST',
-        body: JSON.stringify({ industries: items }),
+        body: JSON.stringify({ industries: list }),
       });
       setMessage('Industries enregistrées.');
     } catch (err) {
@@ -117,6 +119,16 @@ export function IndustriesSettings() {
       setSaving(false);
     }
   };
+
+  const confirmDelete = async () => {
+    if (confirmIndex === null) return;
+    const updated = items.filter((_, idx) => idx !== confirmIndex);
+    setConfirmIndex(null);
+    setItems(updated);
+    await save(updated);
+  };
+
+  const pendingItem = confirmIndex !== null ? items[confirmIndex] : null;
 
   return (
     <section className="rounded-2xl border border-black/5 bg-white p-6 shadow-sm">
@@ -131,7 +143,7 @@ export function IndustriesSettings() {
           <Button variant="outline" size="sm" onClick={() => setItems((l) => [...l, { name: '' }])}>
             <Plus className="mr-1 size-4" /> Ajouter
           </Button>
-          <Button variant="gold" size="sm" disabled={saving || loading} onClick={save}>
+          <Button variant="gold" size="sm" disabled={saving || loading} onClick={() => save(items)}>
             {saving ? 'Enregistrement…' : 'Enregistrer'}
           </Button>
         </div>
@@ -153,11 +165,20 @@ export function IndustriesSettings() {
               key={i}
               item={it}
               onChange={(p) => patch(i, p)}
-              onRemove={() => setItems((l) => l.filter((_, idx) => idx !== i))}
+              onRemove={() => setConfirmIndex(i)}
             />
           ))}
         </div>
       )}
+
+      <ConfirmDialog
+        open={confirmIndex !== null}
+        title="Supprimer cette industrie ?"
+        description={pendingItem?.name ? `« ${pendingItem.name} » sera supprimée définitivement.` : 'Cette industrie sera supprimée définitivement.'}
+        confirmLabel="Supprimer"
+        onCancel={() => setConfirmIndex(null)}
+        onConfirm={() => { void confirmDelete(); }}
+      />
     </section>
   );
 }

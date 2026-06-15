@@ -13,6 +13,7 @@ import { Award, Search, X } from 'lucide-react';
 
 import { Badge, type BadgeTone } from '@/components/admin/Badge';
 import { PageHeader } from '@/components/admin/PageHeader';
+import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/shared/EmptyState';
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner';
@@ -313,6 +314,7 @@ export default function AdminEventsPage() {
   const [error, setError] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [certEvent, setCertEvent] = useState<AdminEvent | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState<AdminEvent | null>(null);
 
   const handleAuthError = useCallback(
     (err: unknown): boolean => {
@@ -365,7 +367,6 @@ export default function AdminEventsPage() {
   };
 
   const remove = async (ev: AdminEvent) => {
-    if (!window.confirm(`Supprimer définitivement « ${ev.title} » ?`)) return;
     try {
       setBusyId(ev.id);
       await apiAuth('/admin/events/delete', {
@@ -489,7 +490,7 @@ export default function AdminEventsPage() {
                     size="sm"
                     className="text-semantic-error"
                     disabled={busyId === ev.id}
-                    onClick={() => remove(ev)}
+                    onClick={() => setConfirmDelete(ev)}
                   >
                     Supprimer
                   </Button>
@@ -522,6 +523,18 @@ export default function AdminEventsPage() {
       {certEvent && (
         <CertificatesModal event={certEvent} onClose={() => setCertEvent(null)} />
       )}
+
+      <ConfirmDialog
+        open={confirmDelete !== null}
+        title="Supprimer cet événement ?"
+        description={confirmDelete ? `« ${confirmDelete.title} » sera définitivement supprimé. Cette action est irréversible.` : undefined}
+        confirmLabel="Supprimer"
+        onCancel={() => setConfirmDelete(null)}
+        onConfirm={() => {
+          if (confirmDelete) void remove(confirmDelete);
+          setConfirmDelete(null);
+        }}
+      />
     </>
   );
 }

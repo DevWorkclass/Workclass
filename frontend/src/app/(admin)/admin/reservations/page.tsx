@@ -20,6 +20,8 @@ import { PermissionGuard } from '@/components/admin/PermissionGuard';
 import { ExportButtons } from '@/components/admin/ExportButtons';
 import { EmptyState } from '@/components/shared/EmptyState';
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner';
+import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
+import { Pagination, paginate } from '@/components/admin/Pagination';
 import { ROUTES } from '@/constants/routes';
 import { ApiError, apiAuth, apiFetch } from '@/lib/api';
 import { hasPermission } from '@/lib/auth';
@@ -105,6 +107,7 @@ function BookingsContent() {
   const [status, setStatus] = useState<StatusFilter>('all');
   const [eventId, setEventId] = useState<string>('all');
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [confirmCancel, setConfirmCancel] = useState<string | null>(null);
 
   // ── Création réservation ──
   const [showCreate, setShowCreate] = useState(false);
@@ -255,16 +258,22 @@ function BookingsContent() {
     });
   }, [bookings, query, status]);
 
+  const PAGE_SIZE = 15;
+  const [page, setPage] = useState(1);
+  useEffect(() => setPage(1), [query, status]);
+  const pageCount = Math.ceil(rows.length / PAGE_SIZE);
+  const pagedRows = paginate(rows, page, PAGE_SIZE);
+
   const groups = useMemo(() => {
     const map = new Map<string, AdminBooking[]>();
-    for (const b of rows) {
+    for (const b of pagedRows) {
       const key = b.event?.title ?? 'Sans événement';
       const list = map.get(key) ?? [];
       list.push(b);
       map.set(key, list);
     }
     return [...map.entries()].sort((a, b) => a[0].localeCompare(b[0]));
-  }, [rows]);
+  }, [pagedRows]);
 
   const counts = useMemo(
     () => ({
@@ -333,7 +342,7 @@ function BookingsContent() {
         }
       />
 
-      <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <section className="grid grid-cols-2 gap-3 xl:grid-cols-4">
         <StatCard label="Confirmées" value={counts.confirmed} accent="green" />
         <StatCard label="En attente" value={counts.pending} accent="gold" />
         <StatCard label="Annulées" value={counts.cancelled} accent="red" />
@@ -476,7 +485,7 @@ function BookingsContent() {
                                   size="sm"
                                   className="text-semantic-error"
                                   disabled={busyId === b.id}
-                                  onClick={() => act(b.id, 'cancel')}
+                                  onClick={() => setConfirmCancel(b.id)}
                                 >
                                   Annuler
                                 </Button>
@@ -487,7 +496,7 @@ function BookingsContent() {
                                 size="sm"
                                 className="text-semantic-error"
                                 disabled={busyId === b.id}
-                                onClick={() => act(b.id, 'cancel')}
+                                onClick={() => setConfirmCancel(b.id)}
                               >
                                 Annuler
                               </Button>
@@ -503,6 +512,22 @@ function BookingsContent() {
           ))}
         </div>
       )}
+
+      {rows.length > PAGE_SIZE && (
+        <Pagination page={page} pageCount={pageCount} onChange={setPage} />
+      )}
+
+      <ConfirmDialog
+        open={confirmCancel !== null}
+        title="Annuler la réservation ?"
+        description="Cette action est irréversible. La réservation sera marquée comme annulée."
+        confirmLabel="Annuler la réservation"
+        onCancel={() => setConfirmCancel(null)}
+        onConfirm={() => {
+          if (confirmCancel) void act(confirmCancel, 'cancel');
+          setConfirmCancel(null);
+        }}
+      />
 
       {/* ── Modal : Nouvelle réservation ── */}
       {showCreate && (

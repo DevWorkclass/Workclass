@@ -8,7 +8,9 @@
  */
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Plus, Trash2 } from 'lucide-react';
+import { Plus, Trash2, Upload } from 'lucide-react';
+
+import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 
 import { Badge } from '@/components/admin/Badge';
 import { PageHeader } from '@/components/admin/PageHeader';
@@ -41,6 +43,7 @@ function AdCard({
 }>) {
   const fileRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
+  const [confirmRemove, setConfirmRemove] = useState(false);
 
   const upload = async (file: File) => {
     try {
@@ -58,20 +61,25 @@ function AdCard({
 
   return (
     <li className="rounded-2xl border border-black/5 bg-white p-5 shadow-sm">
-      <div
-        className="aspect-[16/9] rounded-xl bg-brand-navy-deep/90 bg-cover bg-center"
-        style={ad.imageUrl ? { backgroundImage: `url(${ad.imageUrl})` } : undefined}
-        aria-hidden
-      />
-      <div className="mt-4 space-y-2">
-        <input value={ad.title} onChange={(e) => onChange({ title: e.target.value })} placeholder="Titre *" className={`${inputClass} font-semibold`} />
-        <input value={ad.tag ?? ''} onChange={(e) => onChange({ tag: e.target.value })} placeholder="Étiquette (ex: Partenaire officiel)" className={inputClass} />
-        <textarea value={ad.body ?? ''} onChange={(e) => onChange({ body: e.target.value })} rows={2} placeholder="Texte" className={inputClass} />
-        <div className="grid grid-cols-2 gap-2">
-          <input value={ad.cta ?? ''} onChange={(e) => onChange({ cta: e.target.value })} placeholder="Bouton (CTA)" className={inputClass} />
-          <input value={ad.href ?? ''} onChange={(e) => onChange({ href: e.target.value })} placeholder="/page, # ou https://…" className={inputClass} />
+      {/* Zone image cliquable pour upload */}
+      <button
+        type="button"
+        disabled={uploading}
+        onClick={() => fileRef.current?.click()}
+        className="group relative block w-full cursor-pointer overflow-hidden rounded-xl"
+        aria-label="Cliquer pour changer l'image"
+      >
+        <div
+          className="aspect-[16/9] bg-brand-navy-deep/90 bg-cover bg-center"
+          style={ad.imageUrl ? { backgroundImage: `url(${ad.imageUrl})` } : undefined}
+        />
+        <div className="absolute inset-0 flex flex-col items-center justify-center gap-1.5 bg-black/0 transition-colors group-hover:bg-black/30">
+          <Upload className="size-6 text-white opacity-0 transition-opacity group-hover:opacity-100" />
+          <span className="text-xs font-semibold text-white opacity-0 transition-opacity group-hover:opacity-100">
+            {uploading ? 'Upload…' : 'Changer l\'image'}
+          </span>
         </div>
-      </div>
+      </button>
 
       <input
         ref={fileRef}
@@ -85,20 +93,34 @@ function AdCard({
         }}
       />
 
+      <div className="mt-4 space-y-2">
+        <input value={ad.title} onChange={(e) => onChange({ title: e.target.value })} placeholder="Titre *" className={`${inputClass} font-semibold`} />
+        <input value={ad.tag ?? ''} onChange={(e) => onChange({ tag: e.target.value })} placeholder="Étiquette (ex: Partenaire officiel)" className={inputClass} />
+        <textarea value={ad.body ?? ''} onChange={(e) => onChange({ body: e.target.value })} rows={2} placeholder="Texte" className={inputClass} />
+        <div className="grid grid-cols-2 gap-2">
+          <input value={ad.cta ?? ''} onChange={(e) => onChange({ cta: e.target.value })} placeholder="Bouton (CTA)" className={inputClass} />
+          <input value={ad.href ?? ''} onChange={(e) => onChange({ href: e.target.value })} placeholder="/page, # ou https://…" className={inputClass} />
+        </div>
+      </div>
+
       <div className="mt-4 flex flex-wrap items-center justify-between gap-2">
         <label className="flex cursor-pointer items-center gap-2 text-sm text-brand-navy">
           <input type="checkbox" checked={ad.active} onChange={(e) => onChange({ active: e.target.checked })} className="size-4 accent-brand-gold" />
           {ad.active ? <Badge tone="success" dot>Active</Badge> : <Badge tone="neutral">Inactive</Badge>}
         </label>
-        <div className="flex gap-2">
-          <Button type="button" variant="outline" size="sm" disabled={uploading} onClick={() => fileRef.current?.click()}>
-            {uploading ? '…' : 'Image'}
-          </Button>
-          <Button type="button" variant="ghost" size="sm" className="text-semantic-error" onClick={onRemove}>
-            <Trash2 className="size-4" />
-          </Button>
-        </div>
+        <Button type="button" variant="ghost" size="sm" className="text-semantic-error" onClick={() => setConfirmRemove(true)}>
+          <Trash2 className="size-4" />
+        </Button>
       </div>
+
+      <ConfirmDialog
+        open={confirmRemove}
+        title="Supprimer cette annonce ?"
+        description={ad.title ? `« ${ad.title} » sera définitivement supprimée.` : 'Cette annonce sera définitivement supprimée.'}
+        confirmLabel="Supprimer"
+        onCancel={() => setConfirmRemove(false)}
+        onConfirm={() => { setConfirmRemove(false); onRemove(); }}
+      />
     </li>
   );
 }

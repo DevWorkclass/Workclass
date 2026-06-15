@@ -146,20 +146,28 @@ export default function ReservationEtape3Page() {
 
         {/* Stepper */}
         <ol className="mb-8 grid grid-cols-3 gap-2 rounded-full bg-white p-2 shadow-sm">
-          {STEPS.map((label, index) => (
-            <li
-              key={label}
-              aria-current={index === 2 ? 'step' : undefined}
-              className={`flex items-center justify-center rounded-full px-4 py-3 text-sm font-semibold transition-colors ${
-                index === 2
-                  ? 'bg-brand-navy text-white'
-                  : 'text-brand-gold'
-              }`}
-            >
-              {index < 2 && <CheckCircle2 className="mr-1.5 size-3.5" />}
-              {index + 1} · {label}
-            </li>
-          ))}
+          {STEPS.map((label, index) => {
+            const isPast = index < 2;
+            const isActive = index === 2;
+            return (
+              <li key={label} aria-current={isActive ? 'step' : undefined}>
+                {isPast ? (
+                  <button
+                    type="button"
+                    onClick={() => router.push(`/${locale}/reservation/etape-${index + 1}`)}
+                    className="flex w-full items-center justify-center rounded-full px-4 py-3 text-sm font-semibold text-brand-gold transition-colors hover:bg-brand-gold/10"
+                  >
+                    <CheckCircle2 className="mr-1.5 size-3.5" />
+                    {index + 1} · {label}
+                  </button>
+                ) : (
+                  <span className="flex items-center justify-center rounded-full bg-brand-navy px-4 py-3 text-sm font-semibold text-white">
+                    {index + 1} · {label}
+                  </span>
+                )}
+              </li>
+            );
+          })}
         </ol>
 
         <div className="grid gap-6 lg:grid-cols-[1fr_360px]">

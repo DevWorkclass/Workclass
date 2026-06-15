@@ -7,6 +7,7 @@
  */
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { X } from 'lucide-react';
 
 import { Badge, type BadgeTone } from '@/components/admin/Badge';
 import { PageHeader } from '@/components/admin/PageHeader';
@@ -75,6 +76,7 @@ function FeedbackContent() {
   const [query, setQuery] = useState('');
   const [status, setStatus] = useState<'all' | Moderation>('all');
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [selected, setSelected] = useState<FeedbackResponse | null>(null);
 
   const handleAuthError = useCallback(
     (err: unknown): boolean => {
@@ -176,7 +178,7 @@ function FeedbackContent() {
         }
       />
 
-      <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <section className="grid grid-cols-2 gap-3 xl:grid-cols-4">
         <StatCard label="Note globale" value={stats.global || '—'} hint="avis approuvés" accent="gold" />
         <StatCard label="Avis reçus" value={stats.total} accent="green" />
         <StatCard label="En attente" value={stats.pending} accent="red" />
@@ -224,7 +226,11 @@ function FeedbackContent() {
                     ? `${r.feedbackLink.booking.participant.firstName} ${r.feedbackLink.booking.participant.lastName}`
                     : 'Anonyme';
                   return (
-                    <tr key={r.id} className="border-t border-black/5 align-top">
+                    <tr
+                      key={r.id}
+                      className="cursor-pointer border-t border-black/5 align-top hover:bg-brand-cream/50"
+                      onClick={() => setSelected(r)}
+                    >
                       <td className="max-w-[140px] py-3 pr-2">
                         <span className="block truncate font-semibold text-brand-navy">{name}</span>
                       </td>
@@ -240,7 +246,7 @@ function FeedbackContent() {
                         </Badge>
                       </td>
                       {canModerate && (
-                        <td className="py-3 text-right">
+                        <td className="py-3 text-right" onClick={(e) => e.stopPropagation()}>
                           {r.moderationStatus === 'pending' ? (
                             <div className="flex justify-end gap-1.5">
                               <Button
@@ -275,6 +281,87 @@ function FeedbackContent() {
           </div>
         )}
       </section>
+
+      {/* ── Modal détail avis ── */}
+      {selected && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+          onClick={(e) => { if (e.target === e.currentTarget) setSelected(null); }}
+        >
+          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl">
+            <div className="mb-4 flex items-start justify-between gap-3">
+              <div>
+                <p className="font-bold text-brand-navy">
+                  {selected.feedbackLink?.booking?.participant
+                    ? `${selected.feedbackLink.booking.participant.firstName} ${selected.feedbackLink.booking.participant.lastName}`
+                    : 'Anonyme'}
+                </p>
+                <p className="text-xs text-brand-muted">
+                  {new Date(selected.createdAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}
+                </p>
+              </div>
+              <button
+                type="button"
+                aria-label="Fermer"
+                onClick={() => setSelected(null)}
+                className="grid size-7 shrink-0 place-items-center rounded-lg text-brand-muted hover:bg-brand-navy/5"
+              >
+                <X className="size-4" />
+              </button>
+            </div>
+
+            <div className="mb-4 flex items-center gap-3">
+              <Stars rating={avgRating(selected.ratings)} />
+              <span className="text-sm font-semibold text-brand-navy">{avgRating(selected.ratings)} / 5</span>
+              <Badge tone={STATUS_BADGE[selected.moderationStatus].tone} dot>
+                {STATUS_BADGE[selected.moderationStatus].label}
+              </Badge>
+            </div>
+
+            {Object.keys(selected.ratings).length > 0 && (
+              <ul className="mb-4 space-y-1.5 rounded-xl bg-brand-cream p-3 text-sm">
+                {Object.entries(selected.ratings).map(([key, val]) => (
+                  <li key={key} className="flex items-center justify-between">
+                    <span className="capitalize text-brand-navy">{key}</span>
+                    <span className="text-brand-gold">
+                      {'★'.repeat(Math.round(val))}
+                      <span className="text-brand-muted/40">{'★'.repeat(Math.max(0, 5 - Math.round(val)))}</span>
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            )}
+
+            {selected.comment ? (
+              <p className="text-sm italic text-brand-muted">« {selected.comment} »</p>
+            ) : (
+              <p className="text-sm text-brand-muted/50">Aucun commentaire.</p>
+            )}
+
+            {canModerate && selected.moderationStatus === 'pending' && (
+              <div className="mt-5 flex justify-end gap-2">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-semantic-error"
+                  disabled={busyId === selected.id}
+                  onClick={() => { void moderate(selected.id, 'rejected'); setSelected(null); }}
+                >
+                  Rejeter
+                </Button>
+                <Button
+                  variant="gold"
+                  size="sm"
+                  disabled={busyId === selected.id}
+                  onClick={() => { void moderate(selected.id, 'approved'); setSelected(null); }}
+                >
+                  Approuver
+                </Button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </>
   );
 }

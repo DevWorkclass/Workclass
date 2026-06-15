@@ -9,6 +9,7 @@ import { Trash2 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 
 import { Button } from '@/components/ui/button';
+import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 import { apiAuth, apiFetch, apiUpload, ApiError } from '@/lib/api';
 
 type ThemeIcon = 'briefcase' | 'trending-up' | 'lightbulb' | 'rocket' | 'globe';
@@ -36,11 +37,10 @@ const EMPTY_THEME: HomeTheme = {
 interface ThemeRowProps {
   readonly theme: HomeTheme;
   readonly onChange: (patch: Partial<HomeTheme>) => void;
-  readonly onRemove: () => void;
-  readonly index: number;
+  readonly onRemoveRequest: () => void;
 }
 
-function ThemeRow({ theme, onChange, onRemove, index }: ThemeRowProps) {
+function ThemeRow({ theme, onChange, onRemoveRequest }: ThemeRowProps) {
   const fileRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
@@ -63,18 +63,11 @@ function ThemeRow({ theme, onChange, onRemove, index }: ThemeRowProps) {
     }
   };
 
-  const confirmRemove = () => {
-    const label = theme.title || `n°${index + 1}`;
-    if (globalThis.confirm(`Supprimer le module « ${label} » ?`)) {
-      onRemove();
-    }
-  };
-
   return (
     <div className="relative grid gap-4 rounded-xl border border-black/5 bg-brand-cream p-4 sm:grid-cols-[120px_1fr]">
       <button
         type="button"
-        onClick={confirmRemove}
+        onClick={onRemoveRequest}
         aria-label={`Supprimer le module ${theme.title}`}
         className="absolute right-3 top-3 grid size-8 place-items-center rounded-full border border-semantic-error/30 bg-white text-semantic-error transition-colors hover:bg-semantic-error hover:text-white"
       >
@@ -178,6 +171,8 @@ export function DomainesSettings() {
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [confirmIndex, setConfirmIndex] = useState<number | null>(null);
+  const pendingTheme = confirmIndex !== null ? themes[confirmIndex] : null;
 
   useEffect(() => {
     apiFetch<{ data: HomeTheme[] }>('/content/home-themes')
@@ -265,13 +260,28 @@ export function DomainesSettings() {
             <ThemeRow
               key={rowIds[i] ?? `row-${i}`}
               theme={t}
-              index={i}
               onChange={(p) => patch(i, p)}
-              onRemove={() => removeTheme(i)}
+              onRemoveRequest={() => setConfirmIndex(i)}
             />
           ))}
         </div>
       )}
+
+      <ConfirmDialog
+        open={confirmIndex !== null}
+        title="Supprimer ce module ?"
+        description={
+          pendingTheme?.title
+            ? `« ${pendingTheme.title} » sera supprimé du programme.`
+            : 'Ce module sera supprimé du programme.'
+        }
+        confirmLabel="Supprimer"
+        onCancel={() => setConfirmIndex(null)}
+        onConfirm={() => {
+          if (confirmIndex !== null) removeTheme(confirmIndex);
+          setConfirmIndex(null);
+        }}
+      />
     </section>
   );
 }

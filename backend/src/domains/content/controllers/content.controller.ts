@@ -7,6 +7,7 @@
 
 import type { Request, Response, NextFunction } from 'express';
 import { ContentService } from '../services/content.service';
+import { generatePlainQRCode } from '../../../utils/qr-generator';
 import {
   setHomeThemesSchema,
   setPartnersSchema,
@@ -39,6 +40,20 @@ export class ContentController {
       const parsed = setHomeThemesSchema.parse(req.body);
       const themes = await this.service.setHomeThemes(parsed, req.user?.userId);
       res.json({ success: true, data: themes });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
+   * GET /content/install-qr — renvoie un QR code (data URL PNG) encodant l'URL
+   * publique de l'app pour faciliter l'installation PWA. Public (non sensible).
+   */
+  async getInstallQR(_req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const url = process.env.FRONTEND_URL ?? process.env.APP_URL ?? 'http://localhost:3000';
+      const dataUrl = await generatePlainQRCode(url);
+      res.json({ success: true, data: { url, qrCodeDataUrl: dataUrl } });
     } catch (error) {
       next(error);
     }

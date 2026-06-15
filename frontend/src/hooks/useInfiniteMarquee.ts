@@ -24,6 +24,12 @@ interface Options {
   speed?: number;
   /** Désactive le défilement auto (utile si une seule carte). */
   enabled?: boolean;
+  /**
+   * Mode de boucle :
+   *  - `loop` (défaut) : l'appelant duplique le contenu (× 2), boucle sans couture.
+   *  - `pingpong` : un seul passage des éléments, l'animation rebondit aux extrémités.
+   */
+  mode?: 'loop' | 'pingpong';
 }
 
 interface DragProps {
@@ -37,7 +43,11 @@ interface DragProps {
   onBlurCapture: () => void;
 }
 
-export function useInfiniteMarquee({ speed = 40, enabled = true }: Options = {}): {
+export function useInfiniteMarquee({
+  speed = 40,
+  enabled = true,
+  mode = 'loop',
+}: Options = {}): {
   containerRef: React.RefObject<HTMLDivElement | null>;
   trackRef: React.RefObject<HTMLDivElement | null>;
   dragProps: DragProps;
@@ -45,8 +55,10 @@ export function useInfiniteMarquee({ speed = 40, enabled = true }: Options = {})
   const containerRef = useRef<HTMLDivElement>(null);
   const trackRef = useRef<HTMLDivElement>(null);
 
-  // Offset courant (en pixels). Toujours positif, modulo la demi-largeur du track.
+  // Offset courant (en pixels).
   const offsetRef = useRef(0);
+  // Sens en mode pingpong (1 = vers la droite des éléments, -1 = retour).
+  const dirRef = useRef<1 | -1>(1);
   // Drapeau « pause » (hover, focus, drag en cours).
   const pausedRef = useRef(false);
   // État du drag.
@@ -60,15 +72,34 @@ export function useInfiniteMarquee({ speed = 40, enabled = true }: Options = {})
     }
   }, []);
 
-  /** Normalise l'offset dans [0, halfWidth) pour la boucle sans couture. */
+  /** Recale l'offset selon le mode (loop : modulo demi-largeur ; pingpong : rebond). */
   const normalize = useCallback(() => {
     const track = trackRef.current;
+    const container = containerRef.current;
     if (!track) return;
-    const half = track.scrollWidth / 2;
-    if (half <= 0) return;
-    if (offsetRef.current >= half) offsetRef.current -= half;
-    else if (offsetRef.current < 0) offsetRef.current += half;
-  }, []);
+
+    if (mode === 'loop') {
+      const half = track.scrollWidth / 2;
+      if (half <= 0) return;
+      if (offsetRef.current >= half) offsetRef.current -= half;
+      else if (offsetRef.current < 0) offsetRef.current += half;
+      return;
+    }
+
+    // pingpong : rebondit entre 0 et (scrollWidth - containerWidth).
+    const max = Math.max(0, track.scrollWidth - (container?.clientWidth ?? 0));
+    if (max <= 0) {
+      offsetRef.current = 0;
+      return;
+    }
+    if (offsetRef.current >= max) {
+      offsetRef.current = max;
+      dirRef.current = -1;
+    } else if (offsetRef.current <= 0) {
+      offsetRef.current = 0;
+      dirRef.current = 1;
+    }
+  }, [mode]);
 
   // Boucle d'animation.
   useEffect(() => {
@@ -80,7 +111,8 @@ export function useInfiniteMarquee({ speed = 40, enabled = true }: Options = {})
       const dt = (now - last) / 1000;
       last = now;
       if (!pausedRef.current && !dragRef.current.active) {
-        offsetRef.current += speed * dt;
+        const sign = mode === 'pingpong' ? dirRef.current : 1;
+        offsetRef.current += sign * speed * dt;
         normalize();
         apply();
       }
@@ -89,7 +121,7 @@ export function useInfiniteMarquee({ speed = 40, enabled = true }: Options = {})
 
     rafId = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(rafId);
-  }, [apply, enabled, normalize, speed]);
+  }, [apply, enabled, mode, normalize, speed]);
 
   // Repositionne après mount / changement du contenu.
   useEffect(() => {

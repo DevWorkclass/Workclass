@@ -1,16 +1,16 @@
 'use client';
 
 /**
- * Témoignages — avis approuvés récupérés du backend, affichés en carrousel
- * à défilement continu fluide (RAF) avec drag manuel souris / swipe tactile.
- *  - GET /api/content/testimonials  : avis approuvés (nom anonymisé, événement, note)
+ * Témoignages — UNIQUEMENT les avis approuvés en admin.
+ *  - GET /api/content/testimonials  : avis approuvés (nom, événement, note, commentaire)
  *  - GET /api/content/app-config    : activation du défilement auto
- * Repli sur les témoignages statiques si aucun avis publié.
+ * Section masquée s'il n'y a aucun avis publié (pas de fallback statique).
+ * Défilement ping-pong fluide (RAF), un seul passage des cartes (aucune duplication),
+ * drag manuel souris / swipe tactile.
  */
 import { Star } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
-import { TESTIMONIALS } from '@/data/homepageContent';
 import { apiFetch } from '@/lib/api';
 import { useInfiniteMarquee } from '@/hooks/useInfiniteMarquee';
 
@@ -20,13 +20,6 @@ interface Testimonial {
   content: string;
   rating: number;
 }
-
-const FALLBACK: Testimonial[] = TESTIMONIALS.map((t) => ({
-  name: t.name,
-  role: t.role,
-  content: t.content,
-  rating: t.rating,
-}));
 
 function TestimonialCard({ t }: Readonly<{ t: Testimonial }>) {
   return (
@@ -48,12 +41,14 @@ function TestimonialCard({ t }: Readonly<{ t: Testimonial }>) {
 }
 
 export function TestimonialsSection() {
-  const [items, setItems] = useState<Testimonial[]>(FALLBACK);
+  const [items, setItems] = useState<Testimonial[]>([]);
+  const [loaded, setLoaded] = useState(false);
   const [autoScroll, setAutoScroll] = useState(true);
 
   const { containerRef, trackRef, dragProps } = useInfiniteMarquee({
     speed: 35,
     enabled: autoScroll && items.length > 0,
+    mode: 'pingpong',
   });
 
   useEffect(() => {
@@ -61,7 +56,7 @@ export function TestimonialsSection() {
       '/content/testimonials',
     )
       .then((res) => {
-        if (Array.isArray(res.data) && res.data.length > 0) {
+        if (Array.isArray(res.data)) {
           setItems(
             res.data.map((t) => ({
               name: t.name,
@@ -72,14 +67,16 @@ export function TestimonialsSection() {
           );
         }
       })
-      .catch(() => {});
+      .catch(() => {})
+      .finally(() => setLoaded(true));
 
     apiFetch<{ data: { testimonialAutoScroll: boolean } }>('/content/app-config')
       .then((res) => setAutoScroll(res.data.testimonialAutoScroll))
       .catch(() => {});
   }, []);
 
-  const loop = [...items, ...items];
+  // Masque la section tant qu'aucun avis approuvé n'est disponible.
+  if (loaded && items.length === 0) return null;
 
   return (
     <section className="bg-brand-navy py-16 text-white">
@@ -97,7 +94,7 @@ export function TestimonialsSection() {
           className="relative mt-12 cursor-grab overflow-hidden touch-pan-y active:cursor-grabbing"
         >
           <div ref={trackRef} className="flex w-max gap-6 will-change-transform">
-            {loop.map((t, i) => (
+            {items.map((t, i) => (
               <TestimonialCard key={`${t.name}-${i}`} t={t} />
             ))}
           </div>

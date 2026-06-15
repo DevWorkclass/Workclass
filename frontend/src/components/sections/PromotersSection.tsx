@@ -54,6 +54,7 @@ export function PromotersSection() {
   const { containerRef, trackRef, dragProps } = useInfiniteMarquee({
     speed: 40,
     enabled: promoters.length > 0,
+    mode: 'pingpong',
   });
 
   useEffect(() => {
@@ -64,8 +65,6 @@ export function PromotersSection() {
   }, []);
 
   if (loaded && promoters.length === 0) return null;
-
-  const loop = [...promoters, ...promoters];
 
   return (
     <section id="porteurs" className="py-16">
@@ -83,7 +82,7 @@ export function PromotersSection() {
           className="relative mt-10 cursor-grab overflow-hidden touch-pan-y active:cursor-grabbing"
         >
           <div ref={trackRef} className="flex w-max gap-6 will-change-transform">
-            {loop.map((p, i) => (
+            {promoters.map((p, i) => (
               <PromoterCard key={`${p.name}-${i}`} p={p} />
             ))}
           </div>

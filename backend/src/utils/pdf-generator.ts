@@ -33,6 +33,11 @@ interface CertificatePDFData {
 }
 
 const getLogoPath = (): string | null => {
+  // Chemin bundlé avec le backend (toujours disponible en prod)
+  const bundled = path.join(__dirname, '../assets/logo.png');
+  if (fs.existsSync(bundled)) return bundled;
+
+  // Fallbacks dev (monorepo local)
   const bases = [
     path.join(__dirname, '../../../../frontend/public/assets/images/logo'),
     path.join(__dirname, '../../../frontend/public/assets/images/logo'),
@@ -194,7 +199,7 @@ export async function generateTicketPDF(data: TicketPDFData): Promise<Buffer> {
 
     // ── Footer hors carte ──
     doc.fillColor('rgba(255,255,255,0.35)').font('Helvetica').fontSize(8)
-      .text('WORK CLASS GABON — workclass-gabon.com', 0, cardY + cardH + 18, { align: 'center' });
+      .text('WORK CLASS GABON — workclass-tl.com', 0, cardY + cardH + 18, { align: 'center' });
 
     doc.end();
   });
@@ -241,36 +246,29 @@ export async function generateCertificatePDF(data: CertificatePDFData): Promise<
     doc.save(); doc.translate(W - 18, H - 18); doc.rotate(180); corner(0, 0, 40, 40); doc.restore();
     doc.save(); doc.translate(18, H - 18); doc.rotate(270); corner(0, 0, 40, 40); doc.restore();
 
-    // ── Logo ──
+    // ── Logo centré en haut ──
     const logoPath = getLogoPath();
+    const logoH = 64;
+    const logoY = 34;
     if (logoPath) {
-      try { doc.image(logoPath, W / 2 - 28, 42, { width: 56 }); } catch (_) {}
+      try { doc.image(logoPath, W / 2 - logoH / 2, logoY, { height: logoH }); } catch (_) {}
     }
 
     // ── Titre ──
-    const titleGrad = doc.linearGradient(W / 2 - 200, 0, W / 2 + 200, 0);
-    titleGrad.stop(0, '#B8861D');
-    titleGrad.stop(0.5, '#D4AF37');
-    titleGrad.stop(1, '#B8861D');
-    doc.font('Helvetica-Bold').fontSize(28).fillColor('#0E2450')
-      .text('CERTIFICAT DE PARTICIPATION', 0, 108, { align: 'center' });
+    doc.font('Helvetica-Bold').fontSize(26).fillColor('#0E2450')
+      .text('CERTIFICAT DE PARTICIPATION', 0, logoY + logoH + 10, { align: 'center' });
 
     // Ligne dorée sous le titre
-    const lineY = 148;
-    const lineGrad = doc.linearGradient(W / 2 - 160, lineY, W / 2 + 160, lineY);
-    lineGrad.stop(0, 'transparent');
-    lineGrad.stop(0.3, '#D4AF37');
-    lineGrad.stop(0.7, '#D4AF37');
-    lineGrad.stop(1, 'transparent');
+    const lineY = logoY + logoH + 46;
     doc.moveTo(W / 2 - 160, lineY).lineTo(W / 2 + 160, lineY)
       .lineWidth(1.5).strokeColor('#D4AF37').stroke();
 
     // ── Corps ──
     doc.fillColor('#475569').font('Helvetica-Oblique').fontSize(13)
-      .text('Ce certificat est officiellement décerné à', 0, 162, { align: 'center' });
+      .text('Ce certificat est officiellement décerné à', 0, lineY + 16, { align: 'center' });
 
     // Nom du participant sur fond doré léger
-    const nameBgY = 188;
+    const nameBgY = lineY + 40;
     doc.roundedRect(W / 2 - 220, nameBgY, 440, 52, 8).fill('#FEF3C7');
     doc.fillColor('#0E2450').font('Helvetica-Bold').fontSize(30)
       .text(data.participantName, 0, nameBgY + 10, { align: 'center' });
@@ -287,9 +285,9 @@ export async function generateCertificatePDF(data: CertificatePDFData): Promise<
 
     // Date et numéro
     doc.fillColor('#64748B').font('Helvetica-Bold').fontSize(11)
-      .text(`Délivré le ${data.eventDate}`, 0, nameBgY + 138, { align: 'center' });
+      .text(`Délivré le ${data.eventDate}`, 0, nameBgY + 132, { align: 'center' });
     doc.fillColor('#94A3B8').font('Helvetica').fontSize(8.5)
-      .text(`N° CERTIFICAT : ${data.certificateNumber}`, 0, nameBgY + 156, { align: 'center' });
+      .text(`N° CERTIFICAT : ${data.certificateNumber}`, 0, nameBgY + 150, { align: 'center' });
 
     // ── QR d'authentification ──
     if (data.qrCodeDataUrl) {
@@ -298,31 +296,13 @@ export async function generateCertificatePDF(data: CertificatePDFData): Promise<
         const qrBuffer = Buffer.from(qrBase64, 'base64');
         const qrSize = 60;
         const qrX = W / 2 - qrSize / 2;
-        const qrY = nameBgY + 172;
+        const qrY = nameBgY + 168;
         doc.roundedRect(qrX - 5, qrY - 5, qrSize + 10, qrSize + 10, 6).fill('#FFFFFF');
         doc.image(qrBuffer, qrX, qrY, { width: qrSize });
         doc.fillColor('#94A3B8').font('Helvetica').fontSize(7)
           .text('Scannez pour authentifier', 0, qrY + qrSize + 8, { align: 'center' });
       } catch (_) {}
     }
-
-    // ── Lignes de signature ──
-    const sigY = H - 100;
-    const sigW = 150;
-    const sigLeftX = 110;
-    const sigRightX = W - 110 - sigW;
-
-    doc.moveTo(sigLeftX, sigY).lineTo(sigLeftX + sigW, sigY).lineWidth(1).strokeColor('#CBD5E1').stroke();
-    doc.fillColor('#475569').font('Helvetica-Bold').fontSize(8.5)
-      .text("Le Comité d'Organisation", sigLeftX, sigY + 8, { width: sigW, align: 'center' });
-    doc.fillColor('#94A3B8').font('Helvetica').fontSize(8)
-      .text('Work Class Gabon', sigLeftX, sigY + 22, { width: sigW, align: 'center' });
-
-    doc.moveTo(sigRightX, sigY).lineTo(sigRightX + sigW, sigY).lineWidth(1).strokeColor('#CBD5E1').stroke();
-    doc.fillColor('#475569').font('Helvetica-Bold').fontSize(8.5)
-      .text('La Direction Générale', sigRightX, sigY + 8, { width: sigW, align: 'center' });
-    doc.fillColor('#94A3B8').font('Helvetica').fontSize(8)
-      .text('Work Class Gabon', sigRightX, sigY + 22, { width: sigW, align: 'center' });
 
     doc.end();
   });

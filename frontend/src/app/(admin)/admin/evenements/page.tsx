@@ -457,38 +457,41 @@ export default function AdminEventsPage() {
                   </div>
                 </div>
 
-                <div className="mt-auto flex flex-wrap gap-2 pt-4">
-                  <Button
-                    variant={featuredId === ev.id ? 'gold' : 'outline'}
-                    size="sm"
-                    disabled={busyId === ev.id}
-                    onClick={() => void setFeatured(ev)}
-                  >
-                    {featuredId === ev.id ? '★ À la une' : 'Mettre à la une'}
-                  </Button>
-                  <Link href={`${ROUTES.admin.events}/${ev.id}/modifier`}>
-                    <Button variant="outline" size="sm">
-                      Modifier
+                <div className="mt-auto pt-4">
+                  <div className="grid grid-cols-2 gap-2">
+                    <Button
+                      variant={featuredId === ev.id ? 'gold' : 'outline'}
+                      size="sm"
+                      disabled={busyId === ev.id}
+                      onClick={() => void setFeatured(ev)}
+                      className="w-full"
+                    >
+                      {featuredId === ev.id ? '★ À la une' : 'Mettre à la une'}
                     </Button>
-                  </Link>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="flex items-center gap-1.5"
-                    onClick={() => setCertEvent(ev)}
-                  >
-                    <Award className="size-3.5" />
-                    Certificats
-                  </Button>
-                  <Link href={ROUTES.public.eventDetail(ev.slug)} target="_blank">
-                    <Button variant="outline" size="sm">
-                      Voir la page
+                    <Link href={`${ROUTES.admin.events}/${ev.id}/modifier`} className="block">
+                      <Button variant="outline" size="sm" className="w-full">
+                        Modifier
+                      </Button>
+                    </Link>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="flex w-full items-center justify-center gap-1.5"
+                      onClick={() => setCertEvent(ev)}
+                    >
+                      <Award className="size-3.5" />
+                      Certificats
                     </Button>
-                  </Link>
+                    <Link href={ROUTES.public.eventDetail(ev.slug)} target="_blank" className="block">
+                      <Button variant="outline" size="sm" className="w-full">
+                        Voir la page
+                      </Button>
+                    </Link>
+                  </div>
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="text-semantic-error"
+                    className="mt-2 w-full text-semantic-error"
                     disabled={busyId === ev.id}
                     onClick={() => setConfirmDelete(ev)}
                   >

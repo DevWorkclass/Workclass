@@ -304,6 +304,29 @@ export async function generateCertificatePDF(data: CertificatePDFData): Promise<
       } catch (_) {}
     }
 
+    // ── Signatures ──
+    const sigY = nameBgY + 316;
+    const leftX = W / 4;
+    const rightX = (3 * W) / 4;
+
+    // Gauche — Madame Pauline White
+    doc.moveTo(leftX - 85, sigY).lineTo(leftX + 85, sigY)
+      .lineWidth(0.8).strokeColor('#D4AF37').stroke();
+    doc.fillColor('#0E2450').font('Helvetica-Bold').fontSize(10)
+      .text('Madame Pauline White', leftX - 100, sigY + 6, { width: 200, align: 'center' });
+
+    // Droite — Madame Valérie BENQUET + image signature
+    const sigImgPath = path.join(__dirname, '../assets/signature-valérie_-removebg-preview.png');
+    if (fs.existsSync(sigImgPath)) {
+      try {
+        doc.image(sigImgPath, rightX - 60, sigY - 52, { width: 120 });
+      } catch (_) {}
+    }
+    doc.moveTo(rightX - 85, sigY).lineTo(rightX + 85, sigY)
+      .lineWidth(0.8).strokeColor('#D4AF37').stroke();
+    doc.fillColor('#0E2450').font('Helvetica-Bold').fontSize(10)
+      .text('Madame Valérie BENQUET', rightX - 100, sigY + 6, { width: 200, align: 'center' });
+
     doc.end();
   });
 }

@@ -7,16 +7,15 @@
  */
 import { use, useEffect, useState } from 'react';
 import Link from 'next/link';
-import { CalendarDays, CheckCircle2, MapPin, Users } from 'lucide-react';
+import { ArrowLeft, CalendarDays, CheckCircle2, MapPin, Users } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
-import { ROUTES } from '@/constants/routes';
 import { apiFetch } from '@/lib/api';
 import { formatEventRange, type PublicEvent } from '@/lib/public-event';
 import { formatPrice } from '@/lib/formatters';
 
-export default function EventDetailPage({ params }: Readonly<{ params: Promise<{ slug: string }> }>) {
-  const { slug } = use(params);
+export default function EventDetailPage({ params }: Readonly<{ params: Promise<{ locale: string; slug: string }> }>) {
+  const { locale, slug } = use(params);
   const [event, setEvent] = useState<PublicEvent | null>(null);
   const [status, setStatus] = useState<'loading' | 'ready' | 'notfound'>('loading');
 
@@ -38,17 +37,19 @@ export default function EventDetailPage({ params }: Readonly<{ params: Promise<{
     return (
       <div className="container py-20 text-center">
         <h1 className="text-2xl font-bold text-brand-navy">Événement introuvable</h1>
-        <Link href={ROUTES.public.events} className="mt-4 inline-block text-brand-gold hover:underline">
+        <Link href={`/${locale}/evenements`} className="mt-4 inline-block text-brand-gold hover:underline">
           ← Voir tous les événements
         </Link>
       </div>
     );
   }
 
+  const reserveHref = `/${locale}/reservation?event=${event.slug}`;
+
   const reserveBtn =
     event.seatsAvailable > 0 ? (
       <Button asChild variant="gold" size="lg" className="w-full">
-        <Link href={`${ROUTES.public.reservation.base}?event=${event.slug}`}>Réserver ma place</Link>
+        <Link href={reserveHref}>Réserver ma place</Link>
       </Button>
     ) : (
       <Button variant="gold" size="lg" className="w-full" disabled>
@@ -58,6 +59,19 @@ export default function EventDetailPage({ params }: Readonly<{ params: Promise<{
 
   return (
     <>
+      {/* Barre de retour */}
+      <div className="border-b border-black/5 bg-white">
+        <div className="container py-3">
+          <Link
+            href={`/${locale}/evenements`}
+            className="inline-flex items-center gap-1.5 text-sm font-medium text-brand-navy/60 transition-colors hover:text-brand-navy"
+          >
+            <ArrowLeft className="size-4" />
+            Tous les événements
+          </Link>
+        </div>
+      </div>
+
       {/* Hero couverture */}
       <div
         className="relative flex min-h-[300px] items-end bg-brand-navy-deep bg-cover bg-center"
@@ -146,6 +160,11 @@ export default function EventDetailPage({ params }: Readonly<{ params: Promise<{
               </div>
             </section>
           )}
+
+          {/* Bouton réserver visible sur mobile (avant l'aside) */}
+          <div className="lg:hidden">
+            {reserveBtn}
+          </div>
         </div>
 
         {/* Encart billets + réservation (sticky desktop) */}
@@ -165,13 +184,6 @@ export default function EventDetailPage({ params }: Readonly<{ params: Promise<{
             </ul>
             <div className="mt-5">{reserveBtn}</div>
           </div>
-
-          <Link
-            href={ROUTES.public.events}
-            className="mt-4 block text-center text-sm font-semibold text-brand-navy/60 hover:text-brand-navy"
-          >
-            ← Tous les événements
-          </Link>
         </aside>
       </div>
     </>

@@ -9,7 +9,7 @@
  * caméra installée, l'opérateur colle le contenu du QR (JSON { ticketId, signature }).
  */
 import { Camera, CameraOff } from 'lucide-react';
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 
 import { Badge } from '@/components/admin/Badge';
@@ -50,6 +50,16 @@ interface ScanLog {
   time: string;
 }
 
+interface RecentTicket {
+  ticketNumber: string;
+  scannedAt: string;
+  booking: {
+    event: { title: string } | null;
+    ticketType: { name: string } | null;
+    participant: { firstName: string; lastName: string } | null;
+  } | null;
+}
+
 const ERROR_LABEL: Record<string, string> = {
   invalid: 'Signature invalide',
   not_found: 'Billet introuvable',
@@ -78,6 +88,25 @@ function ScanContent() {
   const [recent, setRecent] = useState<ScanLog[]>([]);
   const [validated, setValidated] = useState(0);
   const [refused, setRefused] = useState(0);
+  const [sessionCount, setSessionCount] = useState(0);
+
+  useEffect(() => {
+    apiAuth<{ data: { totalValidated: number; recentTickets: RecentTicket[] } }>('/admin/scan/stats')
+      .then((res) => {
+        setValidated(res.data.totalValidated);
+        const dbLogs: ScanLog[] = res.data.recentTickets.map((t) => {
+          const name = t.booking?.participant
+            ? `${t.booking.participant.firstName} ${t.booking.participant.lastName}`
+            : t.ticketNumber;
+          const timeStr = new Intl.DateTimeFormat('fr-FR', { hour: '2-digit', minute: '2-digit' }).format(
+            new Date(t.scannedAt),
+          );
+          return { label: name, detail: `${t.ticketNumber} · entrée validée`, ok: true, time: timeStr };
+        });
+        setRecent(dbLogs);
+      })
+      .catch(() => { /* silently ignore — counters stay at 0 */ });
+  }, []);
 
   const handleAuthError = useCallback(
     (err: unknown): boolean => {
@@ -121,6 +150,7 @@ function ScanContent() {
         } else {
           const reason = ERROR_LABEL[res.data.error ?? ''] ?? 'Billet refusé';
           setRefused((n) => n + 1);
+          setSessionCount((n) => n + 1);
           pushLog({ label: 'Refusé', detail: reason, ok: false });
           setMessage(reason);
         }
@@ -162,6 +192,7 @@ function ScanContent() {
         ? `${pending.booking.participant.firstName} ${pending.booking.participant.lastName}`
         : pending.ticketNumber;
       setValidated((n) => n + 1);
+      setSessionCount((n) => n + 1);
       pushLog({ label: name, detail: `${pending.ticketNumber} · entrée validée`, ok: true });
       setPending(null);
       setPayload('');
@@ -188,7 +219,7 @@ function ScanContent() {
       <section className="grid gap-4 sm:grid-cols-3">
         <StatCard label="Entrées validées" value={validated} accent="green" />
         <StatCard label="Accès refusés" value={refused} accent="red" />
-        <StatCard label="Cette session" value={validated + refused} accent="blue" />
+        <StatCard label="Cette session" value={sessionCount} accent="blue" />
       </section>
 
       <section className="mt-6 grid gap-6 lg:grid-cols-2">

@@ -1,8 +1,8 @@
 /**
- * Page d'accueil — Server Component async avec ISR (revalidate 120s).
+ * Page d'accueil — Server Component async avec ISR (revalidate 60s).
  * Les données sont fetchées côté serveur Next.js et passées en props aux
- * composants clients → zéro délai visible, même si Render est en cold start.
- * La revalidation en arrière-plan maintient aussi Render éveillé.
+ * composants clients. En cas de cold start backend (timeout 4s), les composants
+ * clients détectent les props vides et effectuent un fetch client-side autonome.
  */
 import { PromotersSection } from '@/components/sections/PromotersSection';
 import { EventsPreviewSection } from '@/components/sections/EventsPreviewSection';
@@ -18,14 +18,20 @@ import { HeroDynamic } from '@/components/sections/HeroDynamic';
 import { HomeSplash } from '@/components/sections/HomeSplash';
 import type { PublicEvent } from '@/lib/public-event';
 
-const REVALIDATE = 120; // secondes — re-fetch en arrière-plan toutes les 2 min
+const REVALIDATE = 60; // secondes — re-fetch en arrière-plan toutes les 60s
 
 async function fetchHomeData(): Promise<{ events: PublicEvent[]; featuredId: string | null }> {
   const apiUrl = (process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001/api').replace(/\/$/, '');
   try {
     const [eventsRes, featuredRes] = await Promise.all([
-      fetch(`${apiUrl}/public/events`, { next: { revalidate: REVALIDATE } }),
-      fetch(`${apiUrl}/content/featured`, { next: { revalidate: REVALIDATE } }),
+      fetch(`${apiUrl}/public/events`, {
+        next: { revalidate: REVALIDATE },
+        signal: AbortSignal.timeout(4000),
+      }),
+      fetch(`${apiUrl}/content/featured`, {
+        next: { revalidate: REVALIDATE },
+        signal: AbortSignal.timeout(4000),
+      }),
     ]);
     const events: PublicEvent[] = eventsRes.ok ? ((await eventsRes.json()).data ?? []) : [];
     const featuredId: string | null = featuredRes.ok

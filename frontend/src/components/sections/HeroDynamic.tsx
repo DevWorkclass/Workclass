@@ -36,8 +36,9 @@ export function HeroDynamic({ initialEvent }: Props) {
   const [event, setEvent] = useState<Event>(() => toEvent(initialEvent));
 
   useEffect(() => {
-    // Données serveur déjà présentes — pas besoin de re-fetcher
-    if (initialEvent !== undefined) return;
+    // Si le serveur a fourni un vrai événement, pas besoin de re-fetcher
+    if (initialEvent) return;
+    // Sinon (cold start backend ou prop absente), on tente côté client
     getFeaturedEvent()
       .then((featured) => { if (featured) setEvent(toEvent(featured)); })
       .catch(() => {});

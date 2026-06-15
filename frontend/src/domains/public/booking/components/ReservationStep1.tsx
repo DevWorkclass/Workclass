@@ -75,11 +75,11 @@ export function ReservationStep1({ event, ticketTypes, maxQuantity = 10 }: Reser
         {/* En-tête */}
         <header className="mb-8">
           <Link
-            href={`/${locale}`}
+            href={event.slug ? `/${locale}/evenements/${event.slug}` : `/${locale}/evenements`}
             className="mb-5 flex w-fit items-center gap-1.5 text-sm font-medium text-brand-navy/60 transition-colors hover:text-brand-navy"
           >
             <ArrowLeft className="size-4" />
-            Retour à l&apos;accueil
+            Retour à l&apos;événement
           </Link>
           <p className="flex items-center gap-2 text-sm font-semibold uppercase tracking-[0.2em] text-brand-gold">
             <span className="h-px w-6 bg-brand-gold" aria-hidden />

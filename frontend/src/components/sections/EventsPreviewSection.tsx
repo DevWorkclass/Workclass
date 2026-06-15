@@ -20,11 +20,12 @@ interface Props {
 
 export function EventsPreviewSection({ initialEvents }: Props) {
   const [events, setEvents] = useState<PublicEvent[]>(initialEvents ?? []);
-  const [loaded, setLoaded] = useState(initialEvents !== undefined);
+  const [loaded, setLoaded] = useState((initialEvents?.length ?? 0) > 0);
 
   useEffect(() => {
-    // Données serveur déjà présentes — pas besoin de re-fetcher
-    if (initialEvents !== undefined) return;
+    // Si le serveur a fourni des événements réels, pas besoin de re-fetcher
+    if (initialEvents && initialEvents.length > 0) return;
+    // Sinon (cold start backend ou prop absente), on tente côté client
     getPublicEvents()
       .then((data) => {
         const sorted = [...data].sort(
@@ -59,9 +60,20 @@ export function EventsPreviewSection({ initialEvents }: Props) {
         </div>
 
         <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {events.map((ev) => (
-            <PublicEventCard key={ev.id} event={ev} />
-          ))}
+          {!loaded && events.length === 0
+            ? Array.from({ length: 3 }).map((_, i) => (
+                <div key={i} className="animate-pulse rounded-2xl border border-black/5 bg-brand-cream">
+                  <div className="aspect-[16/9] rounded-t-2xl bg-brand-navy/10" />
+                  <div className="p-5 space-y-3">
+                    <div className="h-4 w-3/4 rounded bg-brand-navy/10" />
+                    <div className="h-3 w-1/2 rounded bg-brand-navy/10" />
+                    <div className="h-3 w-2/3 rounded bg-brand-navy/10" />
+                  </div>
+                </div>
+              ))
+            : events.map((ev) => (
+                <PublicEventCard key={ev.id} event={ev} />
+              ))}
         </div>
       </div>
     </section>

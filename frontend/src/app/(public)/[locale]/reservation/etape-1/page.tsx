@@ -14,6 +14,7 @@ import { LoadingSpinner } from '@/components/shared/LoadingSpinner';
 import type { Event } from '@/domains/public/event/types/event.types';
 import type { TicketType } from '@/domains/public/booking/types/booking.types';
 import { getPublicEvents } from '@/lib/events-cache';
+import { getDraft } from '@/lib/reservation-draft';
 import type { PublicEvent } from '@/lib/public-event';
 
 export default function ReservationEtape1Page() {
@@ -79,6 +80,12 @@ function ReservationStep1Loader() {
         // 2) Aucun événement ciblé : un seul → on l'utilise ; plusieurs → choix obligatoire.
         if (withTickets.length === 1 && withTickets[0]) return apply(withTickets[0]);
         if (withTickets.length > 1) {
+          // Retour depuis étape 2/3 : le draft contient l'eventId → on le retrouve
+          const draft = getDraft();
+          if (draft?.eventId) {
+            const fromDraft = withTickets.find((e) => e.id === draft.eventId);
+            if (fromDraft) return apply(fromDraft);
+          }
           router.replace(`/${locale}/evenements`);
           return;
         }

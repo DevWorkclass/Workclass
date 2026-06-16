@@ -52,9 +52,8 @@ export function PartnersSection() {
     );
   }, []);
 
-  // Duplique la liste pour la boucle sans couture.
-  const loop = [...partners, ...partners];
-
+  // Boucle sans couture : deux groupes IDENTIQUES côte à côte ; le hook
+  // remet l'offset à 0 quand on a parcouru exactement un groupe (gap inclus).
   return (
     <section className="border-y border-black/5 bg-brand-cream py-12">
       <div className="container">
@@ -68,9 +67,16 @@ export function PartnersSection() {
         className="relative cursor-grab overflow-hidden touch-pan-y active:cursor-grabbing"
       >
         <div ref={trackRef} className="flex w-max gap-6 will-change-transform">
-          {loop.map((p, i) => (
-            <PartnerLogo key={`${p.name}-${i}`} p={p} />
-          ))}
+          <div className="flex shrink-0 gap-6" aria-hidden={false}>
+            {partners.map((p, i) => (
+              <PartnerLogo key={`a-${p.name}-${i}`} p={p} />
+            ))}
+          </div>
+          <div className="flex shrink-0 gap-6" aria-hidden>
+            {partners.map((p, i) => (
+              <PartnerLogo key={`b-${p.name}-${i}`} p={p} />
+            ))}
+          </div>
         </div>
       </div>
     </section>

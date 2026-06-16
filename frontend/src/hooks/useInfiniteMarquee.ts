@@ -79,10 +79,20 @@ export function useInfiniteMarquee({
     if (!track) return;
 
     if (mode === 'loop') {
-      const half = track.scrollWidth / 2;
-      if (half <= 0) return;
-      if (offsetRef.current >= half) offsetRef.current -= half;
-      else if (offsetRef.current < 0) offsetRef.current += half;
+      // Période de boucle = largeur exacte d'un « groupe » d'items.
+      // Si le track contient exactement 2 enfants (structure recommandée :
+      // deux groupes identiques), on utilise la largeur du 1er + le gap.
+      // Sinon, on retombe sur scrollWidth / 2 (peut introduire un drift d'un
+      // demi-gap quand on duplique des items individuels avec gap-x).
+      let period = track.scrollWidth / 2;
+      const first = track.firstElementChild as HTMLElement | null;
+      if (first && track.children.length === 2) {
+        const gap = parseFloat(globalThis.getComputedStyle(track).columnGap || '0') || 0;
+        period = first.offsetWidth + gap;
+      }
+      if (period <= 0) return;
+      if (offsetRef.current >= period) offsetRef.current -= period;
+      else if (offsetRef.current < 0) offsetRef.current += period;
       return;
     }
 

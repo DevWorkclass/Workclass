@@ -263,11 +263,13 @@ export async function generateCertificatePDF(data: CertificatePDFData): Promise<
     }
 
     // ── Titre ──
+    // Espace supplémentaire sous le logo pour mieux respirer.
+    const contentGap = 38;
     doc.font('Helvetica-Bold').fontSize(24).fillColor('#0E2450')
-      .text('CERTIFICAT DE PARTICIPATION', 0, logoY + logoBoxH + 8, { align: 'center' });
+      .text('CERTIFICAT DE PARTICIPATION', 0, logoY + logoBoxH + contentGap, { align: 'center' });
 
     // Ligne dorée sous le titre
-    const lineY = logoY + logoBoxH + 42;
+    const lineY = logoY + logoBoxH + contentGap + 34;
     doc.moveTo(W / 2 - 160, lineY).lineTo(W / 2 + 160, lineY)
       .lineWidth(1.5).strokeColor('#D4AF37').stroke();
 

@@ -81,7 +81,7 @@ function TdrCard({ label, value, hint }: Readonly<{ label: string; value: number
         </div>
         <div className="min-w-0 flex-1">
           <h3 className="whitespace-nowrap text-sm font-bold text-brand-navy">{label}</h3>
-          <p className="mt-1 whitespace-nowrap text-[10px] leading-tight text-brand-muted">{hint}</p>
+          <p className="mt-1 text-[10px] leading-tight text-brand-muted">{hint}</p>
         </div>
       </div>
     </div>

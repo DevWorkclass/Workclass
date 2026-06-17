@@ -335,9 +335,7 @@ export function CompletionGauges({ data }: Readonly<{ data: KpiSnapshot['gauges'
               </div>
               <div className="min-w-0 flex-1">
                 <h3 className="whitespace-nowrap text-sm font-bold text-brand-navy">{g.label}</h3>
-                <p className="mt-0.5 whitespace-nowrap text-[10px] leading-tight text-brand-muted">
-                  {g.hint}
-                </p>
+                <p className="mt-0.5 text-[10px] leading-tight text-brand-muted">{g.hint}</p>
               </div>
             </div>
           </div>

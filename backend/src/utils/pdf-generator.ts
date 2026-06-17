@@ -104,27 +104,32 @@ export async function generateTicketPDF(data: TicketPDFData): Promise<Buffer> {
     doc.rect(cardX, cardY, cardW, headerH).fill(headerGrad);
     doc.restore();
 
-    // Logo dans l'en-tête
+    // Logo dans l'en-tête — taille bornée pour pouvoir calculer un offset texte fiable.
     const logoPath = getLogoPath();
+    const logoH = 46;
+    const logoMaxW = 60;
+    const logoX = cardX + 18;
+    let textOffsetX = logoX + logoMaxW + 16; // marge de 16px entre logo et texte
     if (logoPath) {
-      try { doc.image(logoPath, cardX + 18, cardY + 12, { height: 46 }); } catch (_) {}
+      try {
+        doc.image(logoPath, logoX, cardY + 12, { fit: [logoMaxW, logoH] });
+      } catch (_) {
+        textOffsetX = cardX + 85;
+      }
+    } else {
+      textOffsetX = cardX + 85;
     }
 
     // Titre — mesure dynamique pour éviter le chevauchement
     doc.font('Helvetica-Bold').fontSize(17);
     const wcWidth = doc.widthOfString('WORK CLASS ');
-    doc.fillColor('#FFFFFF').text('WORK CLASS', cardX + 85, cardY + 14);
+    doc.fillColor('#FFFFFF').text('WORK CLASS', textOffsetX, cardY + 14);
     doc.fillColor('#0E2450').font('Helvetica-Bold').fontSize(17)
-      .text('GABON', cardX + 85 + wcWidth, cardY + 14);
+      .text('GABON', textOffsetX + wcWidth, cardY + 14);
     doc.fillColor('rgba(255,255,255,0.75)').font('Helvetica').fontSize(8.5)
-      .text('BILLET OFFICIEL D\'ACCÈS À L\'ÉVÉNEMENT', cardX + 85, cardY + 38);
+      .text('BILLET OFFICIEL D\'ACCÈS À L\'ÉVÉNEMENT', textOffsetX, cardY + 38);
 
-    // Badge type de billet (coin haut droit de l'en-tête)
-    const isVIP = data.ticketType.toLowerCase().includes('vip');
-    const badgeBg = isVIP ? '#FF6B00' : '#0E2450';
-    doc.roundedRect(cardX + cardW - 90, cardY + 18, 76, 24, 12).fill(badgeBg);
-    doc.fillColor('#FFFFFF').font('Helvetica-Bold').fontSize(8)
-      .text(data.ticketType.toUpperCase(), cardX + cardW - 90, cardY + 26, { width: 76, align: 'center' });
+    // Badge type de billet retiré sur demande — type stocké en métadonnée uniquement.
 
     // ── Corps de la carte ──
     const bodyY = cardY + headerH + 12;

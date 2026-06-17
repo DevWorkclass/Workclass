@@ -67,21 +67,23 @@ function QuickActions() {
 function TdrCard({ label, value, hint }: Readonly<{ label: string; value: number; hint: string }>) {
   const pct = Math.min(Math.max(value, 0), 100);
   return (
-    <div className="rounded-2xl border border-black/5 bg-white p-6 shadow-sm">
-      <div className="flex items-center gap-5">
+    <div className="rounded-2xl border border-black/5 bg-white p-4 shadow-sm sm:p-6">
+      <div className="flex items-center gap-3 sm:gap-5">
         <div
-          className="relative grid size-24 shrink-0 place-items-center rounded-full"
+          className="relative grid size-20 shrink-0 place-items-center rounded-full sm:size-24"
           style={{ background: `conic-gradient(#C8A84B ${pct}%, #E5E7EB ${pct}% 100%)` }}
           role="img"
           aria-label={`${label} : ${value}%`}
         >
-          <div className="grid size-16 place-items-center rounded-full bg-white text-lg font-extrabold text-brand-navy">
+          <div className="grid size-14 place-items-center rounded-full bg-white text-base font-extrabold text-brand-navy sm:size-16 sm:text-lg">
             {value}%
           </div>
         </div>
-        <div>
-          <h3 className="font-bold text-brand-navy">{label}</h3>
-          <p className="mt-1 text-xs text-brand-muted">{hint}</p>
+        <div className="min-w-0 flex-1">
+          <h3 className="truncate text-sm font-bold text-brand-navy sm:text-base">{label}</h3>
+          <p className="mt-1 break-words text-[11px] leading-tight text-brand-muted sm:text-xs">
+            {hint}
+          </p>
         </div>
       </div>
     </div>
@@ -135,9 +137,9 @@ export default function AdminDashboardPage() {
       )}
 
       {kpi && (
-        <div className="space-y-8">
+        <div className="space-y-6 sm:space-y-8">
           {/* KPI principaux */}
-          <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          <section className="grid gap-3 grid-cols-2 lg:grid-cols-4">
             <StatCard label="Réservations totales" value={kpi.totals.bookings} accent="gold" />
             <StatCard
               label="Revenus générés"
@@ -162,7 +164,7 @@ export default function AdminDashboardPage() {
           {/* KPI TDR principaux */}
           <section>
             <h2 className="mb-3 font-bold text-brand-navy">Indicateurs de performance (TDR)</h2>
-            <div className="grid gap-4 lg:grid-cols-3">
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
               <TdrCard
                 label="Taux de conversion"
                 value={kpi.tdr.conversionRate}
@@ -184,7 +186,7 @@ export default function AdminDashboardPage() {
           {/* Tendances temporelles */}
           <section>
             <h2 className="mb-3 font-bold text-brand-navy">Tendances — 30 derniers jours</h2>
-            <div className="grid gap-4 xl:grid-cols-2">
+            <div className="grid gap-3 lg:grid-cols-2">
               <BookingsTrend data={kpi.daily} />
               <RevenueTrend data={kpi.daily} />
             </div>
@@ -193,7 +195,7 @@ export default function AdminDashboardPage() {
           {/* Répartitions */}
           <section>
             <h2 className="mb-3 font-bold text-brand-navy">Répartitions</h2>
-            <div className="grid gap-4 xl:grid-cols-3">
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
               <BookingsStatusDonut data={kpi.bookingsByStatus} />
               <TicketTypeSplit data={kpi.participantsByType} />
               <RatingsHistogram data={kpi.ratingsDistribution} />
@@ -203,11 +205,11 @@ export default function AdminDashboardPage() {
           {/* Top événements + jauges */}
           <section>
             <h2 className="mb-3 font-bold text-brand-navy">Performances</h2>
-            <div className="grid gap-4 xl:grid-cols-2">
+            <div className="grid gap-3 lg:grid-cols-2">
               <TopEvents data={kpi.participantsByEvent} />
-              <div className="flex flex-col gap-4">
+              <div className="flex flex-col gap-3">
                 <CompletionGauges data={kpi.gauges} />
-                <div className="grid gap-3 rounded-2xl border border-black/5 bg-white p-5 shadow-sm sm:grid-cols-2">
+                <div className="grid gap-3 rounded-2xl border border-black/5 bg-white p-4 shadow-sm sm:grid-cols-2 sm:p-5">
                   <StatCard
                     label="Places restantes"
                     value={kpi.totals.seatsRemaining}

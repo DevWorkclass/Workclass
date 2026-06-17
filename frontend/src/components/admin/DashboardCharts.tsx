@@ -50,20 +50,19 @@ const STATUS_LABELS: Record<string, string> = {
   refunded: 'Remboursées',
 };
 
-/** Carte de chart générique avec titre et padding constant. */
+/** Carte de chart générique avec titre et padding adapté mobile. */
 function ChartCard({
   title,
   subtitle,
   children,
-  height = 280,
-}: Readonly<{ title: string; subtitle?: string; children: React.ReactNode; height?: number }>) {
+}: Readonly<{ title: string; subtitle?: string; children: React.ReactNode }>) {
   return (
-    <section className="rounded-2xl border border-black/5 bg-white p-5 shadow-sm">
-      <header className="mb-4">
-        <h3 className="font-bold text-brand-navy">{title}</h3>
-        {subtitle && <p className="text-xs text-brand-muted">{subtitle}</p>}
+    <section className="rounded-2xl border border-black/5 bg-white p-3 shadow-sm sm:p-5">
+      <header className="mb-3 sm:mb-4">
+        <h3 className="text-sm font-bold text-brand-navy sm:text-base">{title}</h3>
+        {subtitle && <p className="text-[11px] text-brand-muted sm:text-xs">{subtitle}</p>}
       </header>
-      <div style={{ width: '100%', height }}>{children}</div>
+      <div className="h-56 w-full sm:h-[280px]">{children}</div>
     </section>
   );
 }
@@ -315,25 +314,32 @@ export function CompletionGauges({ data }: Readonly<{ data: KpiSnapshot['gauges'
     { label: 'Certificats', value: data.certificateRate, hint: 'Envoyés / billets émis' },
   ];
   return (
-    <section className="grid gap-4 sm:grid-cols-3">
+    <section className="grid gap-3 grid-cols-1 sm:grid-cols-3">
       {items.map((g) => {
         const pct = Math.min(Math.max(g.value, 0), 100);
         return (
-          <div key={g.label} className="rounded-2xl border border-black/5 bg-white p-5 shadow-sm">
-            <div className="flex items-center gap-4">
+          <div
+            key={g.label}
+            className="rounded-2xl border border-black/5 bg-white p-4 shadow-sm"
+          >
+            <div className="flex items-center gap-3 sm:gap-4">
               <div
-                className="relative grid size-20 shrink-0 place-items-center rounded-full"
+                className="relative grid size-16 shrink-0 place-items-center rounded-full sm:size-20"
                 style={{ background: `conic-gradient(${COLORS.gold} ${pct}%, #E5E7EB ${pct}% 100%)` }}
                 role="img"
                 aria-label={`${g.label} : ${g.value}%`}
               >
-                <div className="grid size-14 place-items-center rounded-full bg-white text-base font-extrabold text-brand-navy">
+                <div className="grid size-11 place-items-center rounded-full bg-white text-sm font-extrabold text-brand-navy sm:size-14 sm:text-base">
                   {g.value}%
                 </div>
               </div>
-              <div>
-                <h3 className="font-bold text-brand-navy">{g.label}</h3>
-                <p className="mt-0.5 text-xs text-brand-muted">{g.hint}</p>
+              <div className="min-w-0 flex-1">
+                <h3 className="truncate text-sm font-bold text-brand-navy sm:text-base">
+                  {g.label}
+                </h3>
+                <p className="mt-0.5 break-words text-[11px] leading-tight text-brand-muted sm:text-xs">
+                  {g.hint}
+                </p>
               </div>
             </div>
           </div>

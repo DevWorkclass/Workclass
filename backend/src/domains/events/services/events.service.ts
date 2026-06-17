@@ -2,22 +2,52 @@ import { EventsRepository } from '../repositories/events.repository';
 import type { CreateEventInput, UpdateEventInput } from '../validators/events.validator';
 import { logAudit } from '../../shared/audit/services/audit.service';
 import { NotFoundError, ValidationError } from '../../shared/errors/types/error.types';
+import { prisma } from '../../../config/database';
 
 interface TicketTypeSeats {
+  id: string;
   quota: number;
   soldCount: number;
 }
 
-/** Ajoute les places (total / vendues / disponibles) à partir des types de billets. */
-function withAvailability<T extends { ticketTypes?: TicketTypeSeats[] }>(event: T) {
+/**
+ * Ajoute les places (total / vendues / disponibles) à partir des types de billets.
+ * Le « vendu » est calculé EN LIVE depuis la table `bookings` (status ≠ cancelled),
+ * jamais depuis la colonne dénormalisée `sold_count` — celle-ci peut diverger si
+ * des réservations sont effacées en SQL direct sans passer par le service.
+ */
+function withAvailability<T extends { ticketTypes?: TicketTypeSeats[] }>(
+  event: T,
+  liveSoldByTicketType: Map<string, number>,
+) {
   const seatsTotal = (event.ticketTypes ?? []).reduce((sum, t) => sum + t.quota, 0);
-  const seatsSold = (event.ticketTypes ?? []).reduce((sum, t) => sum + t.soldCount, 0);
+  const seatsSold = (event.ticketTypes ?? []).reduce(
+    (sum, t) => sum + (liveSoldByTicketType.get(t.id) ?? 0),
+    0,
+  );
   return {
     ...event,
     seatsTotal,
     seatsSold,
     seatsAvailable: Math.max(seatsTotal - seatsSold, 0),
   };
+}
+
+/**
+ * Agrège la quantité réservée par type de billet pour les bookings actifs
+ * (= non annulés). Une seule requête SQL pour l'ensemble de la base.
+ */
+async function fetchLiveSoldByTicketType(): Promise<Map<string, number>> {
+  const rows = await prisma.booking.groupBy({
+    by: ['ticketTypeId'],
+    where: { status: { not: 'cancelled' } },
+    _sum: { quantity: true },
+  });
+  const map = new Map<string, number>();
+  for (const r of rows) {
+    map.set(r.ticketTypeId, r._sum.quantity ?? 0);
+  }
+  return map;
 }
 
 function generateSlug(title: string): string {
@@ -77,14 +107,20 @@ export class EventsService {
   }
 
   async getEvents() {
-    const events = await this.repository.findAll();
-    return events.map(withAvailability);
+    const [events, liveSold] = await Promise.all([
+      this.repository.findAll(),
+      fetchLiveSoldByTicketType(),
+    ]);
+    return events.map((e) => withAvailability(e, liveSold));
   }
 
   /** Liste publique des événements publiés (avec places disponibles). */
   async getPublicEvents() {
-    const events = await this.repository.findPublished();
-    return events.map(withAvailability);
+    const [events, liveSold] = await Promise.all([
+      this.repository.findPublished(),
+      fetchLiveSoldByTicketType(),
+    ]);
+    return events.map((e) => withAvailability(e, liveSold));
   }
 
   async updateEvent(data: UpdateEventInput, userId: string) {

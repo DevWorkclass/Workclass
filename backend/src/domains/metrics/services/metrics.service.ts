@@ -68,6 +68,18 @@ export interface KpiSnapshot {
   budgetByEvent: { event: string; amount: number }[];
   participantsByType: { type: string; participants: number }[];
   audienceSplit: { withCompany: number; individual: number };
+  /** Série journalière des 30 derniers jours (jours sans booking inclus = 0). */
+  daily: { date: string; bookings: number; revenue: number }[];
+  /** Répartition des bookings par statut. */
+  bookingsByStatus: { status: string; count: number }[];
+  /** Distribution des notes individuelles d'avis approuvés (1 à 5). */
+  ratingsDistribution: { rating: number; count: number }[];
+  /** Jauges de complétion du cycle de vie d'une réservation. */
+  gauges: {
+    scanRate: number; // billets scannés / billets émis
+    certificateRate: number; // certificats envoyés / billets scannés
+    paymentRate: number; // bookings confirmés / bookings totaux
+  };
 }
 
 export class MetricsService {
@@ -83,9 +95,13 @@ export class MetricsService {
       approvedResponses,
       byEvent,
       byType,
+      byStatus,
       withCompany,
       events,
       ticketTypeNames,
+      dailySeries,
+      ticketsTotal,
+      certificatesSent,
     ] = await Promise.all([
       getTotalVisits(),
       prisma.booking.count(),
@@ -101,14 +117,29 @@ export class MetricsService {
       prisma.booking.groupBy({
         by: ['eventId'],
         _sum: { quantity: true, totalAmount: true },
+        where: { status: { not: 'cancelled' } },
       }),
       prisma.booking.groupBy({
         by: ['ticketTypeId'],
         _sum: { quantity: true },
+        where: { status: { not: 'cancelled' } },
       }),
+      prisma.booking.groupBy({ by: ['status'], _count: { _all: true } }),
       prisma.participant.count({ where: { company: { not: null } } }),
       prisma.event.findMany({ select: { id: true, title: true } }),
       prisma.ticketType.findMany({ select: { id: true, name: true } }),
+      prisma.$queryRaw<{ day: Date; bookings: bigint; revenue: string | null }[]>`
+        SELECT date_trunc('day', created_at) AS day,
+               COUNT(*)::bigint AS bookings,
+               COALESCE(SUM(total_amount), 0)::text AS revenue
+        FROM bookings
+        WHERE created_at >= NOW() - INTERVAL '29 days'
+          AND status != 'cancelled'
+        GROUP BY day
+        ORDER BY day ASC
+      `,
+      prisma.ticket.count(),
+      prisma.ticket.count({ where: { certificateSent: true } }),
     ]);
 
     const seatsSold = ticketTypes._sum.soldCount ?? 0;
@@ -132,6 +163,49 @@ export class MetricsService {
       participants: g._sum.quantity ?? 0,
     }));
 
+    // Série journalière : on assure 30 points (J-29 → J), jours sans booking = 0.
+    const dailyMap = new Map<string, { bookings: number; revenue: number }>();
+    for (const row of dailySeries) {
+      const key = new Date(row.day).toISOString().slice(0, 10);
+      dailyMap.set(key, {
+        bookings: Number(row.bookings),
+        revenue: row.revenue ? Number(row.revenue) : 0,
+      });
+    }
+    const daily: { date: string; bookings: number; revenue: number }[] = [];
+    const today = new Date();
+    today.setUTCHours(0, 0, 0, 0);
+    for (let i = 29; i >= 0; i -= 1) {
+      const d = new Date(today);
+      d.setUTCDate(today.getUTCDate() - i);
+      const key = d.toISOString().slice(0, 10);
+      const v = dailyMap.get(key) ?? { bookings: 0, revenue: 0 };
+      daily.push({ date: key, bookings: v.bookings, revenue: v.revenue });
+    }
+
+    // Distribution des notes individuelles (1..5) à partir des ratings approuvés.
+    const ratingsCount = new Map<number, number>([
+      [1, 0], [2, 0], [3, 0], [4, 0], [5, 0],
+    ]);
+    for (const { ratings } of approvedResponses) {
+      if (ratings && typeof ratings === 'object') {
+        for (const value of Object.values(ratings as Record<string, unknown>)) {
+          if (typeof value === 'number' && Number.isFinite(value)) {
+            const r = Math.round(value);
+            if (r >= 1 && r <= 5) ratingsCount.set(r, (ratingsCount.get(r) ?? 0) + 1);
+          }
+        }
+      }
+    }
+    const ratingsDistribution = [...ratingsCount.entries()]
+      .sort((a, b) => a[0] - b[0])
+      .map(([rating, count]) => ({ rating, count }));
+
+    const bookingsByStatus = byStatus.map((g) => ({
+      status: g.status,
+      count: g._count._all,
+    }));
+
     return {
       totals: {
         bookings: bookingsTotal,
@@ -148,13 +222,20 @@ export class MetricsService {
       tdr: {
         conversionRate: rate(bookingsTotal, visits),
         fillRate: rate(seatsSold, seatsTotal),
-        // Engagement : part des réservations ayant donné lieu à un avis/témoignage.
         engagementRate: rate(reviewsCount, bookingsTotal),
       },
       participantsByEvent,
       budgetByEvent,
       participantsByType,
       audienceSplit: { withCompany, individual: Math.max(bookingsTotal - withCompany, 0) },
+      daily,
+      bookingsByStatus,
+      ratingsDistribution,
+      gauges: {
+        scanRate: rate(participantsPresent, seatsSold),
+        certificateRate: rate(certificatesSent, ticketsTotal),
+        paymentRate: rate(confirmedCount, bookingsTotal),
+      },
     };
   }
 

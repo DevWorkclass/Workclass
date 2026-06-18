@@ -90,6 +90,7 @@ export class MetricsService {
       confirmedCount,
       revenueAgg,
       ticketTypes,
+      seatsSoldAgg,
       presentAgg,
       reviewsCount,
       approvedResponses,
@@ -107,7 +108,13 @@ export class MetricsService {
       prisma.booking.count(),
       prisma.booking.count({ where: { status: 'confirmed' } }),
       prisma.booking.aggregate({ _sum: { totalAmount: true }, where: { status: 'confirmed' } }),
-      prisma.ticketType.aggregate({ _sum: { soldCount: true, quota: true } }),
+      // Quota total uniquement (la place vendue est calculée en LIVE depuis bookings).
+      prisma.ticketType.aggregate({ _sum: { quota: true } }),
+      // Places vendues réelles : somme des quantités de bookings non annulés.
+      prisma.booking.aggregate({
+        _sum: { quantity: true },
+        where: { status: { not: 'cancelled' } },
+      }),
       prisma.booking.aggregate({ _sum: { quantity: true }, where: { ticket: { scannedAt: { not: null } } } }),
       prisma.feedbackResponse.count(),
       prisma.feedbackResponse.findMany({
@@ -142,7 +149,7 @@ export class MetricsService {
       prisma.ticket.count({ where: { certificateSent: true } }),
     ]);
 
-    const seatsSold = ticketTypes._sum.soldCount ?? 0;
+    const seatsSold = seatsSoldAgg._sum.quantity ?? 0;
     const seatsTotal = ticketTypes._sum.quota ?? 0;
     const participantsPresent = presentAgg._sum.quantity ?? 0;
     const revenue = toNumber(revenueAgg._sum.totalAmount);

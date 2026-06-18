@@ -266,9 +266,9 @@ export const FAQ_ITEMS: FaqItem[] = [
       "01 L'agripreneur et sa structure · 02 La réglementation selon les destinations (ZLECAf, UE, Asie) · 03 Transport, emballage & Incoterms.",
   },
   {
-    question: 'Que vais-je repartir avec ?',
+    question: 'Avec quoi vais-je repartir ?',
     answer:
-      "Un plan d'action export concret pour votre produit, un livret ressources et l'accès au Livre Blanc SCI.",
+      'Livret ressources pour chaque participants et remontées des remarques et doléances dans le livre blanc.',
   },
   {
     question: 'Comment réserver ma place ?',

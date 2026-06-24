@@ -14,7 +14,7 @@ import {
   generateRefreshToken,
   verifyRefreshToken,
 } from '../../shared/auth/services/jwt.service';
-import { UnauthorizedError } from '../../shared/errors/types/error.types';
+import { UnauthorizedError, ValidationError } from '../../shared/errors/types/error.types';
 import { logAudit } from '../../shared/audit/services/audit.service';
 import type { LoginInput } from '../validators/auth.validator';
 
@@ -97,5 +97,60 @@ export class AuthService {
     const account = await this.users.findPublicById(userId);
     if (!account) throw new UnauthorizedError('Compte introuvable');
     return account;
+  }
+
+  /**
+   * Met à jour les infos du profil courant (prénom / nom uniquement).
+   * L'email reste immuable côté libre-service : un super-admin doit intervenir.
+   */
+  async updateProfile(userId: string, data: { firstName?: string; lastName?: string }) {
+    const account = await this.users.findByIdRaw(userId);
+    if (!account || !account.isActive) throw new UnauthorizedError('Compte inactif');
+    const updated = await this.users.update(userId, {
+      firstName: data.firstName ?? null,
+      lastName: data.lastName ?? null,
+    });
+    await logAudit({
+      action: 'PROFILE_UPDATE',
+      userId,
+      resource: 'admin',
+      resourceId: userId,
+      result: 'success',
+    });
+    return updated;
+  }
+
+  /**
+   * Change le mot de passe du compte courant (auto-service).
+   * Vérifie d'abord le mot de passe actuel pour empêcher l'usage d'une session volée.
+   */
+  async changePassword(userId: string, currentPassword: string, newPassword: string) {
+    if (newPassword.length < 8) {
+      throw new ValidationError('Mot de passe trop court (8 caractères minimum)');
+    }
+    const account = await this.users.findByIdRaw(userId);
+    if (!account || !account.isActive) throw new UnauthorizedError('Compte inactif');
+    const ok = await bcrypt.compare(currentPassword, account.passwordHash);
+    if (!ok) {
+      await logAudit({
+        action: 'PASSWORD_CHANGE',
+        userId,
+        resource: 'admin',
+        resourceId: userId,
+        details: { reason: 'bad_current_password' },
+        result: 'failure',
+      });
+      throw new UnauthorizedError('Mot de passe actuel incorrect');
+    }
+    const passwordHash = await bcrypt.hash(newPassword, 12);
+    await this.users.update(userId, { passwordHash });
+    await logAudit({
+      action: 'PASSWORD_CHANGE',
+      userId,
+      resource: 'admin',
+      resourceId: userId,
+      result: 'success',
+    });
+    return { success: true };
   }
 }

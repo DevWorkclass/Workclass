@@ -29,5 +29,7 @@ const loginLimiter = rateLimit({
 router.post('/auth/login', loginLimiter, controller.login.bind(controller));
 router.post('/auth/refresh', controller.refresh.bind(controller));
 router.get('/auth/me', authMiddleware, controller.me.bind(controller));
+router.post('/auth/profile', authMiddleware, controller.updateProfile.bind(controller));
+router.post('/auth/password', authMiddleware, controller.changePassword.bind(controller));
 
 export { router as authRoutes };

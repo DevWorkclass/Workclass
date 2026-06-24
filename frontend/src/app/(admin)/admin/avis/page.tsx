@@ -21,6 +21,7 @@ import { ROUTES } from '@/constants/routes';
 import { ApiError, apiAuth } from '@/lib/api';
 import { hasPermission } from '@/lib/auth';
 import { useAuthUser } from '@/domains/shared/auth/hooks/useAuthUser';
+import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 
 type Moderation = 'pending' | 'approved' | 'rejected';
 
@@ -75,6 +76,9 @@ function FeedbackContent() {
   const [error, setError] = useState<string | null>(null);
   const [query, setQuery] = useState('');
   const [status, setStatus] = useState<'all' | Moderation>('all');
+  const [confirmMod, setConfirmMod] = useState<
+    { id: string; action: 'approved' | 'rejected' } | null
+  >(null);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [selected, setSelected] = useState<FeedbackResponse | null>(null);
 
@@ -253,7 +257,7 @@ function FeedbackContent() {
                                 variant="gold"
                                 size="sm"
                                 disabled={busyId === r.id}
-                                onClick={() => moderate(r.id, 'approved')}
+                                onClick={() => setConfirmMod({ id: r.id, action: 'approved' })}
                               >
                                 Approuver
                               </Button>
@@ -262,7 +266,7 @@ function FeedbackContent() {
                                 size="sm"
                                 className="text-semantic-error"
                                 disabled={busyId === r.id}
-                                onClick={() => moderate(r.id, 'rejected')}
+                                onClick={() => setConfirmMod({ id: r.id, action: 'rejected' })}
                               >
                                 Rejeter
                               </Button>
@@ -362,6 +366,23 @@ function FeedbackContent() {
           </div>
         </div>
       )}
+
+      <ConfirmDialog
+        open={confirmMod !== null}
+        title={confirmMod?.action === 'approved' ? 'Approuver cet avis ?' : 'Rejeter cet avis ?'}
+        description={
+          confirmMod?.action === 'approved'
+            ? "L'avis sera publié sur le site public (témoignages)."
+            : "L'avis ne sera pas publié. Cette action peut être réajustée plus tard."
+        }
+        confirmLabel={confirmMod?.action === 'approved' ? 'Approuver' : 'Rejeter'}
+        onCancel={() => setConfirmMod(null)}
+        onConfirm={() => {
+          const target = confirmMod;
+          setConfirmMod(null);
+          if (target) void moderate(target.id, target.action);
+        }}
+      />
     </>
   );
 }

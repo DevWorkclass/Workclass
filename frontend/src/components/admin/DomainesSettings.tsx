@@ -172,7 +172,7 @@ export function DomainesSettings() {
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [confirmIndex, setConfirmIndex] = useState<number | null>(null);
-  const pendingTheme = confirmIndex !== null ? themes[confirmIndex] : null;
+  const pendingTheme = confirmIndex === null ? null : themes[confirmIndex];
 
   useEffect(() => {
     apiFetch<{ data: HomeTheme[] }>('/content/home-themes')

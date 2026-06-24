@@ -42,7 +42,7 @@ export function HomeSplash() {
   return (
     <div
       aria-hidden
-      className={`fixed inset-0 z-[100] grid place-items-center bg-brand-navy transition-opacity duration-300 ${
+      className={`fixed inset-0 z-[100] grid place-items-center bg-white transition-opacity duration-300 ${
         hidden ? 'pointer-events-none opacity-0' : 'opacity-100'
       }`}
     >

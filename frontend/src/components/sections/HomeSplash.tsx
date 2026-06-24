@@ -1,8 +1,7 @@
 'use client';
 
 /**
- * Écran de chargement d'accueil — logo Work Class affiché sur la première section
- * pendant le chargement initial, puis disparaît en fondu.
+ * Écran de chargement d'accueil — logo Work Class sur fond navy, puis fondu.
  * S'efface au chargement complet de la page (event `load`) ou après un court délai.
  */
 import Image from 'next/image';
@@ -30,7 +29,7 @@ export function HomeSplash() {
     };
   }, []);
 
-  // Retire du DOM après le fondu (300 ms).
+  // Retire du DOM après le fondu (350 ms).
   useEffect(() => {
     if (!hidden) return;
     const t = setTimeout(() => setRemoved(true), 350);
@@ -46,14 +45,14 @@ export function HomeSplash() {
         hidden ? 'pointer-events-none opacity-0' : 'opacity-100'
       }`}
     >
-      <div className="flex flex-col items-center gap-6">
+      <div className="flex flex-col items-center gap-7">
         <Image
           src="/assets/images/logo/logo.png"
           alt="Work Class"
-          width={180}
-          height={180}
+          width={360}
+          height={170}
           priority
-          className="h-auto w-40 animate-pulse sm:w-48"
+          className="h-auto w-64 sm:w-80"
         />
         <span className="size-7 animate-spin rounded-full border-2 border-brand-gold border-r-transparent" />
       </div>

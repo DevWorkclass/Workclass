@@ -59,7 +59,7 @@ export class TicketGeneratorService {
           booking: {
             include: {
               participant: { select: { firstName: true, lastName: true, email: true } },
-              event: { select: { title: true } },
+              event: { select: { id: true, title: true } },
             },
           },
         },

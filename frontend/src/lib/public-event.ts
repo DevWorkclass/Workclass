@@ -37,6 +37,8 @@ export interface PublicEvent {
   ticketTypes: PublicTicketType[];
   seatsTotal: number;
   seatsSold: number;
+  /** Réservations en attente de validation admin (informatif). */
+  seatsPending: number;
   seatsAvailable: number;
 }
 

@@ -49,8 +49,10 @@ export interface KpiSnapshot {
   totals: {
     bookings: number;
     confirmed: number;
+    pending: number;
     revenue: number;
     seatsSold: number;
+    seatsPending: number;
     seatsTotal: number;
     seatsRemaining: number;
     participantsPresent: number;
@@ -88,9 +90,11 @@ export class MetricsService {
       visits,
       bookingsTotal,
       confirmedCount,
+      pendingCount,
       revenueAgg,
       ticketTypes,
       seatsSoldAgg,
+      seatsPendingAgg,
       presentAgg,
       reviewsCount,
       approvedResponses,
@@ -107,13 +111,19 @@ export class MetricsService {
       getTotalVisits(),
       prisma.booking.count(),
       prisma.booking.count({ where: { status: 'confirmed' } }),
+      prisma.booking.count({ where: { status: 'pending' } }),
       prisma.booking.aggregate({ _sum: { totalAmount: true }, where: { status: 'confirmed' } }),
       // Quota total uniquement (la place vendue est calculée en LIVE depuis bookings).
       prisma.ticketType.aggregate({ _sum: { quota: true } }),
-      // Places vendues réelles : somme des quantités de bookings non annulés.
+      // Places réellement VENDUES = bookings confirmées seulement.
       prisma.booking.aggregate({
         _sum: { quantity: true },
-        where: { status: { not: 'cancelled' } },
+        where: { status: 'confirmed' },
+      }),
+      // Places en ATTENTE de validation = bookings pending (info séparée).
+      prisma.booking.aggregate({
+        _sum: { quantity: true },
+        where: { status: 'pending' },
       }),
       prisma.booking.aggregate({ _sum: { quantity: true }, where: { ticket: { scannedAt: { not: null } } } }),
       prisma.feedbackResponse.count(),
@@ -150,6 +160,7 @@ export class MetricsService {
     ]);
 
     const seatsSold = seatsSoldAgg._sum.quantity ?? 0;
+    const seatsPending = seatsPendingAgg._sum.quantity ?? 0;
     const seatsTotal = ticketTypes._sum.quota ?? 0;
     const participantsPresent = presentAgg._sum.quantity ?? 0;
     const revenue = toNumber(revenueAgg._sum.totalAmount);
@@ -217,8 +228,10 @@ export class MetricsService {
       totals: {
         bookings: bookingsTotal,
         confirmed: confirmedCount,
+        pending: pendingCount,
         revenue,
         seatsSold,
+        seatsPending,
         seatsTotal,
         seatsRemaining: Math.max(seatsTotal - seatsSold, 0),
         participantsPresent,

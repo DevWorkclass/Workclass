@@ -11,43 +11,65 @@ interface TicketTypeSeats {
 }
 
 /**
- * Ajoute les places (total / vendues / disponibles) à partir des types de billets.
- * Le « vendu » est calculé EN LIVE depuis la table `bookings` (status ≠ cancelled),
- * jamais depuis la colonne dénormalisée `sold_count` — celle-ci peut diverger si
- * des réservations sont effacées en SQL direct sans passer par le service.
+ * Ajoute les places (total / vendues / disponibles / en attente) à partir des types
+ * de billets.
+ *
+ * Règle métier (choix produit) :
+ *  - `seatsSold`      = places VALIDÉES en admin (status = 'confirmed').
+ *  - `seatsAvailable` = quota − seatsSold (les pending n'occupent PAS la place côté affichage).
+ *  - `seatsPending`   = places réservées en attente de validation (status = 'pending'),
+ *                       exposées séparément pour information.
+ *
+ * NB : la garantie anti-surbooking reste assurée par `claimQuota` (UPDATE atomique
+ * sur `sold_count`), mais le décompte AFFICHÉ aux visiteurs ne baisse qu'à la
+ * validation.
  */
 function withAvailability<T extends { ticketTypes?: TicketTypeSeats[] }>(
   event: T,
-  liveSoldByTicketType: Map<string, number>,
+  confirmedByType: Map<string, number>,
+  pendingByType: Map<string, number>,
 ) {
   const seatsTotal = (event.ticketTypes ?? []).reduce((sum, t) => sum + t.quota, 0);
   const seatsSold = (event.ticketTypes ?? []).reduce(
-    (sum, t) => sum + (liveSoldByTicketType.get(t.id) ?? 0),
+    (sum, t) => sum + (confirmedByType.get(t.id) ?? 0),
+    0,
+  );
+  const seatsPending = (event.ticketTypes ?? []).reduce(
+    (sum, t) => sum + (pendingByType.get(t.id) ?? 0),
     0,
   );
   return {
     ...event,
     seatsTotal,
     seatsSold,
+    seatsPending,
     seatsAvailable: Math.max(seatsTotal - seatsSold, 0),
   };
 }
 
 /**
- * Agrège la quantité réservée par type de billet pour les bookings actifs
- * (= non annulés). Une seule requête SQL pour l'ensemble de la base.
+ * Agrège la quantité réservée par type de billet et par statut (confirmed / pending).
+ * Une seule requête SQL pour l'ensemble de la base.
  */
-async function fetchLiveSoldByTicketType(): Promise<Map<string, number>> {
+async function fetchLiveByTicketTypeAndStatus(): Promise<{
+  confirmed: Map<string, number>;
+  pending: Map<string, number>;
+}> {
   const rows = await prisma.booking.groupBy({
-    by: ['ticketTypeId'],
-    where: { status: { not: 'cancelled' } },
+    by: ['ticketTypeId', 'status'],
     _sum: { quantity: true },
   });
-  const map = new Map<string, number>();
+  const confirmed = new Map<string, number>();
+  const pending = new Map<string, number>();
   for (const r of rows) {
-    map.set(r.ticketTypeId, r._sum.quantity ?? 0);
+    const qty = r._sum.quantity ?? 0;
+    if (r.status === 'confirmed') {
+      confirmed.set(r.ticketTypeId, (confirmed.get(r.ticketTypeId) ?? 0) + qty);
+    } else if (r.status === 'pending') {
+      pending.set(r.ticketTypeId, (pending.get(r.ticketTypeId) ?? 0) + qty);
+    }
   }
-  return map;
+  return { confirmed, pending };
 }
 
 function generateSlug(title: string): string {
@@ -107,20 +129,20 @@ export class EventsService {
   }
 
   async getEvents() {
-    const [events, liveSold] = await Promise.all([
+    const [events, agg] = await Promise.all([
       this.repository.findAll(),
-      fetchLiveSoldByTicketType(),
+      fetchLiveByTicketTypeAndStatus(),
     ]);
-    return events.map((e) => withAvailability(e, liveSold));
+    return events.map((e) => withAvailability(e, agg.confirmed, agg.pending));
   }
 
   /** Liste publique des événements publiés (avec places disponibles). */
   async getPublicEvents() {
-    const [events, liveSold] = await Promise.all([
+    const [events, agg] = await Promise.all([
       this.repository.findPublished(),
-      fetchLiveSoldByTicketType(),
+      fetchLiveByTicketTypeAndStatus(),
     ]);
-    return events.map((e) => withAvailability(e, liveSold));
+    return events.map((e) => withAvailability(e, agg.confirmed, agg.pending));
   }
 
   async updateEvent(data: UpdateEventInput, userId: string) {

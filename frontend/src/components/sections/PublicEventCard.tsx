@@ -44,6 +44,11 @@ export function PublicEventCard({ event }: Readonly<{ event: PublicEvent }>) {
             <span className="text-semantic-error">Complet</span>
           )}
         </p>
+        {event.seatsPending > 0 && (
+          <p className="text-[11px] text-brand-muted">
+            +{event.seatsPending} en attente de validation
+          </p>
+        )}
 
         <div className="relative z-10 mt-auto flex flex-wrap gap-2 pt-4">
           {event.seatsAvailable > 0 ? (

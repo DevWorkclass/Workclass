@@ -211,7 +211,11 @@ export default function AdminDashboardPage() {
                   <StatCard
                     label="Places restantes"
                     value={kpi.totals.seatsRemaining}
-                    hint={`sur ${kpi.totals.seatsTotal} au total`}
+                    hint={
+                      kpi.totals.seatsPending > 0
+                        ? `sur ${kpi.totals.seatsTotal} · ${kpi.totals.seatsPending} en attente`
+                        : `sur ${kpi.totals.seatsTotal} au total`
+                    }
                     accent="blue"
                   />
                   <StatCard

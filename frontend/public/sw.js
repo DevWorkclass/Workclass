@@ -29,6 +29,13 @@ self.addEventListener('fetch', (event) => {
   const { request } = event;
   if (request.method !== 'GET') return;
 
+  const url = new URL(request.url);
+
+  // Sécurité : NE JAMAIS intercepter les requêtes API (données privées,
+  // tokens, certificats) ni les requêtes cross-origin (auth, webhooks).
+  if (url.pathname.startsWith('/api/')) return;
+  if (url.origin !== self.location.origin) return;
+
   // Navigation : network-first
   if (request.mode === 'navigate') {
     event.respondWith(

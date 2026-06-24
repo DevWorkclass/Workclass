@@ -7,8 +7,10 @@ export interface KpiSnapshot {
   totals: {
     bookings: number;
     confirmed: number;
+    pending: number;
     revenue: number;
     seatsSold: number;
+    seatsPending: number;
     seatsTotal: number;
     seatsRemaining: number;
     participantsPresent: number;

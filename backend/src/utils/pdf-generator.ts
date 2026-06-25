@@ -329,7 +329,13 @@ export async function generateCertificatePDF(data: CertificatePDFData): Promise<
     const leftX = W / 4;
     const rightX = (3 * W) / 4;
 
-    // Gauche — Madame Pauline White
+    // Gauche — Madame Pauline White + image signature
+    const sigImgLeftPath = path.join(__dirname, '../assets/signature-pauline.png');
+    if (fs.existsSync(sigImgLeftPath)) {
+      try {
+        doc.image(sigImgLeftPath, leftX - 75, sigY - 72, { fit: [150, 68], align: 'center', valign: 'bottom' });
+      } catch (_) {}
+    }
     doc.moveTo(leftX - 85, sigY).lineTo(leftX + 85, sigY)
       .lineWidth(0.8).strokeColor('#D4AF37').stroke();
     doc.fillColor('#0E2450').font('Helvetica-Bold').fontSize(10)

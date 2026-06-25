@@ -217,6 +217,7 @@ export class EmailService {
     pdfUrl?: string;
     pdfBuffer?: Buffer;
     downloadUrl?: string;
+    bookletUrl?: string;
     feedbackToken: string;
     eventTitle: string;
     extraCertificates?: ExtraCertificate[] | null;
@@ -228,6 +229,7 @@ export class EmailService {
       pdfUrl,
       pdfBuffer,
       downloadUrl,
+      bookletUrl,
       feedbackToken,
       eventTitle,
     } = params;
@@ -253,11 +255,22 @@ export class EmailService {
       ? `<p>Vous pouvez également le télécharger à tout moment : <a href="${downloadUrl}" style="color:${BRAND_NAVY}">Télécharger mon certificat</a></p>`
       : '';
 
+    const bookletSection = bookletUrl
+      ? `<div style="margin-top:20px;padding:16px;background:#eff6ff;border-radius:8px;border:1px solid #bfdbfe">
+          <p style="margin:0 0 6px;font-weight:bold;color:${BRAND_NAVY}">Livret ressources</p>
+          <p style="margin:0 0 10px;font-size:14px;color:#1e3a5f">
+            Retrouvez le livret ressources de l'événement (supports, contacts, prochaines étapes) :
+          </p>
+          <a href="${bookletUrl}" style="display:inline-block;padding:10px 18px;background:${BRAND_NAVY};color:#fff;border-radius:6px;text-decoration:none;font-weight:bold;font-size:14px">Télécharger le livret ressources</a>
+        </div>`
+      : '';
+
     const html = emailWrapper(`
       <p>Bonjour <strong>${participantName}</strong>,</p>
       <p>Merci d'avoir participé à <strong>${eventTitle}</strong>.</p>
       <p>Votre certificat de participation n° <strong>${certificateNumber}</strong> est en pièce jointe.</p>
       ${certLinkLine}
+      ${bookletSection}
       ${feedbackButton(feedbackUrl)}
       ${extraSection}
       <p style="margin-top:24px;color:#4b5563;font-size:14px">À bientôt sur Work Class Gabon !</p>
@@ -270,6 +283,9 @@ export class EmailService {
       `Merci d'avoir participé à ${eventTitle}.`,
       `Votre certificat de participation n° ${certificateNumber} est en pièce jointe.`,
       '',
+      ...(bookletUrl
+        ? ['── Livret ressources ──', 'Téléchargez le livret ressources de l\'événement :', bookletUrl, '']
+        : []),
       '── Donnez votre avis ──',
       `Aidez-nous à améliorer Work Class Gabon en répondant à un court questionnaire (2 min) :`,
       feedbackUrl,

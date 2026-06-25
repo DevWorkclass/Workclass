@@ -142,7 +142,11 @@ export class EventsService {
       this.repository.findPublished(),
       fetchLiveByTicketTypeAndStatus(),
     ]);
-    return events.map((e) => withAvailability(e, agg.confirmed, agg.pending));
+    // Le livret ressources ne doit pas fuiter publiquement (lien réservé à l'envoi des certificats).
+    return events.map((e) => {
+      const { resourceBookletUrl: _booklet, ...rest } = e as typeof e & { resourceBookletUrl?: string | null };
+      return withAvailability(rest, agg.confirmed, agg.pending);
+    });
   }
 
   async updateEvent(data: UpdateEventInput, userId: string) {
@@ -219,5 +223,23 @@ export class EventsService {
     });
 
     return { id };
+  }
+
+  /** Enregistre l'URL du livret ressources d'un événement (après upload Storage). */
+  async setBooklet(eventId: string, url: string | null, userId: string) {
+    const existing = await this.repository.findById(eventId);
+    if (!existing) throw new NotFoundError('Evenement');
+
+    await this.repository.update(eventId, { resourceBookletUrl: url });
+
+    await logAudit({
+      action: url ? 'EVENT_BOOKLET_SET' : 'EVENT_BOOKLET_REMOVE',
+      userId,
+      resource: 'event',
+      resourceId: eventId,
+      result: 'success',
+    });
+
+    return { id: eventId, resourceBookletUrl: url };
   }
 }

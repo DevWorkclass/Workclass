@@ -41,6 +41,15 @@ export function buildCertDownloadUrl(certificateNumber: string): string {
   return `${apiBaseUrl()}/public/certificates/${certificateNumber}/download?t=${buildCertDownloadToken(certificateNumber)}`;
 }
 
+/** Lien permanent de téléchargement du livret ressources d'un événement. */
+export function buildBookletDownloadToken(eventId: string): string {
+  return generateHMAC(`booklet-download:${eventId}`);
+}
+
+export function buildBookletDownloadUrl(eventId: string): string {
+  return `${apiBaseUrl()}/public/events/${eventId}/booklet/download?t=${buildBookletDownloadToken(eventId)}`;
+}
+
 export class TicketGeneratorService {
   /**
    * Liste paginée des billets (gestion des certificats côté admin).

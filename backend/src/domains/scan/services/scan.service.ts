@@ -236,6 +236,7 @@ export class ScanService {
               certificateNumber,
               pdfUrl: freshUrl,
               downloadUrl: buildCertDownloadUrl(certificateNumber),
+              bookletUrl: ticket.booking.event.resourceBookletUrl ?? undefined,
               feedbackToken,
               eventTitle,
               extraCertificates,

@@ -49,10 +49,10 @@ export function HomeSplash() {
         <Image
           src="/assets/images/logo/logo.png"
           alt="Work Class"
-          width={360}
-          height={170}
+          width={480}
+          height={240}
           priority
-          className="h-auto w-64 sm:w-80"
+          className="h-auto w-80 sm:w-96"
         />
         <span className="size-7 animate-spin rounded-full border-2 border-brand-gold border-r-transparent" />
       </div>

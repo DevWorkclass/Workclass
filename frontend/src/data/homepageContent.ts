@@ -268,7 +268,7 @@ export const FAQ_ITEMS: FaqItem[] = [
   {
     question: 'Avec quoi vais-je repartir ?',
     answer:
-      'Livret ressources pour chaque participants et remontées des remarques et doléances dans le livre blanc.',
+      'Pour les sessions complètes, livret ressources pour chaque participants et remontées des remarques et doléances dans le livre blanc.',
   },
   {
     question: 'Comment réserver ma place ?',

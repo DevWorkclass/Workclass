@@ -111,10 +111,10 @@ export function HeroSection({ event }: HeroSectionProps) {
             <Image
               src="/assets/images/logo/logo.png"
               alt="Work Class Gabon"
-              width={220}
-              height={120}
+              width={320}
+              height={180}
               priority
-              className="h-20 w-auto object-contain sm:h-24"
+              className="h-28 w-auto object-contain sm:h-36 lg:h-44"
             />
           </div>
 

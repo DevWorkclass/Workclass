@@ -20,26 +20,37 @@ import type { PublicEvent } from '@/lib/public-event';
 
 const REVALIDATE = 60; // secondes — re-fetch en arrière-plan toutes les 60s
 
-async function fetchHomeData(): Promise<{ events: PublicEvent[]; featuredId: string | null }> {
+async function fetchHomeData() {
   const apiUrl = (process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001/api').replace(/\/$/, '');
   try {
-    const [eventsRes, featuredRes] = await Promise.all([
+    const [eventsRes, featuredRes, adsRes, partnersRes] = await Promise.all([
       fetch(`${apiUrl}/public/events`, {
         next: { revalidate: REVALIDATE },
         signal: AbortSignal.timeout(4000),
-      }),
+      }).catch(() => null),
       fetch(`${apiUrl}/content/featured`, {
         next: { revalidate: REVALIDATE },
         signal: AbortSignal.timeout(4000),
-      }),
+      }).catch(() => null),
+      fetch(`${apiUrl}/content/ads`, {
+        next: { revalidate: REVALIDATE },
+        signal: AbortSignal.timeout(4000),
+      }).catch(() => null),
+      fetch(`${apiUrl}/content/partners`, {
+        next: { revalidate: REVALIDATE },
+        signal: AbortSignal.timeout(4000),
+      }).catch(() => null),
     ]);
-    const events: PublicEvent[] = eventsRes.ok ? ((await eventsRes.json()).data ?? []) : [];
-    const featuredId: string | null = featuredRes.ok
+    const events: PublicEvent[] = eventsRes?.ok ? ((await eventsRes.json()).data ?? []) : [];
+    const featuredId: string | null = featuredRes?.ok
       ? ((await featuredRes.json()).data?.eventId ?? null)
       : null;
-    return { events, featuredId };
+    const ads = adsRes?.ok ? ((await adsRes.json()).data ?? []) : [];
+    const partners = partnersRes?.ok ? ((await partnersRes.json()).data ?? []) : [];
+    
+    return { events, featuredId, ads, partners };
   } catch {
-    return { events: [], featuredId: null };
+    return { events: [], featuredId: null, ads: [], partners: [] };
   }
 }
 
@@ -58,7 +69,7 @@ function resolveFeatured(events: PublicEvent[], featuredId: string | null): Publ
 }
 
 export default async function HomePage() {
-  const { events, featuredId } = await fetchHomeData();
+  const { events, featuredId, ads, partners } = await fetchHomeData();
   const featured = resolveFeatured(events, featuredId);
   const previewEvents = [...events]
     .sort((a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime())
@@ -70,12 +81,12 @@ export default async function HomePage() {
       <HeroDynamic initialEvent={featured} />
       <FeatureStrip />
       <EventsPreviewSection initialEvents={previewEvents} />
-      <PartnerBanner />
+      <PartnerBanner initialAds={ads} />
       <ThemesSection />
       <IndustriesSection />
       <PromotersSection />
       <TestimonialsSection />
-      <PartnersSection />
+      <PartnersSection initialPartners={partners} />
       <FaqSection />
       <FinalCta />
     </>

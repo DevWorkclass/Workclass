@@ -1,0 +1,690 @@
+================================================================================
+  GUIDE BACK-OFFICE — WORK CLASS GABON
+  Guide d'utilisation à l'intention des administrateurs
+  Mise à jour : juin 2026
+================================================================================
+
+TABLE DES MATIÈRES
+------------------
+  1. Accès et connexion
+  2. Rôles et permissions
+  3. Tableau de bord
+  4. Événements
+  5. Réservations
+  6. Billets et certificats
+  7. Scan à l'entrée
+  8. Participants
+  9. Avis
+ 10. Publicités
+ 11. Utilisateurs (comptes admin)
+ 12. Paramètres — Config
+ 13. Paramètres — Statistiques et paiements
+ 14. Règles de sécurité obligatoires
+ 15. Procédures d'urgence
+
+================================================================================
+1. ACCÈS ET CONNEXION
+================================================================================
+
+URL du back-office
+  https://[domaine]/admin/dashboard
+
+  Accès caché depuis le site public :
+  - Cliquer sur le logo Work Class dans le footer
+  - Un lien discret "Administration" y est intégré
+
+Connexion
+  - Saisir l'adresse email et le mot de passe fournis par le super_admin.
+  - Les sessions sont authentifiées par jeton JWT.
+  - La session expire automatiquement après inactivité prolongée.
+  - En cas d'oubli de mot de passe : contacter un super_admin pour réinitialisation.
+
+Premier accès
+  1. Récupérer les identifiants par canal sécurisé (jamais par email non chiffré).
+  2. Se connecter.
+  3. Aller dans Profil → changer le mot de passe immédiatement.
+  4. Choisir un mot de passe d'au moins 12 caractères, unique à cette application.
+
+================================================================================
+2. RÔLES ET PERMISSIONS
+================================================================================
+
+RÔLES DISPONIBLES
+  super_admin  →  Accès complet à tout sans restriction.
+  admin        →  Accès limité aux fonctionnalités explicitement attribuées.
+
+CATALOGUE DES PERMISSIONS
+  Un admin n'a accès qu'aux sections pour lesquelles il a reçu la permission.
+  Le super_admin attribue les permissions dans : Utilisateurs → [compte] → Modifier.
+
+  Permission            Fonctionnalité débloquée
+  ─────────────────     ────────────────────────────────────────────────────
+  bookings:read         Consulter les réservations (lecture seule)
+  bookings:write        Valider / annuler / modifier les réservations
+  tickets:generate      Générer les billets PDF et les envoyer par email
+  scan                  Scanner les QR codes à l'entrée d'un événement
+  feedback:read         Consulter les avis des participants
+  feedback:moderate     Approuver ou masquer les avis (visibilité site)
+  payments:manage       Configurer le gateway de paiement (clés, mode)
+  users:manage          Créer, modifier, activer/désactiver des comptes admin
+  content:manage        Modifier les contenus du site (textes, images, etc.)
+
+PRINCIPE DU MOINDRE PRIVILÈGE — RÈGLE FONDAMENTALE
+  N'attribuer que les permissions strictement nécessaires à chaque rôle.
+
+  Exemples de profils recommandés :
+  - Agent d'accueil (entrée événement)  →  scan seulement
+  - Assistant commercial                →  bookings:read + bookings:write
+  - Chargé de communication             →  content:manage
+  - Gestionnaire complet                →  toutes sauf users:manage
+  - Référent technique                  →  toutes
+
+================================================================================
+3. TABLEAU DE BORD
+================================================================================
+
+Chemin : Admin → Dashboard
+
+Affiche un résumé en temps réel :
+  - Nombre de réservations récentes (confirmées, en attente)
+  - Événements à venir publiés
+  - Derniers avis soumis
+  - Indicateurs de présence (billets scannés vs générés)
+
+Pas d'action directe depuis ce tableau — sert uniquement de vue globale rapide.
+
+================================================================================
+4. ÉVÉNEMENTS
+================================================================================
+
+Chemin : Admin → Événements
+Permission requise : rôle admin ou super_admin (accès par défaut)
+
+──────────────────────────────────────────
+4.1 CRÉER UN NOUVEL ÉVÉNEMENT
+──────────────────────────────────────────
+
+  1. Cliquer sur le bouton "Nouvel événement".
+  2. Remplir les champs obligatoires :
+       - Titre de l'événement
+       - Date et heure de début
+       - Date et heure de fin
+       - Lieu (salle, ville, adresse)
+       - Description complète
+  3. Ajouter une image de couverture :
+       - Option A : saisir une URL directe (hébergée ailleurs)
+       - Option B : téléverser depuis votre ordinateur (formats JPG/PNG/WebP)
+  4. Ajouter les recommandations aux participants (optionnel — conseils pratiques).
+  5. Construire le programme (optionnel) :
+       - Cliquer "+ Ajouter une session"
+       - Renseigner l'heure, le titre, la description de chaque séquence
+  6. Renseigner les intervenants (optionnel) :
+       - Nom et rôle/titre de chaque intervenant
+  7. Laisser le statut en "Brouillon" pour relire avant publication.
+  8. Cliquer "Enregistrer".
+
+  ATTENTION : Un événement en Brouillon n'est pas visible sur le site public.
+
+──────────────────────────────────────────
+4.2 PUBLIER UN ÉVÉNEMENT
+──────────────────────────────────────────
+
+  1. Ouvrir l'événement → "Modifier".
+  2. Changer le statut de "Brouillon" à "Publié".
+  3. Enregistrer.
+
+  L'événement apparaît immédiatement sur la page d'accueil et dans la liste
+  des événements. Si c'est le dernier événement publié, il devient
+  automatiquement "l'événement à la une" affiché en hero.
+
+  Pour définir manuellement l'événement à la une :
+  Paramètres → Config → section "Événement à la une".
+
+──────────────────────────────────────────
+4.3 MODIFIER UN ÉVÉNEMENT
+──────────────────────────────────────────
+
+  1. Admin → Événements → ligne de l'événement → icône crayon.
+  2. Modifier les champs souhaités.
+  3. Enregistrer.
+
+  Les participants ayant déjà réservé ne sont pas notifiés automatiquement
+  d'une modification. Si la date ou le lieu change, les contacter manuellement.
+
+──────────────────────────────────────────
+4.4 ARCHIVER UN ÉVÉNEMENT
+──────────────────────────────────────────
+
+  Changer le statut en "Archivé" → l'événement disparaît du site public
+  mais reste accessible en back-office pour consultation et export.
+
+──────────────────────────────────────────
+4.5 LIVRET RESSOURCES (PDF)
+──────────────────────────────────────────
+
+  Le livret ressources est un PDF joint à l'email de certificat envoyé après
+  l'événement (supports de formation, contacts, prochaines étapes, etc.).
+
+  IMPORTANT : téléverser le livret AVANT d'envoyer les certificats.
+
+  Ajouter un livret :
+  1. Ouvrir un événement déjà enregistré (mode Modifier).
+  2. Descendre jusqu'à la section "Livret ressources (PDF)".
+     [Cette section n'apparaît qu'en mode Modification, pas à la création]
+  3. Cliquer sur le sélecteur de fichier → choisir le PDF (max 15 Mo).
+  4. L'upload se fait automatiquement — attendre la confirmation.
+
+  Remplacer le livret existant :
+  - Cliquer "Remplacer" → sélectionner le nouveau PDF.
+
+  Supprimer le livret :
+  - Cliquer "Supprimer" → confirmer dans la boîte de dialogue.
+  - Le livret n'est plus joint aux prochains envois de certificats.
+    Les envois déjà effectués ne sont pas affectés.
+
+  Lien sécurisé : le livret est accessible via un lien HMAC (non devinable).
+  Ne pas diffuser ce lien publiquement — il est réservé aux participants.
+
+──────────────────────────────────────────
+4.6 SUPPRIMER UN ÉVÉNEMENT
+──────────────────────────────────────────
+
+  Admin → Événements → icône poubelle → confirmer.
+
+  ATTENTION : La suppression est irréversible. Toutes les réservations et
+  billets liés sont également supprimés (cascade). Ne supprimer que les
+  événements de test ou les doublons accidentels.
+
+================================================================================
+5. RÉSERVATIONS
+================================================================================
+
+Chemin : Admin → Réservations
+Permission requise : bookings:read (voir) + bookings:write (agir)
+
+──────────────────────────────────────────
+5.1 CONSULTER LES RÉSERVATIONS
+──────────────────────────────────────────
+
+  La liste affiche toutes les réservations avec :
+  - Nom du participant
+  - Événement
+  - Statut (en attente / confirmée / annulée)
+  - Date de réservation
+  - Type de billet
+
+  Filtrer par événement ou statut via les filtres en haut de liste.
+
+──────────────────────────────────────────
+5.2 VALIDER UNE RÉSERVATION
+──────────────────────────────────────────
+
+  1. Cliquer sur la réservation → bouton "Valider".
+  2. Le billet PDF est généré automatiquement et envoyé par email.
+  3. Le statut passe à "Confirmée".
+
+  ATTENTION : La validation est définitive. Elle déclenche l'envoi d'email.
+  Vérifier que les informations du participant sont correctes avant de valider.
+
+──────────────────────────────────────────
+5.3 ANNULER UNE RÉSERVATION
+──────────────────────────────────────────
+
+  1. Cliquer sur la réservation → bouton "Annuler".
+  2. Confirmer.
+  3. Le participant est notifié par email.
+
+  Les places sont libérées et redeviennent disponibles à la réservation.
+
+================================================================================
+6. BILLETS ET CERTIFICATS
+================================================================================
+
+Chemin : Admin → Certificats
+Permission requise : tickets:generate
+
+──────────────────────────────────────────
+6.1 GÉNÉRER LES BILLETS
+──────────────────────────────────────────
+
+  Les billets sont générés automatiquement lors de la validation d'une
+  réservation (voir section 5.2). Ils contiennent :
+  - Numéro de billet unique (WCG-YYYY-NNNNNN)
+  - QR code HMAC signé (infalsifiable, scan unique)
+  - Informations de l'événement et du participant
+
+──────────────────────────────────────────
+6.2 ENVOYER LES CERTIFICATS
+──────────────────────────────────────────
+
+  Après l'événement (une fois les billets scannés) :
+  1. Admin → Certificats → liste des billets scannés.
+  2. Bouton "Envoyer le certificat" sur chaque ligne, ou envoi groupé.
+  3. L'email contient :
+       - Le certificat PDF (avec QR d'authentification)
+       - Le lien de téléchargement du certificat
+       - Le livret ressources (si téléversé pour cet événement)
+       - Un lien vers le formulaire d'avis (2 minutes)
+
+  Si un participant ne reçoit pas son certificat :
+  - Vérifier l'adresse email dans ses informations.
+  - Utiliser le bouton "Renvoyer" sur sa ligne.
+
+──────────────────────────────────────────
+6.3 AUTHENTIFIER UN CERTIFICAT
+──────────────────────────────────────────
+
+  Chaque certificat contient un QR code. Scanner ce QR ouvre la page :
+  [site]/certificat/[token-opaque]
+
+  La page affiche :
+  - "Certificat authentique" + nom du titulaire + événement (si valide)
+  - "Certificat non reconnu" (si falsifié ou inexistant)
+
+  SÉCURITÉ : Le token dans l'URL est un UUID aléatoire non devinable.
+  Il n'est pas possible d'accéder aux certificats d'autres participants
+  en modifiant l'URL. Le numéro lisible (WCG-CERT-...) n'est affiché
+  que dans le résultat — il n'est pas utilisé comme clé de recherche.
+
+================================================================================
+7. SCAN À L'ENTRÉE
+================================================================================
+
+Chemin : Admin → Scan
+Permission requise : scan
+
+──────────────────────────────────────────
+7.1 UTILISATION (MOBILE RECOMMANDÉ)
+──────────────────────────────────────────
+
+  1. Se connecter sur mobile ou tablette.
+  2. Aller dans Admin → Scan.
+  3. Autoriser l'accès à la caméra quand demandé.
+  4. Pointer la caméra sur le QR du billet du participant.
+  5. Résultat immédiat :
+       - VERT  →  Billet valide. Accès autorisé.
+       - ROUGE →  Billet déjà utilisé ou invalide. Refuser l'accès.
+
+  Un billet ne peut être validé qu'UNE SEULE FOIS.
+  Tout second scan du même billet est automatiquement refusé.
+
+──────────────────────────────────────────
+7.2 EN CAS DE PROBLÈME
+──────────────────────────────────────────
+
+  QR illisible (écran abîmé, impression floue) :
+  - Demander au participant son numéro de billet (WCG-YYYY-NNNNNN).
+  - Rechercher manuellement dans Admin → Réservations.
+  - Vérifier que la réservation est bien "Confirmée" et que le billet
+    n'est pas encore marqué "Scanné".
+
+  Participant sans billet :
+  - Vérifier dans Admin → Réservations si une réservation existe.
+  - Si "En attente" : valider la réservation pour générer le billet.
+  - Si aucune réservation : l'accès ne peut être accordé.
+
+================================================================================
+8. PARTICIPANTS
+================================================================================
+
+Chemin : Admin → Participants
+Permission requise : bookings:read
+
+Liste tous les participants ayant effectué au moins une réservation.
+
+  Colonnes affichées :
+  - Nom complet
+  - Adresse email
+  - Téléphone
+  - Adresse
+  - Nombre de réservations
+
+  Fonctionnalités :
+  - Recherche par nom / email
+  - Filtrage par événement
+  - Export des données (si permission disponible)
+
+  DONNÉES PERSONNELLES : Cette liste contient des informations personnelles
+  (nom, email, téléphone, adresse). Ne pas exporter ou partager ces données
+  sans autorisation. Respecter le RGPD — ne collecter et utiliser ces données
+  que dans le cadre des événements Work Class Gabon.
+
+================================================================================
+9. AVIS
+================================================================================
+
+Chemin : Admin → Avis
+Permission requise : feedback:read + feedback:moderate
+
+──────────────────────────────────────────
+9.1 FONCTIONNEMENT
+──────────────────────────────────────────
+
+  Les avis sont soumis par les participants via un lien personnalisé inclus
+  dans l'email de certificat. Chaque participant ne peut soumettre qu'un avis
+  par certificat (lien à usage unique).
+
+──────────────────────────────────────────
+9.2 MODÉRATION
+──────────────────────────────────────────
+
+  Statuts possibles :
+  - En attente : soumis, en attente de validation
+  - Approuvé   : visible sur le site public (section témoignages)
+  - Masqué     : retiré du site sans suppression
+
+  Actions :
+  - Approuver → l'avis apparaît dans le carrousel de témoignages sur l'accueil.
+  - Masquer   → l'avis disparaît du site mais reste consultable en back-office.
+
+  Règle : approuver uniquement les avis authentiques et respectueux.
+  Masquer tout avis contenant des données personnelles d'un tiers,
+  un contenu offensant ou une tentative de manipulation.
+
+================================================================================
+10. PUBLICITÉS
+================================================================================
+
+Chemin : Admin → Publicités
+Permission requise : content:manage
+
+Gérer les bannières publicitaires affichées sur le site.
+
+  Pour chaque publicité :
+  - Image (URL ou upload)
+  - URL de destination (clic sur la bannière)
+  - Actif / inactif
+
+  SÉCURITÉ : Vérifier que les URL de destination sont légitimes avant
+  d'activer une publicité. Ne pas mettre de liens vers des sites tiers
+  non vérifiés.
+
+================================================================================
+11. UTILISATEURS (COMPTES ADMIN)
+================================================================================
+
+Chemin : Admin → Utilisateurs
+Permission requise : users:manage
+
+──────────────────────────────────────────
+11.1 CRÉER UN NOUVEAU COMPTE ADMIN
+──────────────────────────────────────────
+
+  1. Cliquer "Créer un utilisateur".
+  2. Renseigner :
+       - Prénom, nom
+       - Adresse email professionnelle
+       - Rôle (choisir "admin" — réserver "super_admin" aux cas exceptionnels)
+  3. Un mot de passe temporaire est généré.
+  4. Communiquer les identifiants au nouvel admin via un canal sécurisé
+     (appel téléphonique, messagerie chiffrée — JAMAIS par email ordinaire).
+  5. Attribuer les permissions nécessaires (voir section 2).
+  6. Demander au nouvel admin de changer son mot de passe à la première connexion.
+
+──────────────────────────────────────────
+11.2 MODIFIER UN COMPTE
+──────────────────────────────────────────
+
+  - Changer le nom ou l'email : bouton "Modifier".
+  - Changer le rôle : disponible dans la même fenêtre.
+  - Réinitialiser le mot de passe : bouton "Réinitialiser le mot de passe".
+    Un nouveau mot de passe temporaire est généré — le communiquer en mains propres.
+
+──────────────────────────────────────────
+11.3 ATTRIBUER / RETIRER DES PERMISSIONS
+──────────────────────────────────────────
+
+  1. Ouvrir le compte → "Modifier les fonctionnalités".
+  2. Cocher/décocher les permissions.
+  3. Enregistrer.
+
+  La modification prend effet immédiatement (à la prochaine requête de l'admin).
+
+──────────────────────────────────────────
+11.4 DÉSACTIVER UN COMPTE
+──────────────────────────────────────────
+
+  Bouton "Désactiver" → confirmer.
+  L'accès est révoqué immédiatement. Le compte et ses données sont conservés.
+
+  OBLIGATION : Désactiver tout compte d'un collaborateur qui quitte l'équipe
+  le jour même de son départ. Ne pas attendre.
+
+──────────────────────────────────────────
+11.5 RÉACTIVER UN COMPTE
+──────────────────────────────────────────
+
+  Bouton "Activer" sur un compte désactivé.
+  Les permissions précédentes doivent être réattribuées si nécessaire.
+
+================================================================================
+12. PARAMÈTRES — CONFIG
+================================================================================
+
+Chemin : Admin → Paramètres → Config
+Permission requise : content:manage
+
+Chaque section s'enregistre indépendamment avec son propre bouton "Enregistrer".
+
+──────────────────────────────────────────
+12.1 CARROUSEL DES TÉMOIGNAGES
+──────────────────────────────────────────
+
+  - Intervalle (secondes) : durée d'affichage de chaque avis avant défilement.
+  - Défilement automatique : activer/désactiver le carousel.
+
+──────────────────────────────────────────
+12.2 FENÊTRE « EN DÉCOUVRIR PLUS »
+──────────────────────────────────────────
+
+  Contenu de la modale qui s'ouvre quand un visiteur clique "En découvrir plus"
+  sur la page d'accueil.
+
+  - Titre : titre affiché en haut de la modale.
+  - Contenu : texte principal (présentation de Work Class Gabon).
+
+──────────────────────────────────────────
+12.3 ÉVÉNEMENT À LA UNE
+──────────────────────────────────────────
+
+  Sélectionner l'événement mis en avant dans le hero de la page d'accueil.
+  Par défaut : le dernier événement publié.
+  Ici : choisir manuellement parmi les événements publiés.
+
+──────────────────────────────────────────
+12.4 PROMOTEURS
+──────────────────────────────────────────
+
+  Gérer la liste des promoteurs/organisateurs affichés sur le site.
+  - Ajouter : nom + logo.
+  - Modifier : cliquer sur un promoteur existant.
+  - Supprimer : icône poubelle + confirmer.
+
+──────────────────────────────────────────
+12.5 PARTENAIRES
+──────────────────────────────────────────
+
+  Même fonctionnement que les promoteurs.
+  Les logos s'affichent en bas de page d'accueil.
+  Format recommandé : PNG transparent, fond blanc ou neutre.
+
+──────────────────────────────────────────
+12.6 INDUSTRIES
+──────────────────────────────────────────
+
+  Les 8 secteurs affichés dans la section "Au service de toutes les industries".
+  Pour chaque secteur : modifier le nom et/ou l'image de fond.
+
+──────────────────────────────────────────
+12.7 FOOTER
+──────────────────────────────────────────
+
+  - Description de Work Class Gabon (pied de page).
+  - Email de contact.
+  - Adresse / localisation.
+  - Colonnes de liens (titre + liste de liens label/URL).
+
+  SÉCURITÉ : Les URLs des liens sont validées côté serveur. Les liens
+  commençant par "javascript:" ou "data:" sont refusés automatiquement.
+
+================================================================================
+13. PARAMÈTRES — STATISTIQUES ET PAIEMENTS
+================================================================================
+
+──────────────────────────────────────────
+13.1 STATISTIQUES
+──────────────────────────────────────────
+
+Chemin : Admin → Paramètres → Statistiques
+
+  Vue synthétique :
+  - Nombre de réservations par événement
+  - Taux de présence (scans / confirmations)
+  - Revenus (si paiement activé)
+  - Avis soumis / approuvés
+
+──────────────────────────────────────────
+13.2 PAIEMENTS
+──────────────────────────────────────────
+
+Chemin : Admin → Paramètres → Paiements
+Permission requise : payments:manage
+
+  Configuration du gateway de paiement en ligne.
+  - Clés API (publique et secrète)
+  - Mode test / production
+
+  SÉCURITÉ CRITIQUE :
+  - Les clés de production ne doivent être saisies QUE par le super_admin.
+  - Ne jamais activer le mode production avant d'avoir validé les paiements
+    en mode test.
+  - Ne jamais partager les clés API dans un email ou un document non chiffré.
+
+================================================================================
+14. RÈGLES DE SÉCURITÉ OBLIGATOIRES
+================================================================================
+
+Ces règles sont non négociables. Leur non-respect expose les données des
+participants et la réputation de Work Class Gabon.
+
+──────────────────────────────────────────
+COMPTES ET ACCÈS
+──────────────────────────────────────────
+
+  [1] Mot de passe unique et fort
+      Minimum 12 caractères, mélange lettres/chiffres/symboles.
+      Ne pas réutiliser un mot de passe d'un autre service.
+
+  [2] Pas de partage de compte
+      Chaque admin doit avoir son propre compte. Jamais de compte "commun".
+
+  [3] Déconnexion systématique
+      Se déconnecter en quittant un poste partagé, public ou en fin de session.
+
+  [4] Signaler toute connexion suspecte
+      Toute connexion à une heure inhabituelle ou depuis un pays inconnu
+      doit être signalée immédiatement au super_admin.
+
+  [5] Désactivation immédiate
+      Tout collaborateur quittant l'équipe → compte désactivé le jour même.
+      Ne pas laisser des comptes inactifs depuis plus de 3 mois.
+
+──────────────────────────────────────────
+DONNÉES PERSONNELLES
+──────────────────────────────────────────
+
+  [6] Pas de capture d'écran des données participants
+      Les pages listant des emails, téléphones ou adresses ne doivent pas
+      être photographiées ou exportées sans autorisation explicite.
+
+  [7] Pas de transfert de données non chiffré
+      Ne jamais envoyer une liste de participants par email ordinaire
+      ou messagerie non sécurisée.
+
+  [8] Usage limité au cadre Work Class Gabon
+      Les données des participants (email, téléphone, adresse) ne peuvent
+      être utilisées qu'à des fins directement liées aux événements.
+
+──────────────────────────────────────────
+LIENS ET FICHIERS
+──────────────────────────────────────────
+
+  [9] Liens sécurisés (certificats, livrets)
+      Les URLs de téléchargement contiennent des tokens d'authentification.
+      Ne pas diffuser ces liens publiquement ou sur les réseaux sociaux.
+      Ils sont réservés aux participants concernés.
+
+  [10] Vérification des URLs de publicités
+       Avant d'activer une publicité, vérifier que l'URL de destination est
+       légitime. Ne pas mettre de liens vers des sites inconnus.
+
+──────────────────────────────────────────
+PERMISSIONS
+──────────────────────────────────────────
+
+  [11] Principe du moindre privilège
+       N'attribuer que les permissions nécessaires à chaque rôle.
+       En cas de doute : moins c'est mieux.
+
+  [12] Revue périodique des comptes
+       Tous les 3 mois, vérifier la liste des comptes actifs et supprimer
+       les accès obsolètes.
+
+================================================================================
+15. PROCÉDURES D'URGENCE
+================================================================================
+
+──────────────────────────────────────────
+COMPTE COMPROMIS (MOT DE PASSE VOLÉ)
+──────────────────────────────────────────
+
+  1. Contacter IMMÉDIATEMENT le super_admin.
+  2. Le super_admin désactive le compte compromis.
+  3. Créer un nouveau compte avec un nouveau mot de passe.
+  4. Vérifier les logs d'audit pour identifier les actions effectuées
+     avec le compte compromis.
+
+──────────────────────────────────────────
+EMAIL MALVEILLANT REÇU (PHISHING)
+──────────────────────────────────────────
+
+  Si vous recevez un email vous demandant vos identifiants WCG :
+  1. Ne jamais cliquer sur les liens.
+  2. Ne jamais saisir votre mot de passe sur un site inconnu.
+  3. Signaler l'email au super_admin.
+  4. L'application WCG ne vous demandera JAMAIS votre mot de passe par email.
+
+──────────────────────────────────────────
+DOUBLON DE RÉSERVATION OU DE BILLET
+──────────────────────────────────────────
+
+  Si un participant passe deux fois avec le même billet :
+  1. Le second scan est automatiquement refusé (QR à usage unique).
+  2. Si le participant insiste, vérifier dans Admin → Réservations
+     que le billet est bien marqué "Scanné" avec une date/heure valide.
+  3. En cas de litige, noter le nom du participant et contacter
+     le super_admin pour consultation des logs d'audit.
+
+──────────────────────────────────────────
+DONNÉES INCORRECTES DANS UNE RÉSERVATION
+──────────────────────────────────────────
+
+  Si l'email d'un participant est erroné et qu'il n'a pas reçu son billet :
+  1. Admin → Participants → trouver le participant.
+  2. Corriger l'email.
+  3. Admin → Réservations → "Renvoyer le billet" sur sa réservation.
+
+  Si d'autres informations sont incorrectes (nom, etc.) :
+  1. Modifier directement dans Admin → Participants.
+  2. Si un certificat a déjà été envoyé avec l'ancien nom, contacter
+     le développeur pour régénérer le certificat.
+
+================================================================================
+FIN DU GUIDE
+================================================================================
+
+Pour toute question technique non couverte par ce guide :
+contacter le développeur ou l'équipe technique de Work Class Gabon.
+
+Ce document est à usage interne. Ne pas le diffuser en dehors de l'équipe.
+================================================================================

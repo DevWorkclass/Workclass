@@ -42,7 +42,6 @@ const FALLBACK: FooterContent = {
       title: 'Réservation',
       links: [
         { label: 'Réserver', href: '/reservation' },
-        { label: 'Mon billet', href: '/participant' },
         { label: 'FAQ', href: '/#faq' },
       ],
     },

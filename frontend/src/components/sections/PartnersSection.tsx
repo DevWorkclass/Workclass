@@ -7,6 +7,7 @@
  * Repli sur la liste statique si aucun partenaire enregistré.
  */
 import { useEffect, useState } from 'react';
+import Image from 'next/image';
 
 import { PARTNERS } from '@/data/homepageContent';
 import { useInfiniteMarquee } from '@/hooks/useInfiniteMarquee';
@@ -17,19 +18,23 @@ interface Partner {
   description?: string;
 }
 
+interface PartnersSectionProps {
+  initialPartners?: Partner[] | null;
+}
+
 const FALLBACK: Partner[] = PARTNERS.map((p) => ({ name: p.name, description: p.description }));
 
 function PartnerLogo({ p }: Readonly<{ p: Partner }>) {
   return (
     <div className="pointer-events-none flex h-20 w-44 shrink-0 items-center justify-center px-2 select-none">
       {p.logoUrl ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
+        <Image
           src={p.logoUrl}
           alt={p.name}
-          loading="lazy"
-          draggable={false}
-          className="max-h-16 max-w-full object-contain"
+          width={160}
+          height={64}
+          unoptimized
+          className="max-h-16 w-auto max-w-full object-contain"
         />
       ) : (
         <span className="text-center text-sm font-bold text-brand-navy">{p.name}</span>
@@ -38,11 +43,15 @@ function PartnerLogo({ p }: Readonly<{ p: Partner }>) {
   );
 }
 
-export function PartnersSection() {
-  const [partners, setPartners] = useState<Partner[]>(FALLBACK);
+export function PartnersSection({ initialPartners }: PartnersSectionProps = {}) {
+  const [partners, setPartners] = useState<Partner[]>(() => {
+    if (initialPartners && initialPartners.length > 0) return initialPartners;
+    return FALLBACK;
+  });
   const { containerRef, trackRef, dragProps } = useInfiniteMarquee({ speed: 50 });
 
   useEffect(() => {
+    if (initialPartners) return;
     import('@/lib/api').then(({ apiFetch }) =>
       apiFetch<{ data: Partner[] }>('/content/partners')
         .then((res) => {
@@ -50,7 +59,7 @@ export function PartnersSection() {
         })
         .catch(() => {}),
     );
-  }, []);
+  }, [initialPartners]);
 
   // Boucle sans couture : deux groupes IDENTIQUES côte à côte ; le hook
   // remet l'offset à 0 quand on a parcouru exactement un groupe (gap inclus).
@@ -67,7 +76,7 @@ export function PartnersSection() {
         className="relative cursor-grab overflow-hidden touch-pan-y active:cursor-grabbing"
       >
         <div ref={trackRef} className="flex w-max gap-6 will-change-transform">
-          <div className="flex shrink-0 gap-6" aria-hidden={false}>
+          <div className="flex shrink-0 gap-6">
             {partners.map((p, i) => (
               <PartnerLogo key={`a-${p.name}-${i}`} p={p} />
             ))}

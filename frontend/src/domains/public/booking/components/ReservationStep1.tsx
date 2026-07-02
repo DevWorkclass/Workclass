@@ -7,6 +7,7 @@
  */
 import { ArrowLeft, Check, Minus, Plus } from 'lucide-react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useParams, useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
 
@@ -125,7 +126,7 @@ export function ReservationStep1({ event, ticketTypes, maxQuantity = 10 }: Reser
                     key={type.id}
                     type="button"
                     role="radio"
-                    aria-checked={isSelected}
+                    aria-checked={isSelected ? 'true' : 'false'}
                     onClick={() => setSelectedId(type.id)}
                     className={`relative rounded-2xl border p-5 text-left transition-colors ${
                       isSelected
@@ -213,12 +214,12 @@ export function ReservationStep1({ event, ticketTypes, maxQuantity = 10 }: Reser
           <aside className="h-fit rounded-2xl bg-[linear-gradient(160deg,#0E2450_5%,#2152B6_95%)] p-5 text-white shadow-lg">
             <div className="relative aspect-[16/9] overflow-hidden rounded-xl bg-brand-navy-deep">
               {event.coverImage ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
+                <Image
                   src={event.coverImage}
                   alt={event.title}
-                  className="size-full object-cover"
-                  loading="lazy"
+                  fill
+                  unoptimized
+                  className="object-cover"
                 />
               ) : null}
             </div>

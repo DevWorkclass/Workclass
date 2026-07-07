@@ -34,5 +34,6 @@ export const ROUTES = {
     ads: '/admin/publicites',
     users: '/admin/utilisateurs',
     settings: '/admin/parametres',
+    profile: '/admin/profil',
   },
 } as const;

@@ -4,7 +4,8 @@
  * Menu profil + déconnexion (coin haut-droit du shell admin).
  * Affiche le compte connecté (initiales + nom/email) et permet de se déconnecter.
  */
-import { LogOut, User } from 'lucide-react';
+import { LogOut, User, UserCog } from 'lucide-react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 
@@ -76,6 +77,15 @@ export function UserMenu() {
             ) : null}
             <p className="mt-1 text-xs font-medium text-brand-gold">{roleLabel}</p>
           </div>
+          <Link
+            href={ROUTES.admin.profile}
+            role="menuitem"
+            onClick={() => setOpen(false)}
+            className="mt-1 flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-brand-navy hover:bg-brand-navy/5"
+          >
+            <UserCog className="size-4" />
+            Mon profil
+          </Link>
           <button
             type="button"
             role="menuitem"

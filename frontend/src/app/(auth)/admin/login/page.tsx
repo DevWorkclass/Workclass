@@ -122,7 +122,7 @@ export default function AdminLoginPage() {
                   <span className="text-xs font-bold uppercase tracking-wider text-brand-navy/70">
                     Mot de passe
                   </span>
-                  {/* On pourrait ajouter un lien "Mot de passe oublié ?" ici */}
+                  {/* On pourrait ajouter un lien "Mot de passe oublié ?" ici dans la V2 */}
                 </div>
                 <div className="relative">
                   <input

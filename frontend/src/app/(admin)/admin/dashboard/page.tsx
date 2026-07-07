@@ -2,17 +2,33 @@
 
 /**
  * Admin — Tableau de bord. KPI temps réel issus du backend (`GET /admin/metrics/kpi`).
- * Vue synthétique : indicateurs clés + 3 KPI TDR + actions rapides.
- * Les répartitions détaillées (par événement / par type) vivent dans
- * Paramètres → Statistiques détaillées.
+ * Vue illustrée : cartes synthétiques, courbes (réservations + revenus), donuts
+ * (statuts + types de billets), barres (top événements), distribution des notes
+ * et jauges de complétion (paiements, présences, certificats).
  */
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { CalendarPlus, QrCode, Users, FileDown, Award, Star } from 'lucide-react';
+import {
+  CalendarPlus,
+  QrCode,
+  Users,
+  FileDown,
+  Award,
+  Star,
+} from 'lucide-react';
 
 import { PageHeader } from '@/components/admin/PageHeader';
 import { StatCard } from '@/components/admin/StatCard';
 import { Button } from '@/components/ui/button';
+import {
+  BookingsStatusDonut,
+  BookingsTrend,
+  CompletionGauges,
+  RatingsHistogram,
+  RevenueTrend,
+  TicketTypeSplit,
+  TopEvents,
+} from '@/components/admin/DashboardCharts';
 import { ROUTES } from '@/constants/routes';
 import { apiAuth, ApiError } from '@/lib/api';
 import { formatPrice } from '@/lib/formatters';
@@ -48,24 +64,24 @@ function QuickActions() {
 }
 
 /** Carte d'un KPI TDR avec jauge circulaire (valeur en %). */
-function TdrCard({ label, value, hint }: { label: string; value: number; hint: string }) {
+function TdrCard({ label, value, hint }: Readonly<{ label: string; value: number; hint: string }>) {
   const pct = Math.min(Math.max(value, 0), 100);
   return (
-    <div className="rounded-2xl border border-black/5 bg-white p-6 shadow-sm">
-      <div className="flex items-center gap-5">
+    <div className="rounded-2xl border border-black/5 bg-white p-4 shadow-sm sm:p-6">
+      <div className="flex items-center gap-3 sm:gap-5">
         <div
-          className="relative grid size-24 shrink-0 place-items-center rounded-full"
+          className="relative grid size-20 shrink-0 place-items-center rounded-full sm:size-24"
           style={{ background: `conic-gradient(#C8A84B ${pct}%, #E5E7EB ${pct}% 100%)` }}
           role="img"
           aria-label={`${label} : ${value}%`}
         >
-          <div className="grid size-16 place-items-center rounded-full bg-white text-lg font-extrabold text-brand-navy">
+          <div className="grid size-14 place-items-center rounded-full bg-white text-base font-extrabold text-brand-navy sm:size-16 sm:text-lg">
             {value}%
           </div>
         </div>
-        <div>
-          <h3 className="font-bold text-brand-navy">{label}</h3>
-          <p className="mt-1 text-xs text-brand-muted">{hint}</p>
+        <div className="min-w-0 flex-1">
+          <h3 className="whitespace-nowrap text-sm font-bold text-brand-navy">{label}</h3>
+          <p className="mt-1 text-[10px] leading-tight text-brand-muted">{hint}</p>
         </div>
       </div>
     </div>
@@ -101,7 +117,7 @@ export default function AdminDashboardPage() {
     <>
       <PageHeader
         title="Tableau de bord"
-        subtitle="Indicateurs temps réel"
+        subtitle="Indicateurs temps réel et tendances"
         actions={
           <Link href={`${ROUTES.admin.settings}/statistiques`}>
             <Button variant="outline" size="sm">
@@ -119,9 +135,9 @@ export default function AdminDashboardPage() {
       )}
 
       {kpi && (
-        <div className="space-y-8">
+        <div className="space-y-6 sm:space-y-8">
           {/* KPI principaux */}
-          <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          <section className="grid gap-3 grid-cols-2 lg:grid-cols-4">
             <StatCard label="Réservations totales" value={kpi.totals.bookings} accent="gold" />
             <StatCard
               label="Revenus générés"
@@ -143,10 +159,10 @@ export default function AdminDashboardPage() {
             />
           </section>
 
-          {/* 3 KPI TDR / HCI */}
+          {/* KPI TDR principaux */}
           <section>
             <h2 className="mb-3 font-bold text-brand-navy">Indicateurs de performance (TDR)</h2>
-            <div className="grid gap-4 lg:grid-cols-3">
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
               <TdrCard
                 label="Taux de conversion"
                 value={kpi.tdr.conversionRate}
@@ -162,6 +178,54 @@ export default function AdminDashboardPage() {
                 value={kpi.tdr.engagementRate}
                 hint="Avis reçus / réservations"
               />
+            </div>
+          </section>
+
+          {/* Tendances temporelles */}
+          <section>
+            <h2 className="mb-3 font-bold text-brand-navy">Tendances — 30 derniers jours</h2>
+            <div className="grid gap-3 lg:grid-cols-2">
+              <BookingsTrend data={kpi.daily} />
+              <RevenueTrend data={kpi.daily} />
+            </div>
+          </section>
+
+          {/* Répartitions */}
+          <section>
+            <h2 className="mb-3 font-bold text-brand-navy">Répartitions</h2>
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              <BookingsStatusDonut data={kpi.bookingsByStatus} />
+              <TicketTypeSplit data={kpi.participantsByType} />
+              <RatingsHistogram data={kpi.ratingsDistribution} />
+            </div>
+          </section>
+
+          {/* Top événements + jauges */}
+          <section>
+            <h2 className="mb-3 font-bold text-brand-navy">Performances</h2>
+            <div className="grid gap-3 lg:grid-cols-2">
+              <TopEvents data={kpi.participantsByEvent} />
+              <div className="flex flex-col gap-3">
+                <CompletionGauges data={kpi.gauges} />
+                <div className="grid gap-3 rounded-2xl border border-black/5 bg-white p-4 shadow-sm sm:grid-cols-2 sm:p-5">
+                  <StatCard
+                    label="Places restantes"
+                    value={kpi.totals.seatsRemaining}
+                    hint={
+                      kpi.totals.seatsPending > 0
+                        ? `sur ${kpi.totals.seatsTotal} · ${kpi.totals.seatsPending} en attente`
+                        : `sur ${kpi.totals.seatsTotal} au total`
+                    }
+                    accent="blue"
+                  />
+                  <StatCard
+                    label="Avis reçus"
+                    value={kpi.totals.reviewsCount}
+                    hint={`note moyenne ${kpi.totals.avgRating || '—'} / 5`}
+                    accent="gold"
+                  />
+                </div>
+              </div>
             </div>
           </section>
 

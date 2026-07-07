@@ -15,6 +15,9 @@ FILE_OWNERSHIP.md
 ARCHITECTURE_DECISIONS.md
 PROGRESS.md
 
+# Guide utilisateur interne (non publié)
+docs/GUIDE_UTILISATEUR.md
+
 # Environnement & secrets
 .env
 .env.local

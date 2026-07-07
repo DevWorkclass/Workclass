@@ -108,6 +108,7 @@ function BookingsContent() {
   const [eventId, setEventId] = useState<string>('all');
   const [busyId, setBusyId] = useState<string | null>(null);
   const [confirmCancel, setConfirmCancel] = useState<string | null>(null);
+  const [confirmValidate, setConfirmValidate] = useState<string | null>(null);
 
   // ── Création réservation ──
   const [showCreate, setShowCreate] = useState(false);
@@ -476,7 +477,7 @@ function BookingsContent() {
                                   variant="gold"
                                   size="sm"
                                   disabled={busyId === b.id}
-                                  onClick={() => act(b.id, 'validate')}
+                                  onClick={() => setConfirmValidate(b.id)}
                                 >
                                   Valider
                                 </Button>
@@ -526,6 +527,18 @@ function BookingsContent() {
         onConfirm={() => {
           if (confirmCancel) void act(confirmCancel, 'cancel');
           setConfirmCancel(null);
+        }}
+      />
+
+      <ConfirmDialog
+        open={confirmValidate !== null}
+        title="Valider la réservation ?"
+        description="Le billet PDF sera généré et envoyé par email au participant. Cette action est irréversible."
+        confirmLabel="Valider"
+        onCancel={() => setConfirmValidate(null)}
+        onConfirm={() => {
+          if (confirmValidate) void act(confirmValidate, 'validate');
+          setConfirmValidate(null);
         }}
       />
 

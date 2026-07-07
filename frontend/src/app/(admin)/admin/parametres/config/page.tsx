@@ -14,6 +14,8 @@ import { IndustriesSettings } from '@/components/admin/IndustriesSettings';
 import { FooterSettings } from '@/components/admin/FooterSettings';
 import { PromotersSettings } from '@/components/admin/PromotersSettings';
 import { AboutSettings } from '@/components/admin/AboutSettings';
+import { DomainesSettings } from '@/components/admin/DomainesSettings';
+import { InstallQRSettings } from '@/components/admin/InstallQRSettings';
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner';
 import { apiAuth, apiFetch, ApiError } from '@/lib/api';
 
@@ -126,7 +128,9 @@ export default function AdminConfigPage() {
           )}
         </section>
 
+        <InstallQRSettings />
         <AboutSettings />
+        <DomainesSettings />
         <PromotersSettings />
         <PartnersSettings />
         <IndustriesSettings />

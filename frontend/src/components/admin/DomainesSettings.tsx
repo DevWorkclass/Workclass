@@ -5,9 +5,11 @@
  * L'image est téléversée vers le backend (Supabase Storage) ; la liste est
  * persistée via POST. Visible uniquement si l'admin a la permission `content:manage`.
  */
+import { Trash2 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 
 import { Button } from '@/components/ui/button';
+import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 import { apiAuth, apiFetch, apiUpload, ApiError } from '@/lib/api';
 
 type ThemeIcon = 'briefcase' | 'trending-up' | 'lightbulb' | 'rocket' | 'globe';
@@ -22,13 +24,23 @@ interface HomeTheme {
 
 const ICON_OPTIONS: ThemeIcon[] = ['briefcase', 'trending-up', 'lightbulb', 'rocket', 'globe'];
 
-function ThemeRow({
-  theme,
-  onChange,
-}: {
-  theme: HomeTheme;
-  onChange: (patch: Partial<HomeTheme>) => void;
-}) {
+const MAX_THEMES = 12;
+
+const EMPTY_THEME: HomeTheme = {
+  icon: 'briefcase',
+  title: 'Nouveau module',
+  description: 'Décrivez ce module en quelques mots.',
+  imageUrl: '',
+  content: '',
+};
+
+interface ThemeRowProps {
+  readonly theme: HomeTheme;
+  readonly onChange: (patch: Partial<HomeTheme>) => void;
+  readonly onRemoveRequest: () => void;
+}
+
+function ThemeRow({ theme, onChange, onRemoveRequest }: ThemeRowProps) {
   const fileRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
@@ -52,7 +64,15 @@ function ThemeRow({
   };
 
   return (
-    <div className="grid gap-4 rounded-xl border border-black/5 bg-brand-cream p-4 sm:grid-cols-[120px_1fr]">
+    <div className="relative grid gap-4 rounded-xl border border-black/5 bg-brand-cream p-4 sm:grid-cols-[120px_1fr]">
+      <button
+        type="button"
+        onClick={onRemoveRequest}
+        aria-label={`Supprimer le module ${theme.title}`}
+        className="absolute right-3 top-3 grid size-8 place-items-center rounded-full border border-semantic-error/30 bg-white text-semantic-error transition-colors hover:bg-semantic-error hover:text-white"
+      >
+        <Trash2 className="size-4" />
+      </button>
       <div className="space-y-2">
         <div
           className="aspect-[3/4] w-full rounded-lg border border-black/10 bg-white bg-cover bg-center"
@@ -139,22 +159,43 @@ function ThemeRow({
   );
 }
 
+/** ID client stable pour la clé React (non envoyé au backend). */
+function newRowId(): string {
+  return globalThis.crypto?.randomUUID?.() ?? `t-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+}
+
 export function DomainesSettings() {
   const [themes, setThemes] = useState<HomeTheme[]>([]);
+  const [rowIds, setRowIds] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [confirmIndex, setConfirmIndex] = useState<number | null>(null);
+  const pendingTheme = confirmIndex === null ? null : themes[confirmIndex];
 
   useEffect(() => {
     apiFetch<{ data: HomeTheme[] }>('/content/home-themes')
-      .then((res) => setThemes(res.data))
+      .then((res) => {
+        setThemes(res.data);
+        setRowIds(res.data.map(() => newRowId()));
+      })
       .catch(() => setError('Impossible de charger les domaines.'))
       .finally(() => setLoading(false));
   }, []);
 
   const patch = (index: number, p: Partial<HomeTheme>) =>
     setThemes((list) => list.map((t, i) => (i === index ? { ...t, ...p } : t)));
+
+  const addTheme = () => {
+    setThemes((list) => (list.length >= MAX_THEMES ? list : [...list, { ...EMPTY_THEME }]));
+    setRowIds((ids) => (ids.length >= MAX_THEMES ? ids : [...ids, newRowId()]));
+  };
+
+  const removeTheme = (index: number) => {
+    setThemes((list) => (list.length <= 1 ? list : list.filter((_, i) => i !== index)));
+    setRowIds((ids) => (ids.length <= 1 ? ids : ids.filter((_, i) => i !== index)));
+  };
 
   const save = async () => {
     try {
@@ -186,10 +227,23 @@ export function DomainesSettings() {
             Image, titre et description de chaque domaine affiché sur le site public.
           </p>
         </div>
-        <Button variant="gold" size="sm" disabled={saving || loading} onClick={save}>
-          {saving ? 'Enregistrement…' : 'Enregistrer les domaines'}
-        </Button>
+        <div className="flex flex-wrap items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={loading || themes.length >= MAX_THEMES}
+            onClick={addTheme}
+          >
+            Ajouter un module
+          </Button>
+          <Button variant="gold" size="sm" disabled={saving || loading} onClick={save}>
+            {saving ? 'Enregistrement…' : 'Enregistrer les domaines'}
+          </Button>
+        </div>
       </div>
+      <p className="mt-1 text-xs text-brand-muted">
+        {themes.length} / {MAX_THEMES} modules. Minimum requis : 1.
+      </p>
 
       {message && <p className="mt-3 text-sm text-semantic-success">{message}</p>}
       {error && (
@@ -203,10 +257,31 @@ export function DomainesSettings() {
       ) : (
         <div className="mt-5 grid gap-4 lg:grid-cols-2">
           {themes.map((t, i) => (
-            <ThemeRow key={i} theme={t} onChange={(p) => patch(i, p)} />
+            <ThemeRow
+              key={rowIds[i] ?? `row-${i}`}
+              theme={t}
+              onChange={(p) => patch(i, p)}
+              onRemoveRequest={() => setConfirmIndex(i)}
+            />
           ))}
         </div>
       )}
+
+      <ConfirmDialog
+        open={confirmIndex !== null}
+        title="Supprimer ce module ?"
+        description={
+          pendingTheme?.title
+            ? `« ${pendingTheme.title} » sera supprimé du programme.`
+            : 'Ce module sera supprimé du programme.'
+        }
+        confirmLabel="Supprimer"
+        onCancel={() => setConfirmIndex(null)}
+        onConfirm={() => {
+          if (confirmIndex !== null) removeTheme(confirmIndex);
+          setConfirmIndex(null);
+        }}
+      />
     </section>
   );
 }

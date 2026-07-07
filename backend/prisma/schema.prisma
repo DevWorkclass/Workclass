@@ -74,6 +74,8 @@ model Event {
   speakers    Json         @default("[]")
   // Recommandations propres à l'événement (consignes/conseils aux participants).
   recommendations String?  @map("recommendations")
+  // Livret ressources (PDF) propre à l'événement — lien envoyé avec le certificat.
+  resourceBookletUrl String? @map("resource_booklet_url")
   status      EventStatus  @default(draft)
   createdAt   DateTime     @default(now()) @map("created_at")
   updatedAt   DateTime     @updatedAt       @map("updated_at")

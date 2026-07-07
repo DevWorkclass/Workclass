@@ -1,8 +1,9 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import Link from 'next/link';
+import Image from 'next/image';
 
 import { AD_SLIDES, type AdSlide } from '@/data/homepageContent';
 import { apiFetch } from '@/lib/api';
@@ -26,6 +27,10 @@ interface BackendAd {
   active: boolean;
 }
 
+interface PartnerBannerProps {
+  initialAds?: BackendAd[] | null;
+}
+
 /** Convertit une annonce backend en slide (génère un visuel par défaut). */
 function toSlide(ad: BackendAd, i: number): AdSlide {
   const p = PALETTES[i % PALETTES.length]!;
@@ -46,12 +51,19 @@ function toSlide(ad: BackendAd, i: number): AdSlide {
   };
 }
 
-export function PartnerBanner() {
+export function PartnerBanner({ initialAds }: PartnerBannerProps = {}) {
   const [current, setCurrent] = useState(0);
   const [paused, setPaused] = useState(false);
-  const [slides, setSlides] = useState<AdSlide[]>(AD_SLIDES);
+  const [slides, setSlides] = useState<AdSlide[]>(() => {
+    if (initialAds && initialAds.length > 0) {
+      const active = initialAds.filter((a) => a.active);
+      if (active.length > 0) return active.map(toSlide);
+    }
+    return AD_SLIDES;
+  });
 
   useEffect(() => {
+    if (initialAds) return;
     apiFetch<{ data: BackendAd[] }>('/content/ads')
       .then((res) => {
         const active = (res.data ?? []).filter((a) => a.active);
@@ -61,7 +73,7 @@ export function PartnerBanner() {
         }
       })
       .catch(() => {});
-  }, []);
+  }, [initialAds]);
 
   const total = slides.length;
 
@@ -74,6 +86,34 @@ export function PartnerBanner() {
     return () => clearInterval(id);
   }, [next, paused]);
 
+  // --- Drag / swipe entre slides (souris + tactile) ---
+  const dragRef = useRef<{ active: boolean; startX: number; pointerId: number | null }>({
+    active: false,
+    startX: 0,
+    pointerId: null,
+  });
+  const bannerRef = useRef<HTMLDivElement>(null);
+
+  const onPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    dragRef.current = { active: true, startX: e.clientX, pointerId: e.pointerId };
+    setPaused(true);
+    try {
+      bannerRef.current?.setPointerCapture(e.pointerId);
+    } catch {
+      /* ignore */
+    }
+  };
+  const onPointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!dragRef.current.active) return;
+    const delta = e.clientX - dragRef.current.startX;
+    dragRef.current = { active: false, startX: 0, pointerId: null };
+    setPaused(false);
+    if (Math.abs(delta) > 40) {
+      if (delta < 0) next();
+      else prev();
+    }
+  };
+
   return (
     <section
       className="bg-brand-navy"
@@ -82,7 +122,13 @@ export function PartnerBanner() {
     >
       <div className="container py-5">
         {/* Bannière */}
-        <div className="relative h-[200px] overflow-hidden rounded-xl">
+        <div
+          ref={bannerRef}
+          onPointerDown={onPointerDown}
+          onPointerUp={onPointerUp}
+          onPointerCancel={onPointerUp}
+          className="relative h-[200px] cursor-grab touch-pan-y overflow-hidden rounded-xl active:cursor-grabbing"
+        >
           {slides.map((slide, i) => {
             const isActive = i === current;
             return (
@@ -102,11 +148,13 @@ export function PartnerBanner() {
                   }}
                 >
                   {slide.imageUrl ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
+                    <Image
                       src={slide.imageUrl}
                       alt={slide.title}
-                      className="size-full object-cover"
+                      fill
+                      priority={i === 0}
+                      unoptimized
+                      className="object-cover"
                     />
                   ) : (
                     /* Placeholder couverture */

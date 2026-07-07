@@ -2,22 +2,74 @@ import { EventsRepository } from '../repositories/events.repository';
 import type { CreateEventInput, UpdateEventInput } from '../validators/events.validator';
 import { logAudit } from '../../shared/audit/services/audit.service';
 import { NotFoundError, ValidationError } from '../../shared/errors/types/error.types';
+import { prisma } from '../../../config/database';
 
 interface TicketTypeSeats {
+  id: string;
   quota: number;
   soldCount: number;
 }
 
-/** Ajoute les places (total / vendues / disponibles) à partir des types de billets. */
-function withAvailability<T extends { ticketTypes?: TicketTypeSeats[] }>(event: T) {
+/**
+ * Ajoute les places (total / vendues / disponibles / en attente) à partir des types
+ * de billets.
+ *
+ * Règle métier (choix produit) :
+ *  - `seatsSold`      = places VALIDÉES en admin (status = 'confirmed').
+ *  - `seatsAvailable` = quota − seatsSold (les pending n'occupent PAS la place côté affichage).
+ *  - `seatsPending`   = places réservées en attente de validation (status = 'pending'),
+ *                       exposées séparément pour information.
+ *
+ * NB : la garantie anti-surbooking reste assurée par `claimQuota` (UPDATE atomique
+ * sur `sold_count`), mais le décompte AFFICHÉ aux visiteurs ne baisse qu'à la
+ * validation.
+ */
+function withAvailability<T extends { ticketTypes?: TicketTypeSeats[] }>(
+  event: T,
+  confirmedByType: Map<string, number>,
+  pendingByType: Map<string, number>,
+) {
   const seatsTotal = (event.ticketTypes ?? []).reduce((sum, t) => sum + t.quota, 0);
-  const seatsSold = (event.ticketTypes ?? []).reduce((sum, t) => sum + t.soldCount, 0);
+  const seatsSold = (event.ticketTypes ?? []).reduce(
+    (sum, t) => sum + (confirmedByType.get(t.id) ?? 0),
+    0,
+  );
+  const seatsPending = (event.ticketTypes ?? []).reduce(
+    (sum, t) => sum + (pendingByType.get(t.id) ?? 0),
+    0,
+  );
   return {
     ...event,
     seatsTotal,
     seatsSold,
+    seatsPending,
     seatsAvailable: Math.max(seatsTotal - seatsSold, 0),
   };
+}
+
+/**
+ * Agrège la quantité réservée par type de billet et par statut (confirmed / pending).
+ * Une seule requête SQL pour l'ensemble de la base.
+ */
+async function fetchLiveByTicketTypeAndStatus(): Promise<{
+  confirmed: Map<string, number>;
+  pending: Map<string, number>;
+}> {
+  const rows = await prisma.booking.groupBy({
+    by: ['ticketTypeId', 'status'],
+    _sum: { quantity: true },
+  });
+  const confirmed = new Map<string, number>();
+  const pending = new Map<string, number>();
+  for (const r of rows) {
+    const qty = r._sum.quantity ?? 0;
+    if (r.status === 'confirmed') {
+      confirmed.set(r.ticketTypeId, (confirmed.get(r.ticketTypeId) ?? 0) + qty);
+    } else if (r.status === 'pending') {
+      pending.set(r.ticketTypeId, (pending.get(r.ticketTypeId) ?? 0) + qty);
+    }
+  }
+  return { confirmed, pending };
 }
 
 function generateSlug(title: string): string {
@@ -77,14 +129,24 @@ export class EventsService {
   }
 
   async getEvents() {
-    const events = await this.repository.findAll();
-    return events.map(withAvailability);
+    const [events, agg] = await Promise.all([
+      this.repository.findAll(),
+      fetchLiveByTicketTypeAndStatus(),
+    ]);
+    return events.map((e) => withAvailability(e, agg.confirmed, agg.pending));
   }
 
   /** Liste publique des événements publiés (avec places disponibles). */
   async getPublicEvents() {
-    const events = await this.repository.findPublished();
-    return events.map(withAvailability);
+    const [events, agg] = await Promise.all([
+      this.repository.findPublished(),
+      fetchLiveByTicketTypeAndStatus(),
+    ]);
+    // Le livret ressources ne doit pas fuiter publiquement (lien réservé à l'envoi des certificats).
+    return events.map((e) => {
+      const { resourceBookletUrl: _booklet, ...rest } = e as typeof e & { resourceBookletUrl?: string | null };
+      return withAvailability(rest, agg.confirmed, agg.pending);
+    });
   }
 
   async updateEvent(data: UpdateEventInput, userId: string) {
@@ -161,5 +223,23 @@ export class EventsService {
     });
 
     return { id };
+  }
+
+  /** Enregistre l'URL du livret ressources d'un événement (après upload Storage). */
+  async setBooklet(eventId: string, url: string | null, userId: string) {
+    const existing = await this.repository.findById(eventId);
+    if (!existing) throw new NotFoundError('Evenement');
+
+    await this.repository.update(eventId, { resourceBookletUrl: url });
+
+    await logAudit({
+      action: url ? 'EVENT_BOOKLET_SET' : 'EVENT_BOOKLET_REMOVE',
+      userId,
+      resource: 'event',
+      resourceId: eventId,
+      result: 'success',
+    });
+
+    return { id: eventId, resourceBookletUrl: url };
   }
 }

@@ -23,6 +23,7 @@ export function Logo({ className, iconOnly = false, size = 40 }: LogoProps) {
         width={size}
         height={size}
         priority
+        style={{ width: size, height: 'auto' }}
         className="object-contain"
       />
       {!iconOnly && (

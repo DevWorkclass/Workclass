@@ -1,13 +1,16 @@
 'use client';
 
 /**
- * Partenaires — logos affichés en défilement automatique continu sur l'accueil.
+ * Partenaires — logos affichés en défilement continu fluide sur l'accueil.
  *  - GET /api/content/partners (logos gérés depuis Paramètres → Config)
+ * Défilement infini (RAF) avec drag manuel souris / swipe tactile.
  * Repli sur la liste statique si aucun partenaire enregistré.
  */
 import { useEffect, useState } from 'react';
+import Image from 'next/image';
 
 import { PARTNERS } from '@/data/homepageContent';
+import { useInfiniteMarquee } from '@/hooks/useInfiniteMarquee';
 
 interface Partner {
   name: string;
@@ -15,19 +18,23 @@ interface Partner {
   description?: string;
 }
 
+interface PartnersSectionProps {
+  initialPartners?: Partner[] | null;
+}
+
 const FALLBACK: Partner[] = PARTNERS.map((p) => ({ name: p.name, description: p.description }));
 
 function PartnerLogo({ p }: Readonly<{ p: Partner }>) {
-  // Logo sans cadre ni fond : juste l'image en object-contain.
   return (
-    <div className="flex h-20 w-44 shrink-0 items-center justify-center px-2">
+    <div className="pointer-events-none flex h-20 w-44 shrink-0 items-center justify-center px-2 select-none">
       {p.logoUrl ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
+        <Image
           src={p.logoUrl}
           alt={p.name}
-          loading="lazy"
-          className="max-h-16 max-w-full object-contain"
+          width={160}
+          height={64}
+          unoptimized
+          className="max-h-16 w-auto max-w-full object-contain"
         />
       ) : (
         <span className="text-center text-sm font-bold text-brand-navy">{p.name}</span>
@@ -36,10 +43,15 @@ function PartnerLogo({ p }: Readonly<{ p: Partner }>) {
   );
 }
 
-export function PartnersSection() {
-  const [partners, setPartners] = useState<Partner[]>(FALLBACK);
+export function PartnersSection({ initialPartners }: PartnersSectionProps = {}) {
+  const [partners, setPartners] = useState<Partner[]>(() => {
+    if (initialPartners && initialPartners.length > 0) return initialPartners;
+    return FALLBACK;
+  });
+  const { containerRef, trackRef, dragProps } = useInfiniteMarquee({ speed: 50 });
 
   useEffect(() => {
+    if (initialPartners) return;
     import('@/lib/api').then(({ apiFetch }) =>
       apiFetch<{ data: Partner[] }>('/content/partners')
         .then((res) => {
@@ -47,11 +59,10 @@ export function PartnersSection() {
         })
         .catch(() => {}),
     );
-  }, []);
+  }, [initialPartners]);
 
-  // On duplique la liste pour un défilement en boucle sans couture.
-  const loop = [...partners, ...partners];
-
+  // Boucle sans couture : deux groupes IDENTIQUES côte à côte ; le hook
+  // remet l'offset à 0 quand on a parcouru exactement un groupe (gap inclus).
   return (
     <section className="border-y border-black/5 bg-brand-cream py-12">
       <div className="container">
@@ -59,11 +70,22 @@ export function PartnersSection() {
           Nos partenaires
         </p>
       </div>
-      <div className="group relative overflow-hidden">
-        <div className="flex w-max animate-[wcg-marquee_30s_linear_infinite] gap-6 group-hover:[animation-play-state:paused]">
-          {loop.map((p, i) => (
-            <PartnerLogo key={`${p.name}-${i}`} p={p} />
-          ))}
+      <div
+        ref={containerRef}
+        {...dragProps}
+        className="relative cursor-grab overflow-hidden touch-pan-y active:cursor-grabbing"
+      >
+        <div ref={trackRef} className="flex w-max gap-6 will-change-transform">
+          <div className="flex shrink-0 gap-6">
+            {partners.map((p, i) => (
+              <PartnerLogo key={`a-${p.name}-${i}`} p={p} />
+            ))}
+          </div>
+          <div className="flex shrink-0 gap-6" aria-hidden>
+            {partners.map((p, i) => (
+              <PartnerLogo key={`b-${p.name}-${i}`} p={p} />
+            ))}
+          </div>
         </div>
       </div>
     </section>

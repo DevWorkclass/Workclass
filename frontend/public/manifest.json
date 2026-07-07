@@ -1,14 +1,18 @@
 {
+  "id": "/?source=pwa",
   "name": "Work Class Gabon",
-  "short_name": "WCG",
-  "description": "Plateforme de réservation et gestion d'événements professionnels.",
-  "start_url": "/",
+  "short_name": "WorkClass",
+  "description": "Plateforme de réservation et gestion d'événements professionnels au Gabon.",
+  "start_url": "/?source=pwa",
   "scope": "/",
   "display": "standalone",
+  "display_override": ["standalone", "minimal-ui", "browser"],
   "orientation": "portrait",
-  "background_color": "#FFFFFF",
-  "theme_color": "#0066CC",
+  "background_color": "#0E2150",
+  "theme_color": "#0E2150",
   "lang": "fr",
+  "dir": "ltr",
+  "categories": ["business", "events", "productivity"],
   "icons": [
     {
       "src": "/assets/images/logo/icon-192.png",
@@ -27,6 +31,20 @@
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Événements",
+      "short_name": "Événements",
+      "url": "/evenements",
+      "icons": [{ "src": "/assets/images/logo/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Réserver",
+      "short_name": "Réserver",
+      "url": "/reservation",
+      "icons": [{ "src": "/assets/images/logo/icon-192.png", "sizes": "192x192" }]
     }
   ]
 }

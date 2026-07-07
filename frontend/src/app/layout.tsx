@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from 'next';
 import '@/styles/globals.css';
+import { PwaRegister } from '@/components/shared/PwaRegister';
 
 /** Origine de l'API (sans le suffixe /api) pour le préchargement réseau. */
 function apiOrigin(): string | null {
@@ -41,7 +42,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         {origin && <link rel="preconnect" href={origin} crossOrigin="anonymous" />}
         {origin && <link rel="dns-prefetch" href={origin} />}
       </head>
-      <body>{children}</body>
+      <body>
+        {children}
+        <PwaRegister />
+      </body>
     </html>
   );
 }

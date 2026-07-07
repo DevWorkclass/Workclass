@@ -3,6 +3,7 @@
  * lien détail + bouton réserver. Réutilisée sur l'accueil et la liste.
  */
 import Link from 'next/link';
+import Image from 'next/image';
 import { ArrowRight, CalendarDays, MapPin } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
@@ -13,11 +14,16 @@ export function PublicEventCard({ event }: Readonly<{ event: PublicEvent }>) {
   const detail = ROUTES.public.eventDetail(event.slug);
   return (
     <article className="flex flex-col overflow-hidden rounded-2xl border border-black/5 bg-white shadow-sm transition-shadow hover:shadow-md">
-      <Link href={detail} className="block">
-        <div
-          className="aspect-[16/9] bg-brand-navy-deep bg-cover bg-center"
-          style={event.coverImage ? { backgroundImage: `url(${event.coverImage})` } : undefined}
-        />
+      <Link href={detail} className="block relative aspect-[16/9] bg-brand-navy-deep overflow-hidden">
+        {event.coverImage && (
+          <Image
+            src={event.coverImage}
+            alt={event.title}
+            fill
+            unoptimized
+            className="object-cover"
+          />
+        )}
       </Link>
       <div className="flex flex-1 flex-col p-5">
         <h3 className="text-lg font-bold text-brand-navy">
@@ -44,6 +50,11 @@ export function PublicEventCard({ event }: Readonly<{ event: PublicEvent }>) {
             <span className="text-semantic-error">Complet</span>
           )}
         </p>
+        {event.seatsPending > 0 && (
+          <p className="text-[11px] text-brand-muted">
+            +{event.seatsPending} en attente de validation
+          </p>
+        )}
 
         <div className="relative z-10 mt-auto flex flex-wrap gap-2 pt-4">
           {event.seatsAvailable > 0 ? (

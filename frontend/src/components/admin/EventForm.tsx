@@ -5,9 +5,10 @@ import { useRouter } from 'next/navigation';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Plus, Trash2 } from 'lucide-react';
+import { FileText, Plus, Trash2 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
+import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 import { apiFetch, apiUpload } from '@/lib/api';
 
 /** Convertit une date ISO en valeur d'input `datetime-local` (YYYY-MM-DDTHH:mm). */
@@ -62,6 +63,7 @@ export interface EventFormInitial {
   endDate?: string;
   coverImage?: string;
   recommendations?: string;
+  resourceBookletUrl?: string;
   status?: 'draft' | 'published' | 'archived';
   program?: { time?: string; title: string; description?: string }[];
   speakers?: { name: string; role?: string }[];
@@ -82,6 +84,10 @@ export function EventForm({ eventId, initial }: EventFormProps = {}) {
   const [error, setError] = useState<string | null>(null);
   const [coverMode, setCoverMode] = useState<'url' | 'upload'>('url');
   const [uploading, setUploading] = useState(false);
+  const [bookletUrl, setBookletUrl] = useState<string>(initial?.resourceBookletUrl ?? '');
+  const [bookletBusy, setBookletBusy] = useState(false);
+  const [bookletError, setBookletError] = useState<string | null>(null);
+  const [confirmRemoveBooklet, setConfirmRemoveBooklet] = useState(false);
   const isEdit = Boolean(eventId);
 
   const {
@@ -136,6 +142,47 @@ export function EventForm({ eventId, initial }: EventFormProps = {}) {
       setError("L'upload de l'image a échoué.");
     } finally {
       setUploading(false);
+    }
+  };
+
+  const handleBookletUpload = async (file: File) => {
+    if (!eventId) return;
+    if (file.type !== 'application/pdf') {
+      setBookletError('Le livret doit être un fichier PDF.');
+      return;
+    }
+    try {
+      setBookletError(null);
+      setBookletBusy(true);
+      const form = new FormData();
+      form.append('booklet', file);
+      form.append('eventId', eventId);
+      const res = await apiUpload<{ data: { resourceBookletUrl: string | null } }>(
+        '/admin/events/booklet',
+        form,
+      );
+      setBookletUrl(res.data.resourceBookletUrl ?? '');
+    } catch {
+      setBookletError("L'upload du livret a échoué.");
+    } finally {
+      setBookletBusy(false);
+    }
+  };
+
+  const handleBookletRemove = async () => {
+    if (!eventId) return;
+    try {
+      setBookletError(null);
+      setBookletBusy(true);
+      await apiFetch('/admin/events/booklet/delete', {
+        method: 'POST',
+        body: JSON.stringify({ eventId }),
+      });
+      setBookletUrl('');
+    } catch {
+      setBookletError("La suppression du livret a échoué.");
+    } finally {
+      setBookletBusy(false);
     }
   };
 
@@ -330,6 +377,71 @@ export function EventForm({ eventId, initial }: EventFormProps = {}) {
         {errors.recommendations && <p className="text-xs text-semantic-error">{errors.recommendations.message}</p>}
       </div>
 
+      {/* Livret ressources (PDF) — disponible uniquement en édition (besoin de l'ID). */}
+      {isEdit ? (
+        <div className="space-y-2 rounded-xl border border-black/10 bg-brand-cream/40 p-4">
+          <label className={labelClass}>Livret ressources (PDF)</label>
+          <p className="text-xs text-brand-muted">
+            Le lien de téléchargement sera envoyé au participant en même temps que son certificat.
+            Enregistrez-le avant l&apos;envoi des certificats.
+          </p>
+
+          {bookletUrl ? (
+            <div className="flex flex-wrap items-center gap-3 pt-1">
+              <a
+                href={bookletUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-2 text-sm font-semibold text-brand-navy underline"
+              >
+                <FileText className="size-4" /> Voir le livret enregistré
+              </a>
+              <label className="cursor-pointer text-sm font-semibold text-brand-navy underline">
+                Remplacer
+                <input
+                  type="file"
+                  accept="application/pdf"
+                  className="hidden"
+                  disabled={bookletBusy}
+                  onChange={(e) => {
+                    const f = e.target.files?.[0];
+                    if (f) void handleBookletUpload(f);
+                    e.target.value = '';
+                  }}
+                />
+              </label>
+              <button
+                type="button"
+                onClick={() => setConfirmRemoveBooklet(true)}
+                disabled={bookletBusy}
+                className="text-sm font-semibold text-semantic-error underline"
+              >
+                Supprimer
+              </button>
+            </div>
+          ) : (
+            <input
+              type="file"
+              accept="application/pdf"
+              disabled={bookletBusy}
+              onChange={(e) => {
+                const f = e.target.files?.[0];
+                if (f) void handleBookletUpload(f);
+                e.target.value = '';
+              }}
+              className="block w-full text-sm text-brand-navy file:mr-3 file:rounded-md file:border-0 file:bg-brand-navy file:px-4 file:py-2 file:text-white"
+            />
+          )}
+
+          {bookletBusy && <p className="text-xs text-brand-muted">Traitement en cours…</p>}
+          {bookletError && <p className="text-xs text-semantic-error">{bookletError}</p>}
+        </div>
+      ) : (
+        <div className="rounded-xl border border-dashed border-black/15 p-4 text-xs text-brand-muted">
+          Livret ressources : enregistrez d&apos;abord l&apos;événement pour pouvoir téléverser son PDF.
+        </div>
+      )}
+
       <div className="flex justify-end gap-3 pt-2">
         <Button type="button" variant="outline" onClick={() => router.push('/admin/evenements')} disabled={isSubmitting}>
           Annuler
@@ -338,6 +450,18 @@ export function EventForm({ eventId, initial }: EventFormProps = {}) {
           {submitLabel}
         </Button>
       </div>
+
+      <ConfirmDialog
+        open={confirmRemoveBooklet}
+        title="Supprimer le livret ressources ?"
+        description="Le livret ne sera plus joint aux prochains envois de certificats. Cette action est irréversible."
+        confirmLabel="Supprimer"
+        onCancel={() => setConfirmRemoveBooklet(false)}
+        onConfirm={() => {
+          setConfirmRemoveBooklet(false);
+          void handleBookletRemove();
+        }}
+      />
     </form>
   );
 }

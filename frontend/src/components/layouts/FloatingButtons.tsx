@@ -33,12 +33,17 @@ export function FloatingButtons() {
   }, []);
 
   return (
-    <div className="fixed bottom-5 right-4 z-50 flex flex-col items-end gap-3 sm:bottom-6 sm:right-6">
+    // Conteneur : pointer-events-none pour laisser passer les clics dans la
+    // zone fantôme du popup (300 px de layout invisible quand fermé).
+    // Chaque enfant interactif réactive pointer-events-auto.
+    <div className="pointer-events-none fixed bottom-5 right-4 z-50 flex flex-col items-end gap-3 sm:bottom-6 sm:right-6">
       {/* ── Popup contact ── */}
       <div
         className={cn(
           'w-72 overflow-hidden rounded-2xl border border-brand-navy/10 bg-white shadow-2xl transition-all duration-300 origin-bottom-right sm:w-80',
-          chatOpen ? 'scale-100 opacity-100' : 'pointer-events-none scale-95 opacity-0',
+          chatOpen
+            ? 'pointer-events-auto scale-100 opacity-100'
+            : 'pointer-events-none scale-95 opacity-0',
         )}
       >
         {/* En-tête */}
@@ -105,7 +110,7 @@ export function FloatingButtons() {
         onClick={() => setChatOpen((v) => !v)}
         aria-label={chatOpen ? 'Fermer le contact' : 'Nous contacter'}
         className={cn(
-          'flex size-12 items-center justify-center rounded-full shadow-lg transition-all duration-200 sm:size-14',
+          'pointer-events-auto flex size-12 items-center justify-center rounded-full shadow-lg transition-all duration-200 sm:size-14',
           chatOpen
             ? 'bg-brand-navy text-white'
             : 'bg-brand-gold text-brand-navy hover:bg-brand-gold-hover',
@@ -120,7 +125,9 @@ export function FloatingButtons() {
         aria-label="Remonter en haut de la page"
         className={cn(
           'flex size-10 items-center justify-center rounded-full border border-brand-navy/15 bg-white text-brand-navy shadow-md transition-all duration-300 hover:border-brand-navy/25 hover:bg-brand-cream sm:size-11',
-          showTop ? 'translate-y-0 opacity-100' : 'pointer-events-none translate-y-4 opacity-0',
+          showTop
+            ? 'pointer-events-auto translate-y-0 opacity-100'
+            : 'pointer-events-none translate-y-4 opacity-0',
         )}
       >
         <ArrowUp className="size-4" />

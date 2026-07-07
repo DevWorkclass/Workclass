@@ -11,7 +11,7 @@ import { ArrowRight } from 'lucide-react';
 
 import { PublicEventCard } from '@/components/sections/PublicEventCard';
 import { ROUTES } from '@/constants/routes';
-import { getPublicEvents } from '@/lib/events-cache';
+import { getPublicEvents, invalidatePublicEvents } from '@/lib/events-cache';
 import type { PublicEvent } from '@/lib/public-event';
 
 interface Props {
@@ -22,10 +22,9 @@ export function EventsPreviewSection({ initialEvents }: Props) {
   const [events, setEvents] = useState<PublicEvent[]>(initialEvents ?? []);
   const [loaded, setLoaded] = useState((initialEvents?.length ?? 0) > 0);
 
-  useEffect(() => {
-    // Si le serveur a fourni des événements réels, pas besoin de re-fetcher
-    if (initialEvents && initialEvents.length > 0) return;
-    // Sinon (cold start backend ou prop absente), on tente côté client
+  // Fetch + tri + slice top 3 par date.
+  const refresh = (force: boolean) => {
+    if (force) invalidatePublicEvents();
     getPublicEvents()
       .then((data) => {
         const sorted = [...data].sort(
@@ -35,6 +34,29 @@ export function EventsPreviewSection({ initialEvents }: Props) {
       })
       .catch(() => {})
       .finally(() => setLoaded(true));
+  };
+
+  useEffect(() => {
+    // Au montage : si pas d'initial events, fetch immédiat. Sinon on garde l'affichage
+    // serveur mais on revalide quand même en arrière-plan pour rafraîchir les places.
+    refresh(!!(initialEvents && initialEvents.length > 0));
+
+    // Revalidation quand l'utilisateur revient sur la page (retour de réservation).
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') refresh(true);
+    };
+    document.addEventListener('visibilitychange', onVisible);
+    window.addEventListener('focus', () => refresh(true));
+
+    // Polling léger toutes les 30 s tant que la page est visible.
+    const id = window.setInterval(() => {
+      if (document.visibilityState === 'visible') refresh(true);
+    }, 30_000);
+
+    return () => {
+      document.removeEventListener('visibilitychange', onVisible);
+      window.clearInterval(id);
+    };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (loaded && events.length === 0) return null;

@@ -111,10 +111,10 @@ export function HeroSection({ event }: HeroSectionProps) {
             <Image
               src="/assets/images/logo/logo.png"
               alt="Work Class Gabon"
-              width={220}
-              height={120}
+              width={480}
+              height={270}
               priority
-              className="h-20 w-auto object-contain sm:h-24"
+              className="h-32 w-auto object-contain sm:h-48 lg:h-64"
             />
           </div>
 
@@ -154,12 +154,13 @@ export function HeroSection({ event }: HeroSectionProps) {
           {/* Image de couverture */}
           <div className="relative flex aspect-[16/9] items-end overflow-hidden rounded-xl bg-gradient-to-br from-[#0a1628] to-[#162d5a]">
             {event.coverImage && (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
+              <Image
                 src={event.coverImage}
                 alt={event.title}
-                className="absolute inset-0 size-full object-cover"
-                loading="eager"
+                fill
+                priority
+                unoptimized
+                className="absolute inset-0 object-cover"
               />
             )}
             {/* Dégradé sombre pour lisibilité du badge */}

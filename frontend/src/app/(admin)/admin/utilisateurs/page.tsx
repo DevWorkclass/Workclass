@@ -22,6 +22,7 @@ import { ROUTES } from '@/constants/routes';
 import type { Permission, PermissionCatalogItem } from '@/constants/permissions';
 import { PermissionGuard } from '@/components/admin/PermissionGuard';
 import { ApiError, apiAuth } from '@/lib/api';
+import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 
 interface AdminUser {
   id: string;
@@ -81,6 +82,8 @@ function UsersContent() {
   const [editing, setEditing] = useState<AdminUser | null>(null);
   const [creating, setCreating] = useState(false);
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [confirmToggle, setConfirmToggle] = useState<AdminUser | null>(null);
+  const [confirmReset, setConfirmReset] = useState<AdminUser | null>(null);
 
   const handleAuthError = useCallback(
     (err: unknown): boolean => {
@@ -282,7 +285,7 @@ function UsersContent() {
                             variant="ghost"
                             size="sm"
                             disabled={busyId === u.id}
-                            onClick={() => void toggleActive(u)}
+                            onClick={() => setConfirmToggle(u)}
                           >
                             {u.isActive ? 'Désactiver' : 'Activer'}
                           </Button>
@@ -290,7 +293,7 @@ function UsersContent() {
                             variant="ghost"
                             size="sm"
                             disabled={busyId === u.id}
-                            onClick={() => void resetPassword(u)}
+                            onClick={() => setConfirmReset(u)}
                           >
                             Mot de passe
                           </Button>
@@ -326,6 +329,42 @@ function UsersContent() {
           onAuthError={handleAuthError}
         />
       ) : null}
+
+      <ConfirmDialog
+        open={confirmToggle !== null}
+        title={confirmToggle?.isActive ? 'Désactiver ce compte ?' : 'Réactiver ce compte ?'}
+        description={
+          confirmToggle
+            ? confirmToggle.isActive
+              ? `${fullName(confirmToggle)} ne pourra plus se connecter tant que le compte sera désactivé.`
+              : `${fullName(confirmToggle)} retrouvera l'accès à son compte.`
+            : undefined
+        }
+        confirmLabel={confirmToggle?.isActive ? 'Désactiver' : 'Réactiver'}
+        onCancel={() => setConfirmToggle(null)}
+        onConfirm={() => {
+          const target = confirmToggle;
+          setConfirmToggle(null);
+          if (target) void toggleActive(target);
+        }}
+      />
+
+      <ConfirmDialog
+        open={confirmReset !== null}
+        title="Réinitialiser le mot de passe ?"
+        description={
+          confirmReset
+            ? `Vous allez définir un nouveau mot de passe pour ${fullName(confirmReset)}. Communiquez-le par un canal sécurisé.`
+            : undefined
+        }
+        confirmLabel="Continuer"
+        onCancel={() => setConfirmReset(null)}
+        onConfirm={() => {
+          const target = confirmReset;
+          setConfirmReset(null);
+          if (target) void resetPassword(target);
+        }}
+      />
     </>
   );
 }

@@ -31,6 +31,7 @@ jobs:
     env:
       NODE_ENV: test
       DATABASE_URL: postgresql://workclass:workclass@localhost:5432/workclass_test?schema=public
+      DIRECT_URL: postgresql://workclass:workclass@localhost:5432/workclass_test?schema=public
       REDIS_URL: redis://localhost:6379
       JWT_SECRET: ci_test_secret_change_me
       QR_HMAC_SECRET: ci_test_secret_change_me

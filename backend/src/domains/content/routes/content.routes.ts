@@ -37,6 +37,7 @@ router.get('/content/ads', controller.getAds.bind(controller));
 router.get('/content/promoters', controller.getPromoters.bind(controller));
 router.get('/content/featured', controller.getFeaturedEvent.bind(controller));
 router.get('/content/about', controller.getAbout.bind(controller));
+router.get('/content/install-qr', controller.getInstallQR.bind(controller));
 
 // --- Admin : gestion du contenu (guard content:manage) ---
 router.post('/admin/content/home-themes', ...guard, controller.setHomeThemes.bind(controller));

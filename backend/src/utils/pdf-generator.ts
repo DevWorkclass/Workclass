@@ -104,27 +104,32 @@ export async function generateTicketPDF(data: TicketPDFData): Promise<Buffer> {
     doc.rect(cardX, cardY, cardW, headerH).fill(headerGrad);
     doc.restore();
 
-    // Logo dans l'en-tête
+    // Logo dans l'en-tête — taille bornée pour pouvoir calculer un offset texte fiable.
     const logoPath = getLogoPath();
+    const logoH = 46;
+    const logoMaxW = 60;
+    const logoX = cardX + 18;
+    let textOffsetX = logoX + logoMaxW + 16; // marge de 16px entre logo et texte
     if (logoPath) {
-      try { doc.image(logoPath, cardX + 18, cardY + 12, { height: 46 }); } catch (_) {}
+      try {
+        doc.image(logoPath, logoX, cardY + 12, { fit: [logoMaxW, logoH] });
+      } catch (_) {
+        textOffsetX = cardX + 85;
+      }
+    } else {
+      textOffsetX = cardX + 85;
     }
 
     // Titre — mesure dynamique pour éviter le chevauchement
     doc.font('Helvetica-Bold').fontSize(17);
     const wcWidth = doc.widthOfString('WORK CLASS ');
-    doc.fillColor('#FFFFFF').text('WORK CLASS', cardX + 85, cardY + 14);
+    doc.fillColor('#FFFFFF').text('WORK CLASS', textOffsetX, cardY + 14);
     doc.fillColor('#0E2450').font('Helvetica-Bold').fontSize(17)
-      .text('GABON', cardX + 85 + wcWidth, cardY + 14);
+      .text('GABON', textOffsetX + wcWidth, cardY + 14);
     doc.fillColor('rgba(255,255,255,0.75)').font('Helvetica').fontSize(8.5)
-      .text('BILLET OFFICIEL D\'ACCÈS À L\'ÉVÉNEMENT', cardX + 85, cardY + 38);
+      .text('BILLET OFFICIEL D\'ACCÈS À L\'ÉVÉNEMENT', textOffsetX, cardY + 38);
 
-    // Badge type de billet (coin haut droit de l'en-tête)
-    const isVIP = data.ticketType.toLowerCase().includes('vip');
-    const badgeBg = isVIP ? '#FF6B00' : '#0E2450';
-    doc.roundedRect(cardX + cardW - 90, cardY + 18, 76, 24, 12).fill(badgeBg);
-    doc.fillColor('#FFFFFF').font('Helvetica-Bold').fontSize(8)
-      .text(data.ticketType.toUpperCase(), cardX + cardW - 90, cardY + 26, { width: 76, align: 'center' });
+    // Badge type de billet retiré sur demande — type stocké en métadonnée uniquement.
 
     // ── Corps de la carte ──
     const bodyY = cardY + headerH + 12;
@@ -258,11 +263,13 @@ export async function generateCertificatePDF(data: CertificatePDFData): Promise<
     }
 
     // ── Titre ──
+    // Espace supplémentaire sous le logo pour mieux respirer.
+    const contentGap = 38;
     doc.font('Helvetica-Bold').fontSize(24).fillColor('#0E2450')
-      .text('CERTIFICAT DE PARTICIPATION', 0, logoY + logoBoxH + 8, { align: 'center' });
+      .text('CERTIFICAT DE PARTICIPATION', 0, logoY + logoBoxH + contentGap, { align: 'center' });
 
     // Ligne dorée sous le titre
-    const lineY = logoY + logoBoxH + 42;
+    const lineY = logoY + logoBoxH + contentGap + 34;
     doc.moveTo(W / 2 - 160, lineY).lineTo(W / 2 + 160, lineY)
       .lineWidth(1.5).strokeColor('#D4AF37').stroke();
 
@@ -322,7 +329,13 @@ export async function generateCertificatePDF(data: CertificatePDFData): Promise<
     const leftX = W / 4;
     const rightX = (3 * W) / 4;
 
-    // Gauche — Madame Pauline White
+    // Gauche — Madame Pauline White + image signature
+    const sigImgLeftPath = path.join(__dirname, '../assets/signature-pauline.png');
+    if (fs.existsSync(sigImgLeftPath)) {
+      try {
+        doc.image(sigImgLeftPath, leftX - 75, sigY - 72, { fit: [150, 68], align: 'center', valign: 'bottom' });
+      } catch (_) {}
+    }
     doc.moveTo(leftX - 85, sigY).lineTo(leftX + 85, sigY)
       .lineWidth(0.8).strokeColor('#D4AF37').stroke();
     doc.fillColor('#0E2450').font('Helvetica-Bold').fontSize(10)

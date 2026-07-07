@@ -58,6 +58,12 @@ export class ScanService {
     return { valid: true, ticket };
   }
 
+  /**
+   * Marque le ticket scanné de manière atomique (anti double-scan).
+   * NE génère PLUS le certificat ni l'email ici : l'envoi est désormais
+   * déclenché à la demande depuis l'admin (un par un ou en batch par événement)
+   * via `sendCertificates`.
+   */
   async confirmScan(ticketId: string, scannerId: string): Promise<ConfirmResult> {
     const ticket = await prisma.ticket.findUnique({
       where: { id: ticketId },
@@ -74,103 +80,20 @@ export class ScanService {
     });
     if (claim.count === 0) throw new ValidationError('Ticket deja scanne');
 
-    const participant = ticket.booking.participant;
-    const eventTitle = ticket.booking.event.title;
-    const eventDate = ticket.booking.event.startDate.toLocaleDateString('fr-FR');
-    const appUrl = (process.env.FRONTEND_URL ?? process.env.APP_URL ?? 'http://localhost:3000').replace(/\/$/, '');
-    const feedbackExpiry = new Date();
-    feedbackExpiry.setDate(feedbackExpiry.getDate() + 30);
+    const updatedTicket = await prisma.ticket.findUnique({ where: { id: ticketId } });
 
-    // ── 1. Certificat principal (payeur) ─────────────────────────────────────
-    const ticketYear = ticket.ticketNumber.split('-')[1] ?? String(new Date().getFullYear());
-    const ticketSeq = ticket.ticketNumber.split('-')[2] ?? '000000';
-    const certificateNumber = `WCG-CERT-${ticketYear}-${ticketSeq}`;
-    const certificateToken = crypto.randomUUID();
-
-    const verifyUrl = `${appUrl}/certificat/${certificateToken}`;
-    let qrCodeDataUrl: string | undefined;
-    try { qrCodeDataUrl = await generatePlainQRCode(verifyUrl); } catch { /* sans QR */ }
-
-    const payerPdfBuffer = await generateCertificatePDF({
-      participantName: `${participant.firstName} ${participant.lastName}`,
-      eventTitle,
-      eventDate,
-      certificateNumber,
-      qrCodeDataUrl,
-    });
-    const certificateUrl = await uploadPdf('certificates', `${certificateNumber}.pdf`, payerPdfBuffer);
-
-    const certData = { certificateSent: true, certificateUrl, certificateNumber, certificateToken };
-    const updatedTicket = await prisma.ticket.update({
-      where: { id: ticketId },
-      data: certData as Parameters<typeof prisma.ticket.update>[0]['data'],
-    });
-
-    // ── 2. Participants secondaires (depuis metadata) — tous joints au mail payeur ──
-    const metaPs: ParticipantMeta[] = (
-      (participant.metadata as { participants?: ParticipantMeta[] } | null)?.participants ?? []
-    ).filter((p): p is ParticipantMeta => p !== null && p !== undefined);
-
-    // Participants secondaires = tous sauf le premier (index 0 = toujours le payeur)
-    const secondaryPs = metaPs.slice(1);
-
-    // Génération des PDFs secondaires en parallèle (buffer uniquement — pas d'upload)
-    const extraCertificates: ExtraCertificate[] = (
-      await Promise.allSettled(
-        secondaryPs.map(async (p, i) => {
-          const certNum = `${certificateNumber}-P${i + 2}`;
-          const buffer = await generateCertificatePDF({
-            participantName: `${p.firstName} ${p.lastName}`,
-            eventTitle,
-            eventDate,
-            certificateNumber: certNum,
-            qrCodeDataUrl: undefined,
-          });
-          return { name: `${p.firstName} ${p.lastName}`, buffer };
-        }),
-      )
-    )
-      .filter((r): r is PromiseFulfilledResult<ExtraCertificate> => r.status === 'fulfilled')
-      .map((r) => r.value);
-
-    // ── 3. Un seul email au payeur avec TOUS les certificats en pièces jointes ──
-    if (participant.email) {
-      try {
-        const feedbackToken = crypto.randomUUID();
-        await prisma.feedbackLink.create({
-          data: { eventId: ticket.booking.eventId, bookingId: ticket.booking.id, token: feedbackToken, expiresAt: feedbackExpiry },
-        });
-        await this.emailService.sendCertificateWithFeedback({
-          email: participant.email,
-          participantName: `${participant.firstName} ${participant.lastName}`,
-          certificateNumber,
-          pdfBuffer: payerPdfBuffer,
-          downloadUrl: buildCertDownloadUrl(certificateNumber),
-          feedbackToken,
-          eventTitle,
-          extraCertificates,
-        });
-      } catch (err) {
-        logger.error({ err }, 'Erreur envoi email payeur');
-      }
-    }
-
-    const emailsSent = participant.email ? 1 : 0;
     await logAudit({
       action: 'TICKET_SCANNED',
       userId: scannerId,
       resource: 'ticket',
       resourceId: ticketId,
-      details: {
-        certificateNumber,
-        emailsSent,
-        extrasJoints: extraCertificates.length,
-      },
+      details: { ticketNumber: ticket.ticketNumber },
       result: 'success',
     });
 
-    logger.info({ ticketNumber: ticket.ticketNumber, certificateNumber, emailsSent }, 'Ticket scanne');
-    return { ticket: updatedTicket, certificateUrl };
+    logger.info({ ticketNumber: ticket.ticketNumber }, 'Ticket scanne (certificat à envoyer manuellement)');
+    // Pas d'URL de certificat à ce stade — sera générée lors de l'envoi.
+    return { ticket: updatedTicket as unknown, certificateUrl: '' };
   }
 
   // ── Statistiques globales de scan (tous événements) ──────────────────────
@@ -313,6 +236,7 @@ export class ScanService {
               certificateNumber,
               pdfUrl: freshUrl,
               downloadUrl: buildCertDownloadUrl(certificateNumber),
+              bookletUrl: ticket.booking.event.resourceBookletUrl ?? undefined,
               feedbackToken,
               eventTitle,
               extraCertificates,

@@ -103,6 +103,11 @@ export default function ReservationEtape3Page() {
       const reference = res.data.reference;
       clearDraft();
 
+      // Invalide le cache mémoire des événements publics → places restantes à jour
+      // dès le retour sur l'accueil / la liste des événements.
+      const { invalidatePublicEvents } = await import('@/lib/events-cache');
+      invalidatePublicEvents();
+
       // Stocke l'URL WhatsApp pour la page de confirmation (window.open après await
       // est bloqué par les navigateurs — on passe par un lien cliquable côté confirmation).
       if (support?.whatsapp) {

@@ -253,7 +253,7 @@ export const TESTIMONIALS: Testimonial[] = [
 export const FAQ_ITEMS: FaqItem[] = [
   {
     question: 'Quand et où se tient la workclass ?',
-    answer: 'Le 04 juillet 2026, de 08h45 à 12h45, à la CCAIM de Libreville.',
+    answer: 'Le 11 juillet 2026, de 08h45 à 12h45, à la CCAIM de Libreville.',
   },
   {
     question: "À qui s'adresse cette workclass ?",
